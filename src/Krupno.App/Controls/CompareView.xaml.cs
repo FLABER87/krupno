@@ -308,9 +308,9 @@ public partial class CompareView : UserControl
         TileShade.Data = shade;
         TileShade.Visibility = Visibility.Visible;
 
-        if (tiles.Done.Count > 0)
+        if (tiles.Current is { } current)
         {
-            TileOutline.Data = new RectangleGeometry(Scale(tiles.Done[^1], width, height));
+            TileOutline.Data = new RectangleGeometry(Scale(current, width, height));
             TileOutline.Visibility = Visibility.Visible;
             UpdateTileOutline();
         }
@@ -345,9 +345,10 @@ public partial class CompareView : UserControl
         var point = e.GetPosition(Stage);
         if (e.ClickCount == 2)
         {
-            // Double click: "fit to window" ↔ 1:1 at the clicked point.
+            // Double click: "fit to window" ↔ 1:1 at the clicked point. For a small image 1:1 is below "fit" (zoom < 1),
+            // so any departure from "fit" counts, not just IsZoomed.
             var layer = LayerAt(point);
-            if (IsZoomed)
+            if (Math.Abs(_zoom - 1) > 0.01)
                 FitToWindow();
             else
                 ZoomAt(ActualSizeZoom(), layer, e.GetPosition(layer));
@@ -396,6 +397,19 @@ public partial class CompareView : UserControl
         _panOrigin = null;
         Root.ReleaseMouseCapture();
         UpdateCursor(e.GetPosition(Stage));
+    }
+
+    /// <summary>
+    /// Capture can be lost without a button-up (Alt+Tab, a message box): end the drag, otherwise the divider or the image
+    /// would keep following the mouse with no button pressed.
+    /// </summary>
+    private void OnLostMouseCapture(object sender, MouseEventArgs e)
+    {
+        if (e.OriginalSource != Root)
+            return;
+        _draggingDivider = false;
+        _panOrigin = null;
+        Cursor = null;
     }
 
     private void OnMouseMove(object sender, MouseEventArgs e)

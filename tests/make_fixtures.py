@@ -85,5 +85,7 @@ if icc_path.exists():
 broken = root / "broken"
 broken.mkdir(parents=True, exist_ok=True)
 (broken / "broken.png").write_bytes(b"this is not a png\n" * 4)
+# A GIF header followed by garbage: WIC reports it with ArgumentException ("The image is missing a frame"), not NotSupportedException.
+(broken / "broken.gif").write_bytes(b"GIF89a\x01\x00\x01\x00garbage")
 
 print(f"fixtures ready: {root}")

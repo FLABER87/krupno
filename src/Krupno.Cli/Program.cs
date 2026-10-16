@@ -77,6 +77,11 @@ catch (Exception ex) when (ex is CliException or IOException or NotSupportedExce
 
 static int Run(CliOptions options, CancellationToken cancellationToken)
 {
+    // Check the input before loading the model: inspecting a large model takes seconds.
+    string inputPath = Path.GetFullPath(options.Input!);
+    if (!Directory.Exists(inputPath) && !File.Exists(inputPath))
+        throw new CliException($"File or folder not found: {inputPath}");
+
     string modelPath = ResolveModel(options.Model);
     var stopwatch = Stopwatch.StartNew();
     using var model = UpscaleModel.Load(modelPath, ParseDevice(options.Device));
@@ -101,11 +106,15 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
         {
             var itemTimer = Stopwatch.StartNew();
             var loaded = ImageCodec.Load(input);
+            var format = options.Format ?? ImageCodec.FormatFromExtension(output) ?? ImageFileFormat.Png;
+            var (outputWidth, outputHeight) = upscaler.OutputSize(loaded.Image.Width, loaded.Image.Height, upscaleOptions);
+            ImageCodec.EnsureCanSave(format, outputWidth, outputHeight);
+
             var progress = new ConsoleProgress();
             var result = upscaler.Upscale(loaded.Image, upscaleOptions, progress, cancellationToken);
             progress.Finish();
+            cancellationToken.ThrowIfCancellationRequested();
 
-            var format = options.Format ?? ImageCodec.FormatFromExtension(output) ?? ImageFileFormat.Png;
             ImageCodec.Save(result, output, format, new SaveOptions { JpegQuality = options.Quality, Source = loaded });
             Console.WriteLine($"  {loaded.Image.Width}×{loaded.Image.Height} → {result.Width}×{result.Height}  " +
                               $"{itemTimer.Elapsed.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture)} s  → {output}");
@@ -137,11 +146,13 @@ static List<(string Input, string Output)> PlanJobs(CliOptions options, double s
             ? input.TrimEnd(Path.DirectorySeparatorChar) + "_upscaled"
             : Path.GetFullPath(options.Output);
         var extension = ImageCodec.GetExtension(options.Format ?? ImageFileFormat.Png);
-        return Directory.EnumerateFiles(input)
+        var files = Directory.EnumerateFiles(input)
             .Where(ImageCodec.IsSupportedInput)
             .Order(StringComparer.OrdinalIgnoreCase)
-            .Select(file => (file, Path.Combine(outputDir, Path.GetFileNameWithoutExtension(file) + extension)))
             .ToList();
+        var outputs = OutputPaths.MakeUnique(files,
+            files.Select(file => Path.Combine(outputDir, Path.GetFileNameWithoutExtension(file) + extension)).ToList());
+        return files.Zip(outputs).ToList();
     }
 
     if (!File.Exists(input))
@@ -155,12 +166,19 @@ static List<(string Input, string Output)> PlanJobs(CliOptions options, double s
     }
     else if (Directory.Exists(options.Output) || options.Output.EndsWith('\\') || options.Output.EndsWith('/'))
     {
+        // The source's folder is a valid choice too: then the name gets " (2)" instead of replacing the source.
         var extension = ImageCodec.GetExtension(options.Format ?? ImageFileFormat.Png);
-        output = Path.Combine(Path.GetFullPath(options.Output), Path.GetFileNameWithoutExtension(input) + extension);
+        output = OutputPaths.MakeUnique([input],
+            [Path.Combine(Path.GetFullPath(options.Output), Path.GetFileNameWithoutExtension(input) + extension)])[0];
     }
     else
     {
         output = Path.GetFullPath(options.Output);
+        if (string.Equals(output, input, StringComparison.OrdinalIgnoreCase))
+            throw new CliException("The output file is the source image itself; choose another name.");
+        // An unknown extension would get PNG data under a misleading name; a name without an extension stays PNG.
+        if (options.Format is null && Path.GetExtension(output) is { Length: > 0 } extension && ImageCodec.FormatFromExtension(output) is null)
+            throw new CliException($"Unknown output format \"{extension}\": use .png, .jpg, .tif or .bmp, or set it with -f.");
     }
     return [(input, output)];
 }

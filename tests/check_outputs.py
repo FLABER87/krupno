@@ -59,9 +59,15 @@ expect_model("noise_probe_cpu", "probe_x3 (×3)")
 expect_model("noise_legacy", "Legacy x2 (×2, Test)")
 
 # Alpha: RGB is exact, alpha is Lanczos (compared approximately with Pillow's Lanczos).
+# Under fully transparent pixels (columns 0 and 1 of the fixture) the color is filled from the nearest visible pixel
+# (column 2 of the same row) before the network sees it, so the edge doesn't pick up the color stored under alpha 0.
 src = np.asarray(Image.open(img / "alpha_257x129.png")).astype(np.int32)
 got = np.asarray(Image.open(out / "alpha_red.png")).astype(np.int32)
-exp_rgb = np.repeat(np.repeat(src[..., :3], 4, 0), 4, 1) * np.array([1, 0, 0])
+bled = src[..., :3].copy()
+transparent_columns = np.where((src[..., 3] == 0).all(0))[0].tolist()
+assert transparent_columns == [0, 1] and not (src[:, 2:, 3] == 0).any(), f"unexpected alpha fixture: {transparent_columns}"
+bled[:, :2] = bled[:, 2:3]
+exp_rgb = np.repeat(np.repeat(bled, 4, 0), 4, 1) * np.array([1, 0, 0])
 rgb_ok = got.shape[:2] == exp_rgb.shape[:2] and got.shape[2] == 4 and int(np.abs(got[..., :3] - exp_rgb).max()) == 0
 pil_alpha = np.asarray(Image.fromarray(src[..., 3].astype(np.uint8)).resize((257 * 4, 129 * 4), Image.LANCZOS)).astype(np.int32)
 alpha_err = float(np.abs(got[..., 3] - pil_alpha).mean()) if got.shape[2] == 4 else 999
@@ -98,8 +104,23 @@ got = load(out / "batch" / "orient6.png") if (out / "batch" / "orient6.png").exi
 check("batch/orient6.png", got.shape == (160 * 4, 90 * 4, 3), f"shape {got.shape}")
 
 # Broken file: a clear error and exit code 1, not a crash and not an empty result.
-check("broken.log", "Error:" in log("broken") and not (out / "broken.png").exists(),
-      " | ".join(line for line in log("broken").splitlines() if line.strip()) or "empty output")
+for label in ("broken", "broken_gif"):
+    check(f"{label}.log", "Error:" in log(label) and "Unhandled" not in log(label) and not (out / f"{label}.png").exists(),
+          " | ".join(line for line in log(label).splitlines() if line.strip()) or "empty output")
+
+# The source's own folder as the output: the source stays as it was, the result gets " (2)".
+same_src = out / "same" / "noise.png"
+same_out = out / "same" / "noise (2).png"
+check("same_folder", same_src.exists() and Image.open(same_src).size == (300, 200)
+      and same_out.exists() and Image.open(same_out).size == (1200, 800),
+      f"source {Image.open(same_src).size if same_src.exists() else 'missing'}, "
+      f"result {Image.open(same_out).size if same_out.exists() else 'missing'}")
+
+# "x.jpg" and "x.png" from one folder: both results are kept ("x.jpg" comes first alphabetically and gets "x.png").
+dup = out / "dup_out"
+check("dup_names", (dup / "x.png").exists() and (dup / "x (2).png").exists()
+      and Image.open(dup / "x.png").size == (90 * 4, 160 * 4) and Image.open(dup / "x (2).png").size == (1200, 800),
+      ", ".join(sorted(p.name for p in dup.iterdir())) if dup.exists() else "folder missing")
 
 print("ALL OK" if failures == 0 else f"{failures} FAILED")
 sys.exit(1 if failures else 0)

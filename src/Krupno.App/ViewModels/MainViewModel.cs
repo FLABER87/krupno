@@ -43,6 +43,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool _rebuildingModels;
     private bool _suppressPreview;
     private int _previewVersion;
+    private CancellationTokenSource? _previewCts;
+    /// <summary>One full-size preview decode at a time: clicking quickly through the filmstrip must not start a decode per click.</summary>
+    private readonly SemaphoreSlim _previewGate = new(1, 1);
+    private int _thumbnailGeneration;
+    /// <summary>Bumped by clearing the list: selections still being read are dropped.</summary>
+    private int _selectionGeneration;
+    private readonly SemaphoreSlim _selectionGate = new(1, 1);
     private UpscaleModel? _model;
     private (string Path, ExecutionDevice Device) _modelKey;
     private CancellationTokenSource? _cts;
@@ -106,7 +113,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 OpenFiles(append: false);
             else
                 _ = UpscaleAsync();
-        }, () => !IsBusy);
+        }, () => !IsBusy && (State == PanelState.Empty || SelectedModel is not null));
         OpenCommand = new RelayCommand(() => OpenFiles(append: false), () => !IsBusy);
         AddFilesCommand = new RelayCommand(() => OpenFiles(append: true), () => !IsBusy);
         ClearFilesCommand = new RelayCommand(ClearFiles, () => !IsBusy && HasFiles);
@@ -481,43 +488,76 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (IsBusy)
             return;
 
-        var found = paths
-            .SelectMany(p => Directory.Exists(p)
-                ? Directory.EnumerateFiles(p).Order(StringComparer.OrdinalIgnoreCase)
-                : (IEnumerable<string>)[p])
-            .Where(ImageCodec.IsSupportedInput)
-            .Select(Path.GetFullPath)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-        if (found.Count == 0)
-        {
-            ShowToast("The selection contains no supported images");
-            return;
-        }
-
-        if (!append)
-            Files.Clear();
-        var known = new HashSet<string>(Files.Select(f => f.Path), StringComparer.OrdinalIgnoreCase);
+        // Folders are read off the UI thread: a large folder or a slow network share would freeze the window. Selections are
+        // applied one at a time in the order they were made, so a slow folder dropped first can't replace (or, with Ctrl,
+        // lose) one dropped after it; clearing the list drops the selections still being read.
+        int selection = _selectionGeneration;
         var added = new List<FileItem>();
-        foreach (var path in found)
+        await _selectionGate.WaitAsync();
+        try
         {
-            if (!known.Add(path))
-                continue;
-            var item = new FileItem(path);
-            Files.Add(item);
-            added.Add(item);
-        }
+            if (selection != _selectionGeneration)
+                return;
 
-        _lastDone = null;
-        Notice = null;
-        OnFilesChanged();
-        CurrentFile = append && CurrentFile is not null ? CurrentFile : Files.FirstOrDefault();
-        await LoadThumbnailsAsync(added);
+            List<string> found;
+            try
+            {
+                found = await Task.Run(() => paths
+                    .SelectMany(p => Directory.Exists(p)
+                        ? Directory.EnumerateFiles(p).Order(StringComparer.OrdinalIgnoreCase)
+                        : (IEnumerable<string>)[p])
+                    .Where(ImageCodec.IsSupportedInput)
+                    .Select(Path.GetFullPath)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList());
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+            {
+                if (selection == _selectionGeneration)
+                    ShowToast($"Can't read the selection: {ex.Message}");
+                return;
+            }
+            // Processing may have started, or the list may have been cleared, while the folder was being read.
+            if (IsBusy || selection != _selectionGeneration)
+                return;
+            if (found.Count == 0)
+            {
+                ShowToast("The selection contains no supported images");
+                return;
+            }
+
+            if (!append)
+            {
+                Files.Clear();
+                ++_thumbnailGeneration;
+            }
+            var known = new HashSet<string>(Files.Select(f => f.Path), StringComparer.OrdinalIgnoreCase);
+            foreach (var path in found)
+            {
+                if (!known.Add(path))
+                    continue;
+                var item = new FileItem(path);
+                Files.Add(item);
+                added.Add(item);
+            }
+
+            _lastDone = null;
+            Notice = null;
+            OnFilesChanged();
+            CurrentFile = append && CurrentFile is not null ? CurrentFile : Files.FirstOrDefault();
+        }
+        finally
+        {
+            _selectionGate.Release();
+        }
+        // Thumbnails load outside the gate: the next selection doesn't wait for them.
+        await LoadThumbnailsAsync(added, _thumbnailGeneration);
     }
 
     public void Dispose()
     {
         _cts?.Cancel();
+        _previewCts?.Cancel();
         // The session must not be touched while processing is running; the process is exiting anyway.
         if (!IsBusy)
             _model?.Dispose();
@@ -536,16 +576,21 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private void ClearFiles()
     {
         Files.Clear();
+        ++_thumbnailGeneration;
+        ++_selectionGeneration;
         _lastDone = null;
         Notice = null;
         CurrentFile = null;
         OnFilesChanged();
     }
 
-    private async Task LoadThumbnailsAsync(IReadOnlyList<FileItem> items)
+    private async Task LoadThumbnailsAsync(IReadOnlyList<FileItem> items, int generation)
     {
         foreach (var item in items)
         {
+            // The list was replaced or cleared: stop instead of decoding thumbnails nobody will see.
+            if (generation != _thumbnailGeneration)
+                return;
             try
             {
                 item.Thumbnail = await Task.Run(() => ImageCodec.LoadThumbnail(item.Path, ThumbnailHeight));
@@ -560,6 +605,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private async Task ShowPreviewAsync(FileItem? file)
     {
         int version = ++_previewVersion;
+        // A newer request makes the older one pointless: skip its decodes that haven't started yet.
+        _previewCts?.Cancel();
+        _previewCts = new CancellationTokenSource();
+        var cancellationToken = _previewCts.Token;
         Tiles = null;
         PreviewError = null;
         if (file is null)
@@ -572,16 +621,41 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         try
         {
-            var before = await Task.Run(() => ImageCodec.ToBitmapSource(ImageCodec.Load(file.Path).Image));
+            await _previewGate.WaitAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        try
+        {
+            var before = await Task.Run(() => ImageCodec.ToBitmapSource(ImageCodec.Load(file.Path).Image), cancellationToken);
             BitmapSource? after = null;
+            string? afterError = null;
             if (file.IsDone && file.OutputExists)
-                after = await Task.Run(() => ImageCodec.ToBitmapSource(ImageCodec.Load(file.OutputPath!).Image));
+            {
+                try
+                {
+                    after = await Task.Run(() => ImageCodec.ToBitmapSource(ImageCodec.Load(file.OutputPath!).Image), cancellationToken);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    // The result can't be shown (deleted or replaced by another app), but the source is fine: it isn't an error of the file.
+                    afterError = Friendly(ex);
+                }
+            }
             if (version != _previewVersion)
                 return;
 
             Before = before;
             After = after;
             SetSourceSize((before.PixelWidth, before.PixelHeight));
+            if (afterError is not null)
+                ShowToast($"Can't show the result: {afterError}");
+        }
+        catch (OperationCanceledException)
+        {
         }
         catch (Exception ex)
         {
@@ -593,6 +667,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             file.State = FileState.Error;
             file.Error = Friendly(ex);
             PreviewError = file.Error;
+        }
+        finally
+        {
+            _previewGate.Release();
         }
     }
 
@@ -612,6 +690,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var files = Files.ToList();
         var settings = (Scale: SelectedScale.Value, Tile: SelectedTile.Value, Format: SelectedFormat.Value,
             Quality: JpegQuality, Folder: OutputFolder);
+        // All names up front: a result must not overwrite a queued source ("photo.png" → "photo_x4.png" while
+        // "photo_x4.png" waits in the queue) or another result ("photo.jpg" and "photo.png" → "photo_x4.png").
+        var outputs = OutputPaths.MakeUnique(files.Select(f => f.Path),
+            files.Select(f => BuildOutputPath(f.Path, settings.Folder, settings.Scale, settings.Format)).ToList());
         foreach (var file in files)
         {
             file.State = FileState.Pending;
@@ -634,13 +716,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var total = Stopwatch.StartNew();
         Stopwatch? work = null;
         int succeeded = 0, failed = 0;
+        string? firstError = null;
         long lastBytes = 0;
 
         try
         {
             var model = await GetModelAsync();
             var upscaler = new Upscaler(model);
-            string device = Text.Device(model.Device);
             var options = new UpscaleOptions { Scale = settings.Scale, TileSize = settings.Tile };
 
             for (int i = 0; i < files.Count; i++)
@@ -657,41 +739,73 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 try
                 {
                     var loaded = await Task.Run(() => ImageCodec.Load(file.Path), cancellationToken);
-                    Before = await Task.Run(() => ImageCodec.ToBitmapSource(loaded.Image), cancellationToken);
-                    After = null;
-                    PreviewError = null;
-                    SetSourceSize((loaded.Image.Width, loaded.Image.Height));
+                    // The user may be looking at another file of the batch meanwhile: the canvas shows only the selected one,
+                    // so every step checks the selection again after an await.
+                    if (CurrentFile == file)
+                    {
+                        var before = await Task.Run(() => ImageCodec.ToBitmapSource(loaded.Image), cancellationToken);
+                        if (CurrentFile == file)
+                        {
+                            Before = before;
+                            After = null;
+                            PreviewError = null;
+                            SetSourceSize((loaded.Image.Width, loaded.Image.Height));
+                            Tiles = TileOverlay.Empty;
+                        }
+                    }
 
-                    var doneTiles = new List<Rect>();
-                    Tiles = TileOverlay.Empty;
+                    // The format's size limit, before minutes of work rather than after.
+                    var (outputWidth, outputHeight) = upscaler.OutputSize(loaded.Image.Width, loaded.Image.Height, options);
+                    ImageCodec.EnsureCanSave(settings.Format, outputWidth, outputHeight);
+
+                    var tiles = new TileProgress();
                     work ??= Stopwatch.StartNew();
                     var progress = new Progress<UpscaleProgress>(p =>
-                        OnProgress(p, index, files.Count, device, doneTiles, work));
+                        OnProgress(p, file, index, files.Count, model, tiles, work));
                     var result = await upscaler.UpscaleAsync(loaded.Image, options, progress, cancellationToken);
 
-                    string output = BuildOutputPath(file.Path, settings.Folder, settings.Scale, settings.Format);
+                    string output = outputs[index];
                     await Task.Run(() => ImageCodec.Save(result, output, settings.Format,
                         new SaveOptions { Source = loaded, JpegQuality = settings.Quality }), cancellationToken);
-                    After = await Task.Run(() => ImageCodec.ToBitmapSource(result), cancellationToken);
-                    Tiles = null;
 
+                    // The file is written: record it before anything that can still be canceled.
                     file.OutputPath = output;
                     file.State = FileState.Done;
                     _lastDone = file;
                     lastBytes = new FileInfo(output).Length;
                     succeeded++;
+
+                    if (CurrentFile == file)
+                    {
+                        Tiles = null;
+                        BitmapSource? after = null;
+                        try
+                        {
+                            after = await Task.Run(() => ImageCodec.ToBitmapSource(result));
+                        }
+                        catch (OutOfMemoryException)
+                        {
+                            // The result is saved; without a preview the canvas just shows the original.
+                        }
+                        if (CurrentFile == file)
+                            After = after;
+                    }
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    Tiles = null;
                     file.State = FileState.Error;
                     file.Error = Friendly(ex);
-                    if (ex is NotSupportedException)
+                    firstError ??= file.Error;
+                    if (CurrentFile == file)
                     {
-                        // The file couldn't be read, so don't leave the previous image on the canvas.
-                        Before = null;
-                        After = null;
-                        PreviewError = file.Error;
+                        Tiles = null;
+                        if (ex is NotSupportedException)
+                        {
+                            // The file couldn't be read, so don't leave the previous image on the canvas.
+                            Before = null;
+                            After = null;
+                            PreviewError = file.Error;
+                        }
                     }
                     failed++;
                     if (files.Count == 1)
@@ -700,22 +814,33 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             }
 
             string elapsed = Text.Seconds(total.Elapsed);
-            if (files.Count == 1)
+            if (succeeded == 0)
             {
-                DoneTitle = $"Done in {elapsed} · {Text.Bytes(lastBytes)}";
-                DoneSubtitle = After is { } after
-                    ? $"{Path.GetFileName(_lastDone!.OutputPath)} · {Text.Size(after.PixelWidth, after.PixelHeight)}"
-                    : Path.GetFileName(_lastDone!.OutputPath)!;
+                // Every file of the batch failed: that is not a success, whatever the count.
+                ErrorDetail = $"None of the {files.Count} files could be upscaled. {firstError}";
+                ErrorTechnical = firstError;
+                State = PanelState.Error;
+                TaskbarState = TaskbarItemProgressState.Error;
             }
             else
             {
-                DoneTitle = failed == 0
-                    ? $"Done: {Text.Files(succeeded)} in {elapsed}"
-                    : $"Done: {succeeded} of {files.Count}, {failed} failed";
-                DoneSubtitle = settings.Folder ?? "Saved next to the originals";
+                if (files.Count == 1)
+                {
+                    DoneTitle = $"Done in {elapsed} · {Text.Bytes(lastBytes)}";
+                    DoneSubtitle = After is { } after
+                        ? $"{Path.GetFileName(_lastDone!.OutputPath)} · {Text.Size(after.PixelWidth, after.PixelHeight)}"
+                        : Path.GetFileName(_lastDone!.OutputPath)!;
+                }
+                else
+                {
+                    DoneTitle = failed == 0
+                        ? $"Done: {Text.Files(succeeded)} in {elapsed}"
+                        : $"Done: {succeeded} of {files.Count}, {failed} failed";
+                    DoneSubtitle = settings.Folder ?? "Saved next to the originals";
+                }
+                State = PanelState.Done;
+                TaskbarState = failed > 0 ? TaskbarItemProgressState.Error : TaskbarItemProgressState.None;
             }
-            State = PanelState.Done;
-            TaskbarState = failed > 0 ? TaskbarItemProgressState.Error : TaskbarItemProgressState.None;
         }
         catch (OperationCanceledException)
         {
@@ -743,23 +868,35 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    private void OnProgress(UpscaleProgress p, int index, int count, string device, List<Rect> doneTiles, Stopwatch work)
+    private void OnProgress(UpscaleProgress p, FileItem file, int index, int count, UpscaleModel model, TileProgress tiles,
+        Stopwatch work)
     {
+        // The session is created lazily, and DirectML may have just fallen back to the CPU: say so, the run is much slower then.
+        string device = Text.Device(model.Device);
+        if (model.FallbackReason is not null)
+            ProgressNote ??= "DirectML is unavailable, running on the CPU";
+
         if (p.Message is { } message)
         {
-            ProgressNote = message;
+            // A warning stays visible for the rest of the run; a stage ("Resizing to …") only replaces the detail line.
+            if (p.IsWarning)
+                ProgressNote = message;
+            else
+                ProgressDetail = count > 1 ? $"File {index + 1} of {count} · {message}" : message;
             return;
         }
 
         if (p.Region is { } region)
         {
-            doneTiles.Add(new Rect(region.Left, region.Top, region.Width, region.Height));
-            Tiles = new TileOverlay(doneTiles.ToArray());
+            var overlay = tiles.Add(new Rect(region.Left, region.Top, region.Width, region.Height));
+            if (CurrentFile == file)
+                Tiles = overlay;
         }
         else if (p.Tile == 0)
         {
-            doneTiles.Clear();
-            Tiles = TileOverlay.Empty;
+            tiles.Clear();
+            if (CurrentFile == file)
+                Tiles = TileOverlay.Empty;
         }
 
         double fraction = Math.Clamp((index + p.Fraction) / count, 0, 1);
@@ -773,11 +910,42 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             ? Text.Remaining(elapsed * ((1 - fraction) / fraction))
             : "";
 
-        string tiles = p.TileCount > 0 ? $"tile {p.Tile} of {p.TileCount}" : "";
+        string tileText = p.TileCount > 0 ? $"tile {p.Tile} of {p.TileCount}" : "";
         string pass = p.PassCount > 1 ? $" · pass {p.Pass} of {p.PassCount}" : "";
         ProgressDetail = count > 1
-            ? $"File {index + 1} of {count} · {tiles}{pass}"
-            : $"{(tiles.Length > 0 ? char.ToUpper(tiles[0]) + tiles[1..] : "")}{pass} · {device}";
+            ? $"File {index + 1} of {count} · {tileText}{pass}"
+            : $"{(tileText.Length > 0 ? char.ToUpper(tileText[0]) + tileText[1..] : "")}{pass} · {device}";
+    }
+
+    /// <summary>
+    /// Finished tiles of the current pass for the overlay. Tiles finish row by row, so complete rows are merged into one
+    /// rectangle: the overlay holds at most a row of tiles plus one, instead of growing with every tile (quadratic work on large images).
+    /// </summary>
+    private sealed class TileProgress
+    {
+        private readonly List<Rect> _row = [];
+        private Rect? _rows;
+
+        public void Clear()
+        {
+            _row.Clear();
+            _rows = null;
+        }
+
+        public TileOverlay Add(Rect tile)
+        {
+            // A tile at the left edge starts a new row, so the previous row is complete.
+            if (tile.X == 0 && _row.Count > 0)
+            {
+                var rows = _rows ?? _row[0];
+                foreach (var done in _row)
+                    rows.Union(done);
+                _rows = rows;
+                _row.Clear();
+            }
+            _row.Add(tile);
+            return new TileOverlay(_rows is { } merged ? [merged, .. _row] : [.. _row], tile);
+        }
     }
 
     private async Task<UpscaleModel> GetModelAsync()
@@ -837,6 +1005,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(HasNoModels));
         OnPropertyChanged(nameof(HasMoreModels));
         OnPropertyChanged(nameof(AllModelsToggleText));
+        // The main button depends on whether a model is selected.
+        CommandManager.InvalidateRequerySuggested();
         if (SelectedModel is { } selected)
             _ = ShowModelDetailsAsync(selected);
     }

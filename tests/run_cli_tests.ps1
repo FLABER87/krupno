@@ -55,6 +55,17 @@ if (Test-Path -LiteralPath "$img\icc_60x40.png") {
 Run "noise_legacy"    @("$img\noise_300x200.png", "-m", "$mod\legacy_x2.onnx", "-o", "$out\noise_legacy.png")
 Run "batch"           @($img, "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\batch")
 Run "broken"          @("$fx\broken\broken.png", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\broken.png") -Expect 1
+Run "broken_gif"      @("$fx\broken\broken.gif", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\broken_gif.png") -Expect 1
+
+# "-o" pointing at the source's own folder must not replace the source: the result gets " (2)".
+New-Item -ItemType Directory -Force "$out\same" | Out-Null
+Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\same\noise.png"
+Run "same_folder"     @("$out\same\noise.png", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\same")
+# "x.png" and "x.jpg" in one folder both become "x.png": the second one gets " (2)" instead of overwriting the first.
+New-Item -ItemType Directory -Force "$out\dup" | Out-Null
+Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\dup\x.png"
+Copy-Item -LiteralPath "$img\orient6.jpg" "$out\dup\x.jpg"
+Run "dup_names"       @("$out\dup", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\dup_out")
 
 & $Python "$PSScriptRoot\check_outputs.py" $fx $out
 $checkCode = $LASTEXITCODE

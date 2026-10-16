@@ -16,7 +16,10 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         // On a laptop at 200% scaling the height can be as little as ~720 logical pixels, so stay within the screen.
+        // The minimum size gives way too: otherwise it wins over the smaller Width/Height and the window sticks out of the screen.
         var workArea = SystemParameters.WorkArea;
+        MinWidth = Math.Min(MinWidth, workArea.Width);
+        MinHeight = Math.Min(MinHeight, workArea.Height);
         Width = Math.Min(Width, workArea.Width - 32);
         Height = Math.Min(Height, workArea.Height - 32);
         DataContext = _viewModel;

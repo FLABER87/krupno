@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -86,13 +87,19 @@ public static class ImageCodec
             image = new ImageBuffer(source.PixelWidth, source.PixelHeight);
             source.CopyPixels(image.Pixels, image.Stride, 0);
         }
-        catch (Exception ex) when (ex is NotSupportedException or FileFormatException)
+        // WIC reports some broken files with other exceptions, for example ArgumentException "The image is missing a frame".
+        catch (Exception ex) when (ex is NotSupportedException or FileFormatException or ArgumentException or COMException
+                                       or OverflowException)
         {
             throw new NotSupportedException(DecodeError(path), ex);
         }
 
         var metadata = frame.Metadata as BitmapMetadata;
-        image = image.ApplyExifOrientation(ReadOrientation(metadata));
+        int orientation = ReadOrientation(metadata);
+        image = image.ApplyExifOrientation(orientation);
+        // A quarter turn swaps the axes, and with them the horizontal and vertical resolution.
+        bool swapAxes = orientation is >= 5 and <= 8;
+        double dpiX = frame.DpiX > 0 ? frame.DpiX : 96, dpiY = frame.DpiY > 0 ? frame.DpiY : 96;
 
         return new LoadedImage
         {
@@ -105,15 +112,36 @@ public static class ImageCodec
                 BmpBitmapDecoder => ImageFileFormat.Bmp,
                 _ => null,
             },
-            DpiX = frame.DpiX > 0 ? frame.DpiX : 96,
-            DpiY = frame.DpiY > 0 ? frame.DpiY : 96,
+            DpiX = swapAxes ? dpiY : dpiX,
+            DpiY = swapAxes ? dpiX : dpiY,
             Metadata = CloneMetadata(metadata),
             ColorContexts = TryGet(() => frame.ColorContexts),
         };
     }
 
+    /// <summary>
+    /// Throws a clear error if the format can't hold an image of this size: the WIC PNG encoder stops at 65535 px on a side,
+    /// JPEG at 65500. Called before processing too, so a panorama doesn't fail only after minutes of work.
+    /// </summary>
+    public static void EnsureCanSave(ImageFileFormat format, long width, long height)
+    {
+        int max = format switch
+        {
+            ImageFileFormat.Png => 65535,
+            ImageFileFormat.Jpeg => 65500,
+            _ => int.MaxValue,
+        };
+        if (width > max || height > max)
+        {
+            throw new InvalidOperationException(
+                $"{format.ToString().ToUpperInvariant()} can't hold an image larger than {max} px on a side, and the result is " +
+                $"{width}×{height}. Save as TIFF or choose a smaller scale.");
+        }
+    }
+
     public static void Save(ImageBuffer image, string path, ImageFileFormat format, SaveOptions? options = null)
     {
+        EnsureCanSave(format, image.Width, image.Height);
         options ??= new SaveOptions();
         var src = options.Source;
 
@@ -124,21 +152,39 @@ public static class ImageCodec
 
         // Metadata is carried over only into the same container: WIC does not convert it between formats.
         var metadata = src?.SourceFormat == format ? src.Metadata : null;
-        var colorContexts = format == ImageFileFormat.Bmp ? null : src?.ColorContexts;
+        var colorContexts = src?.ColorContexts is { Count: > 0 } contexts ? contexts : null;
+        if (format == ImageFileFormat.Bmp && colorContexts is not null)
+        {
+            // BMP can't carry the profile, so convert the pixels to sRGB instead of silently changing their meaning.
+            bitmap = TryGet<BitmapSource>(() => new ColorConvertedBitmap(bitmap, colorContexts[0],
+                new ColorContext(bitmap.Format), bitmap.Format)) ?? bitmap;
+            colorContexts = null;
+        }
+
+        // Carrying metadata and the profile over is best-effort: if the codec rejects them, drop the metadata first, then the profile.
+        var attempts = new List<(BitmapMetadata? Metadata, ReadOnlyCollection<ColorContext>? ColorContexts)> { (metadata, colorContexts) };
+        if (metadata is not null && colorContexts is not null)
+            attempts.Add((null, colorContexts));
+        if (metadata is not null || colorContexts is not null)
+            attempts.Add((null, null));
 
         string directory = Path.GetDirectoryName(Path.GetFullPath(path))!;
         Directory.CreateDirectory(directory);
-        string tempPath = path + ".tmp";
+        // A short name of our own: an existing "<name>.tmp" may belong to the user, another Krupno may be saving the same file,
+        // and a suffix on a long name could exceed the 255-character limit of a file name.
+        string tempPath = Path.Combine(directory, $"krupno-{Guid.NewGuid():N}.tmp");
         try
         {
-            try
+            for (int i = 0; ; i++)
             {
-                Encode(bitmap, tempPath, format, options.JpegQuality, metadata, colorContexts);
-            }
-            catch (Exception) when (metadata is not null || colorContexts is not null)
-            {
-                // Carrying metadata over is best-effort; if the codec rejects it, save without it.
-                Encode(bitmap, tempPath, format, options.JpegQuality, null, null);
+                try
+                {
+                    Encode(bitmap, tempPath, format, options.JpegQuality, attempts[i].Metadata, attempts[i].ColorContexts);
+                    break;
+                }
+                catch (Exception) when (i < attempts.Count - 1)
+                {
+                }
             }
             File.Move(tempPath, path, overwrite: true);
         }
@@ -253,6 +299,9 @@ public static class ImageCodec
             // The rotation is already applied to the pixels; reset the tag so viewers don't rotate the image again.
             if (clone.ContainsQuery("System.Photo.Orientation"))
                 clone.SetQuery("System.Photo.Orientation", (ushort)1);
+            // An unfrozen clone belongs to the loading thread: an encoder on another thread (the app loads and saves in
+            // separate Task.Run calls) fails on it, and the image would be saved without metadata and without the ICC profile.
+            clone.Freeze();
             return clone;
         });
     }

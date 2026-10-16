@@ -276,7 +276,17 @@
 
                 <!-- Settings -->
                 <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
+                    <!-- Disabled while processing; the custom model cards and segmented lists have no disabled look of their own, so dim the panel. -->
                     <StackPanel Margin="20,14,20,10" IsEnabled="{Binding IsIdle}">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Style.Triggers>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter Property="Opacity" Value="0.55" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
 
                         <!-- Model -->
                         <DockPanel Margin="0,0,0,8">

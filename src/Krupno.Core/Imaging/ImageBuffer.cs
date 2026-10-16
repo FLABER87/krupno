@@ -31,8 +31,14 @@ public sealed class ImageBuffer
     public int Stride => Width * BytesPerPixel;
     public byte[] Pixels { get; }
 
+    /// <summary>
+    /// Whether the image fits in one array and WIC can still save and show it: WIC wants (height + 1) × stride within
+    /// int.MaxValue, a little less than Array.MaxLength. Without the second check an image right at the limit (80000×6710)
+    /// was processed for minutes and then failed to save.
+    /// </summary>
     public static bool CanAllocate(long width, long height) =>
-        width > 0 && height > 0 && width * height * BytesPerPixel <= Array.MaxLength;
+        width > 0 && height > 0 && width * height * BytesPerPixel <= Array.MaxLength
+        && width * BytesPerPixel * (height + 1) <= int.MaxValue;
 
     /// <summary>Whether at least one pixel is not fully opaque.</summary>
     public bool HasTransparency()
@@ -63,6 +69,71 @@ public sealed class ImageBuffer
         var px = Pixels;
         for (int i = 0; i < alpha.Length; i++)
             px[i * BytesPerPixel + 3] = alpha[i];
+    }
+
+    /// <summary>
+    /// An image in which every fully transparent pixel takes the color of the nearest pixel that is at least partly visible
+    /// (a copy; this image itself if it has no fully transparent pixels or nothing visible to take colors from).
+    /// The network and the resampler mix neighboring colors, and the color stored under alpha 0 (usually black) would
+    /// otherwise show up as a dark fringe along the edges.
+    /// </summary>
+    public ImageBuffer BleedTransparentColors()
+    {
+        var source = MemoryMarshal.Cast<byte, uint>(Pixels.AsSpan());
+        int count = Width * Height;
+        int transparent = 0;
+        foreach (uint pixel in source)
+        {
+            if (pixel >> 24 == 0)
+                transparent++;
+        }
+        if (transparent == 0 || transparent == count)
+            return this;
+
+        var result = new ImageBuffer(Width, Height, (byte[])Pixels.Clone());
+        var px = MemoryMarshal.Cast<byte, uint>(result.Pixels.AsSpan());
+
+        // Breadth-first search from the visible pixels next to transparency at once: each transparent pixel gets the color of the one
+        // that reached it first. Each pixel enters the queue once: the transparent ones plus at most 4 visible neighbors for each.
+        var done = new bool[count];
+        var queue = new int[(int)Math.Min(count, 5L * transparent)];
+        int head = 0, tail = 0;
+        for (int i = 0; i < count; i++)
+        {
+            if (px[i] >> 24 == 0)
+                continue;
+            done[i] = true;
+            int x = i % Width;
+            bool bordersTransparent = (x > 0 && px[i - 1] >> 24 == 0) || (x < Width - 1 && px[i + 1] >> 24 == 0)
+                || (i >= Width && px[i - Width] >> 24 == 0) || (i + Width < count && px[i + Width] >> 24 == 0);
+            if (bordersTransparent)
+                queue[tail++] = i;
+        }
+
+        while (head < tail)
+        {
+            int i = queue[head++];
+            int x = i % Width;
+            uint color = px[i] & 0x00FFFFFF;
+            if (x > 0)
+                Visit(i - 1, color, px);
+            if (x < Width - 1)
+                Visit(i + 1, color, px);
+            if (i >= Width)
+                Visit(i - Width, color, px);
+            if (i + Width < count)
+                Visit(i + Width, color, px);
+        }
+        return result;
+
+        void Visit(int n, uint color, Span<uint> pixels)
+        {
+            if (done[n])
+                return;
+            done[n] = true;
+            pixels[n] = color; // alpha stays 0
+            queue[tail++] = n;
+        }
     }
 
     /// <summary>

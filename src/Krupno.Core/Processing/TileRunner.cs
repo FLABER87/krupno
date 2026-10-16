@@ -25,6 +25,9 @@ internal sealed class TileRunner : IDisposable
     private float[]? _outputScratch;
     private IDisposableReadOnlyCollection<OrtValue>? _outputs;
 
+    public int Width => _width;
+    public int Height => _height;
+
     public TileRunner(UpscaleModel model, int width, int height)
     {
         _info = model.Info;

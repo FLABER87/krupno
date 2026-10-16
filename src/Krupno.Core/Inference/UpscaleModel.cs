@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
@@ -21,10 +22,17 @@ public sealed class UpscaleModel : IDisposable
     private const int ProbeSize = 32;
     private const int MaxCachedSessions = 2;
 
+    /// <summary>
+    /// <see cref="Inspect"/> creates a full CPU session: about 3 s for DAT2 or UltraSharpV2. The app inspects a model when it is
+    /// selected and again when it is loaded, so the result is kept for as long as the file stays the same.
+    /// </summary>
+    private static readonly ConcurrentDictionary<(string Path, long Length, DateTime WriteTime), Lazy<ModelInfo>> InfoCache = new();
+
     private readonly Dictionary<(int Width, int Height), InferenceSession> _sessions = [];
     private readonly Lock _lock = new();
     private readonly bool _allowCpuFallback;
     private (ExecutionDevice Device, int Tile)? _tileLimit;
+    private bool _gpuSessionCreated;
     private bool _disposed;
 
     // Official ONNX Runtime builds for Windows write telemetry via TraceLogging by default, and Windows may
@@ -85,9 +93,26 @@ public sealed class UpscaleModel : IDisposable
     /// <summary>Reads the metadata and the input/output shape without touching the GPU.</summary>
     public static ModelInfo Inspect(string path)
     {
-        if (!File.Exists(path))
+        var file = new FileInfo(path);
+        if (!file.Exists)
             throw new FileNotFoundException($"Model file not found: {path}", path);
 
+        // Lazy shares an inspection that is already running; a failure isn't cached, so the next call tries again.
+        var key = (file.FullName.ToUpperInvariant(), file.Length, file.LastWriteTimeUtc);
+        var entry = InfoCache.GetOrAdd(key, _ => new Lazy<ModelInfo>(() => InspectCore(file.FullName)));
+        try
+        {
+            return entry.Value;
+        }
+        catch
+        {
+            InfoCache.TryRemove(new KeyValuePair<(string, long, DateTime), Lazy<ModelInfo>>(key, entry));
+            throw;
+        }
+    }
+
+    private static ModelInfo InspectCore(string path)
+    {
         using var options = new SessionOptions
         {
             // Not DISABLE_ALL: without basic optimizations the CPU provider breaks on fp16 models with explicit Casts
@@ -227,18 +252,40 @@ public sealed class UpscaleModel : IDisposable
             try
             {
                 using var gpuOptions = CreateOptions(gpu: true, shape);
-                return new InferenceSession(Info.Path, gpuOptions);
+                var session = new InferenceSession(Info.Path, gpuOptions);
+                _gpuSessionCreated = true;
+                return session;
             }
-            catch (Exception ex) when (_allowCpuFallback && ex is OnnxRuntimeException or EntryPointNotFoundException or DllNotFoundException)
+            catch (Exception ex) when (_allowCpuFallback && ShouldFallBackToCpu(ex))
             {
                 FallbackReason = ex.Message;
                 Device = ExecutionDevice.Cpu;
+                // GPU sessions created earlier would never be used again, but would keep holding video memory.
+                ReleaseSessionsCore();
             }
         }
 
         using var cpuOptions = CreateOptions(gpu: false, shape: null);
         return new InferenceSession(Info.Path, cpuOptions);
     }
+
+    /// <summary>
+    /// "DirectML doesn't work here" is a reason to move to the CPU; running out of video memory is not: the caller shrinks the tile.
+    /// The two can't be told apart by the exception type, so once DirectML has created a session for this model, a later failure
+    /// is never treated as "doesn't work", and on the first attempt an out-of-memory message is recognized by its text.
+    /// </summary>
+    private bool ShouldFallBackToCpu(Exception ex) => ex switch
+    {
+        DllNotFoundException or EntryPointNotFoundException => true,
+        OnnxRuntimeException => !_gpuSessionCreated && !LooksLikeOutOfMemory(ex.Message),
+        _ => false,
+    };
+
+    private static bool LooksLikeOutOfMemory(string message) =>
+        message.Contains("8007000E", StringComparison.OrdinalIgnoreCase)
+        || message.Contains("E_OUTOFMEMORY", StringComparison.OrdinalIgnoreCase)
+        || message.Contains("out of memory", StringComparison.OrdinalIgnoreCase)
+        || message.Contains("not enough memory", StringComparison.OrdinalIgnoreCase);
 
     private SessionOptions CreateOptions(bool gpu, (int Width, int Height)? shape)
     {

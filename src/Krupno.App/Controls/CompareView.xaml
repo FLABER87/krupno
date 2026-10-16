@@ -20,7 +20,7 @@
           MouseLeftButtonDown="OnLeftDown" MouseLeftButtonUp="OnButtonUp"
           MouseRightButtonDown="OnPanDown" MouseRightButtonUp="OnButtonUp"
           MouseDown="OnMouseDown" MouseUp="OnMouseUp"
-          MouseMove="OnMouseMove" MouseWheel="OnMouseWheel" MouseLeave="OnMouseLeave">
+          MouseMove="OnMouseMove" MouseWheel="OnMouseWheel" MouseLeave="OnMouseLeave" LostMouseCapture="OnLostMouseCapture">
 
         <!-- Stage with the images; room at the bottom for the floating zoom toolbar. -->
         <Grid x:Name="Stage" Margin="24,24,24,72" SizeChanged="OnStageSizeChanged">

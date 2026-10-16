@@ -161,6 +161,9 @@ krupno-cli --list-models --list-devices
 
 See `krupno-cli --help` for details. Ctrl+C cancels processing.
 
+A result never replaces a source image or another result of the same run: if `-o` points at the source's own folder,
+or a folder has both `photo.jpg` and `photo.png`, the second name gets ` (2)` (`photo (2).png`). An existing file from an earlier run is overwritten.
+
 Without `-m`, `4xBHI_realplksr_dysample_real` is used, or the first model in alphabetical order if it is missing. `--list-models` marks the default model with an asterisk.
 
 ## Window
@@ -207,7 +210,8 @@ powershell -ExecutionPolicy Bypass -File tests\run_cli_tests.ps1
 The script creates the input images (`tests/make_fixtures.py`), runs `krupno-cli.exe` on the GPU and on the CPU, and puts the results and logs into `tests/out/cli`.
 Then `tests/check_outputs.py` compares them with the expectations, and the script exits with code 0 only if everything matches. A run takes about 15 s.
 Covered: tiling (including a model with a static 64×64 input and a run without tiling), a probe run of a model without metadata, reading `krupno.*` and `upscalr.*` metadata,
-fractional scale, ×8 in two passes, alpha channel, EXIF rotation, ICC profile, folder processing and a broken file.
+fractional scale, ×8 in two passes, alpha channel (with the color fill under transparent pixels), EXIF rotation, ICC profile, folder processing,
+output names that would overwrite a source or another result, and broken files.
 `python tests/make_fixtures.py --models` regenerates the models (it also needs the `onnx` package).
 On GitHub, the `.github/workflows/tests.yml` workflow (`windows-latest`) builds and runs these tests on every push and pull request. The runner has no GPU, and Krupno does not count "Microsoft Basic Render Driver" as one. So the workflow runs the script with the `-CheckFallback` switch: it sets `KRUPNO_BASIC_RENDER_DRIVER=1`, "Auto" picks that adapter, DirectML fails to start on it, and every "GPU" run must fall back to the CPU. This is how the fallback is tested. If the tests fail, `tests/out/cli` is uploaded as the `cli-tests-out` artifact.
 
@@ -224,9 +228,9 @@ Both scripts swap `%LOCALAPPDATA%\Krupno\settings.json` for the duration of the 
 - **Input shape for DirectML.** All tiles of an image are fed to the network in a window of the same size. The size is fixed through `AddFreeDimensionOverrideByName`, and DirectML compiles the graph once per image size.
 - **Checked against a reference.** Without tiling, the result matches the PyTorch implementation of Real-ESRGAN within ±1 level, both on DirectML and on the CPU.
 - **Out of memory.** If the window does not fit on the device, the tile shrinks and the pass starts over. Up to 512 px, the tile steps down a 64 px grid, respecting the model's size multiple (512 → 448 → 384 → 320 → 256 → …, no smaller than 128). A larger window is halved, but not below 512: every failed attempt costs a graph compilation, about 10 s for DAT2. Previously the tile was always halved and skipped the size that would fit: DAT2 fp32 on 10 GB dropped from 384 straight to 192. The chosen tile is remembered for the model on that device: later frames of a batch and the second ×8 pass start with it right away, and the reduction message is printed once. With DAT2 fp32 and `-t 384`, a batch of two 1920×1200 frames takes 62.1 + 51.7 s: only the first frame spends the extra ~10 s. In the window, the limit lasts until the model or device changes, and the next processing run shows "Tile 320 px (chosen after running out of memory)" once. To try a larger tile again, for example after freeing VRAM, switch the model or restart the app. DirectML does not report spilling into shared memory as an exception, so it cannot be caught this way.
-- **CPU fallback.** In "Auto" mode the GPU with the most memory is used; if DirectML fails to start, the work runs on the CPU. The software "Microsoft Basic Render Driver" does not count as a GPU: on a machine without a GPU it is not in the device list, and "Auto" goes straight to the CPU.
-- **Any scale.** The network runs as many times as needed (×8 with a ×4 model is two passes), then the result is resized precisely with a Lanczos-3 filter.
-- **The alpha channel** is scaled separately (Lanczos); the network processes RGB.
+- **CPU fallback.** In "Auto" mode the GPU with the most memory is used; if DirectML fails to start, the work runs on the CPU, and the window says so during processing. Running out of video memory is not a reason to fall back: once DirectML has created a session for the model, or when the error reads as out of memory, the tile shrinks instead. The software "Microsoft Basic Render Driver" does not count as a GPU: on a machine without a GPU it is not in the device list, and "Auto" goes straight to the CPU.
+- **Any scale.** The network runs as many times as needed (×8 with a ×4 model is two passes), then the result is resized precisely with a Lanczos-3 filter. If the last pass would not fit in memory at full size (×8 of a 1920×1200 photo makes a 30720×19200 intermediate), its input is first reduced so that the pass lands just above the target size, and a message says so.
+- **The alpha channel** is scaled separately (Lanczos); the network processes RGB. The color under fully transparent pixels is first filled from the nearest visible pixel, so the edges don't pick up the color stored there (usually black), and the final resize weights colors by alpha.
 - **EXIF rotation** is applied to the pixels. The ICC profile is carried over to the result, and the metadata too if the output format matches the source.
 
 ## What's next
