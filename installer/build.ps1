@@ -139,7 +139,8 @@ function Write-Checksums {
     $sums = foreach ($file in $files) {
         "{0} *{1}" -f (Get-FileHash -Algorithm SHA256 -LiteralPath $file).Hash.ToLowerInvariant(), (Split-Path $file -Leaf)
     }
-    [IO.File]::WriteAllLines((Join-Path $OutDir "SHA256SUMS.txt"), [string[]]$sums)
+    # LF line endings: with CRLF, "sha256sum -c" on Linux, macOS or Git Bash looks for "<file>\r" and fails.
+    [IO.File]::WriteAllText((Join-Path $OutDir "SHA256SUMS.txt"), (($sums -join "`n") + "`n"))
     foreach ($file in $files) { "{0,8:N1} MB  {1}" -f ((Get-Item -LiteralPath $file).Length / 1MB), $file }
 }
 
