@@ -2,11 +2,12 @@
 
     python tests/check_outputs.py [<fixtures folder>] [<results folder>]
 """
+import io
 import sys
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageCms
 
 sys.stdout.reconfigure(encoding="utf-8")
 here = Path(__file__).resolve().parent
@@ -103,6 +104,47 @@ if (out / "p3_red.png").exists():
           f"shape {got.shape}, colors {np.unique(got.reshape(-1, 3), axis=0)[:3].tolist()}, profile {'kept' if icc_out == icc_in else 'lost'}")
 else:
     check("p3_red.png", False, "file missing")
+
+
+def expect_srgb(src_name, out_name, tolerance, mode="RGB", alpha=None, centers=False, intent=ImageCms.Intent.PERCEPTUAL):
+    """A CMYK or grayscale source upscaled ×2 (legacy_x2): its pixels converted with the embedded profile to sRGB, compared with
+    LittleCMS (Windows' color engine differs by a few levels), and no profile in the result. centers: only the middle of each
+    CMYK patch, for a lossy result."""
+    path = out / out_name
+    if not path.exists():
+        return check(out_name, False, "file missing")
+    src = Image.open(fixtures / "profiles" / src_name)
+    profile = ImageCms.ImageCmsProfile(io.BytesIO(src.info["icc_profile"]))
+    exp = np.asarray(ImageCms.profileToProfile(src.convert("L") if src.mode == "LA" else src, profile,
+                                               ImageCms.createProfile("sRGB"), renderingIntent=intent,
+                                               outputMode="RGB")).astype(np.int32)
+    exp = np.repeat(np.repeat(exp, 2, 0), 2, 1)
+    result = Image.open(path)
+    icc = result.info.get("icc_profile")
+    got = load(path)
+    if got.shape != exp.shape:
+        return check(out_name, False, f"shape {got.shape} != {exp.shape}")
+    if centers:
+        got, exp = got[32::64, 24::48], exp[32::64, 24::48]
+    diff = int(np.abs(got - exp).max())
+    alpha_ok = alpha is None or bool((np.asarray(result.getchannel("A")) == alpha).all())
+    check(out_name, result.mode == mode and icc is None and diff <= tolerance and alpha_ok,
+          f"mode {result.mode}, profile {icc[16:20].decode() if icc else 'none'}, max diff {diff} (≤{tolerance})"
+          + (f", alpha {'kept' if alpha_ok else 'changed'}" if alpha is not None else ""))
+
+
+# CMYK and grayscale profiles: the result is RGB, which a CMYK or grayscale profile can't describe, so the pixels are
+# converted to sRGB on load, the way color-managed viewers show them. The same container (JPEG → JPEG, TIFF → TIFF) carries
+# the metadata over, and the profile must not come along with it. Windows converts CMYK without a profile as SWOP, so only
+# the toy press profile shows that the embedded profile is applied: a naive conversion misses it by over 100 levels.
+# The toy profile has the same table for every intent, but LittleCMS also scales the black point of a v2 profile for the
+# perceptual intent, which Windows doesn't; the relative colorimetric intent gives the table as it is.
+if (fixtures / "profiles" / "cmyk_swop.jpg").exists():
+    expect_srgb("cmyk_swop.jpg", "cmyk_swop.png", 6)
+    expect_srgb("cmyk_swop.jpg", "cmyk_swop_jpg.jpg", 8, centers=True)
+expect_srgb("cmyk_toy.tif", "cmyk_toy_tif.tif", 4, intent=ImageCms.Intent.RELATIVE_COLORIMETRIC)
+expect_srgb("gray.png", "gray_icc.png", 3)
+expect_srgb("gray_alpha.png", "gray_alpha_icc.png", 3, mode="RGBA", alpha=160)
 
 # Folder → folder: all images, name without a suffix, .png extension.
 sources = sorted(p for p in img.iterdir() if p.suffix.lower() in (".png", ".jpg"))

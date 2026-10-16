@@ -52,6 +52,18 @@ public sealed class ImageBuffer
         return false;
     }
 
+    /// <summary>Whether every pixel is a shade of gray: blue, green and red are equal.</summary>
+    public bool IsGrayscale()
+    {
+        var px = Pixels;
+        for (int i = 0; i < px.Length; i += BytesPerPixel)
+        {
+            if (px[i] != px[i + 1] || px[i] != px[i + 2])
+                return false;
+        }
+        return true;
+    }
+
     public byte[] ExtractAlpha()
     {
         var alpha = GC.AllocateUninitializedArray<byte>(Width * Height);

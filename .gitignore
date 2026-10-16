@@ -25,4 +25,5 @@ venv/
 tests/fixtures/images/
 tests/fixtures/broken/
 tests/fixtures/color/
+tests/fixtures/profiles/
 tests/out/

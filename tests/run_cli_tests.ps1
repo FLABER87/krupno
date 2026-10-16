@@ -54,6 +54,14 @@ if (Test-Path -LiteralPath "$img\icc_60x40.png") {
 }
 # Display P3: the pixels are processed as stored, not converted to sRGB, and the profile goes along with them.
 Run "p3_red"          @("$fx\color\wide_p3.png", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\p3_red.png")
+# CMYK and grayscale profiles: the pixels are converted to sRGB, and the result carries no profile, also in the same container.
+if (Test-Path -LiteralPath "$fx\profiles\cmyk_swop.jpg") {
+    Run "cmyk_swop"     @("$fx\profiles\cmyk_swop.jpg", "-m", "$mod\legacy_x2.onnx", "-o", "$out\cmyk_swop.png")
+    Run "cmyk_swop_jpg" @("$fx\profiles\cmyk_swop.jpg", "-m", "$mod\legacy_x2.onnx", "-o", "$out\cmyk_swop_jpg.jpg")
+}
+Run "cmyk_toy_tif"    @("$fx\profiles\cmyk_toy.tif", "-m", "$mod\legacy_x2.onnx", "-o", "$out\cmyk_toy_tif.tif")
+Run "gray_icc"        @("$fx\profiles\gray.png", "-m", "$mod\legacy_x2.onnx", "-o", "$out\gray_icc.png")
+Run "gray_alpha_icc"  @("$fx\profiles\gray_alpha.png", "-m", "$mod\legacy_x2.onnx", "-o", "$out\gray_alpha_icc.png")
 Run "noise_legacy"    @("$img\noise_300x200.png", "-m", "$mod\legacy_x2.onnx", "-o", "$out\noise_legacy.png")
 Run "batch"           @($img, "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\batch")
 Run "broken"          @("$fx\broken\broken.png", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\broken.png") -Expect 1

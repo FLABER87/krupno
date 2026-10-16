@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -79,20 +80,16 @@ public static class ImageCodec
         BitmapDecoder decoder;
         BitmapFrame frame;
         ImageBuffer image;
+        ReadOnlyCollection<ColorContext>? colorContexts;
         try
         {
-            // IgnoreColorProfile: take the pixels as is and carry the ICC profile over to the result
-            // (only the preview converts them, see ToBitmapSource).
+            // IgnoreColorProfile: take the pixels as is and carry an RGB profile over to the result (only the preview
+            // converts them, see ToBitmapSource). CMYK and grayscale images are converted right away, see DecodePixels.
             decoder = BitmapDecoder.Create(stream,
                 BitmapCreateOptions.PreservePixelFormat | BitmapCreateOptions.IgnoreColorProfile,
                 BitmapCacheOption.OnLoad);
             frame = decoder.Frames[0];
-            BitmapSource source = frame.Format == PixelFormats.Bgra32
-                ? frame
-                : new FormatConvertedBitmap(frame, PixelFormats.Bgra32, null, 0);
-
-            image = new ImageBuffer(source.PixelWidth, source.PixelHeight);
-            source.CopyPixels(image.Pixels, image.Stride, 0);
+            (image, colorContexts) = DecodePixels(frame, TryGet(() => frame.ColorContexts));
         }
         // WIC reports some broken files with other exceptions, for example ArgumentException "The image is missing a frame".
         catch (Exception ex) when (ex is NotSupportedException or FileFormatException or ArgumentException or COMException
@@ -122,7 +119,7 @@ public static class ImageCodec
             DpiX = swapAxes ? dpiY : dpiX,
             DpiY = swapAxes ? dpiX : dpiY,
             Metadata = CloneMetadata(metadata),
-            ColorContexts = TryGet(() => frame.ColorContexts),
+            ColorContexts = colorContexts,
         };
     }
 
@@ -159,7 +156,11 @@ public static class ImageCodec
 
         // Metadata is carried over only into the same container: WIC does not convert it between formats.
         var metadata = src?.SourceFormat == format ? src.Metadata : null;
-        var colorContexts = src?.ColorContexts is { Count: > 0 } contexts ? contexts : null;
+        // The pixels written are RGB, so only an RGB profile can go with them (Load converts CMYK and grayscale images to sRGB),
+        // and only the first one, which the pixels are shown with.
+        var colorContexts = src?.ColorContexts is { Count: > 0 } contexts && IsRgb(contexts[0])
+            ? new ReadOnlyCollection<ColorContext>([contexts[0]])
+            : null;
         if (format == ImageFileFormat.Bmp && colorContexts is not null)
         {
             // BMP can't carry the profile, so convert the pixels to sRGB instead of silently changing their meaning.
@@ -212,9 +213,148 @@ public static class ImageCodec
     /// The caller no longer needs <paramref name="image"/>: the conversion overwrites it instead of taking another full-size copy
     /// (a result can take a gigabyte or two).
     /// </param>
-    public static BitmapSource ToBitmapSource(ImageBuffer image, LoadedImage? source = null, bool convertInPlace = false)
+    public static BitmapSource ToBitmapSource(ImageBuffer image, LoadedImage? source = null, bool convertInPlace = false) =>
+        ToDisplayBitmap(image, source?.ColorContexts, convertInPlace);
+
+    /// <summary>
+    /// A fast thumbnail that honors EXIF rotation and the color profile the same way as <see cref="Load"/> and
+    /// <see cref="ToBitmapSource"/> do for the preview: WIC scales while decoding (for JPEG, right in the DCT), so the full
+    /// image never gets into memory.
+    /// </summary>
+    public static BitmapSource LoadThumbnail(string path, int height)
     {
-        if (DisplayProfile(source?.ColorContexts) is { } profile)
+        var bitmap = new BitmapImage();
+        bitmap.BeginInit();
+        bitmap.UriSource = new Uri(Path.GetFullPath(path));
+        bitmap.DecodePixelHeight = height;
+        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+        // The profile is applied below, the same way as for the preview, rather than by WPF. A CMYK or grayscale profile
+        // applies only to pixels in their own format.
+        bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile | BitmapCreateOptions.PreservePixelFormat;
+        bitmap.EndInit();
+
+        BitmapSource scaled = bitmap;
+        var (orientation, colorContexts, format) = ReadFrameInfo(path);
+        // The WIC scaler (JPEG scales while decoding instead) turns CMYK into BGRA, which the CMYK profile no longer applies to,
+        // so such a frame is converted to sRGB first. Gray levels convert from any pixel format, see DecodePixels.
+        if (bitmap.Format != format && colorContexts is { Count: > 0 } && ColorSpace(colorContexts[0]) is not (null or "RGB " or "GRAY")
+            && TryGet(() => ConvertThenScale(path, colorContexts[0], height)) is { } converted)
+        {
+            scaled = converted;
+            colorContexts = null;
+        }
+
+        var (image, profile) = DecodePixels(scaled, colorContexts);
+        return ToDisplayBitmap(image.ApplyExifOrientation(orientation), profile, convertInPlace: true);
+    }
+
+    /// <summary>The image converted from <paramref name="profile"/> to sRGB and then scaled, without decoding it whole into memory.</summary>
+    private static BitmapSource ConvertThenScale(string path, ColorContext profile, int height)
+    {
+        using var stream = File.OpenRead(path);
+        var frame = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat | BitmapCreateOptions.IgnoreColorProfile,
+            BitmapCacheOption.None).Frames[0];
+        var converted = SrgbConversion(frame, profile) ?? throw new NotSupportedException();
+        double scale = (double)height / frame.PixelHeight;
+        // CachedBitmap runs the chain right away, while the file is open.
+        return new CachedBitmap(new TransformedBitmap(converted, new ScaleTransform(scale, scale)),
+            BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+    }
+
+    /// <summary>A clear reason: Microsoft Store formats lack a codec, anything else is a corrupt file.</summary>
+    private static string DecodeError(string path)
+    {
+        string name = Path.GetFileName(path);
+        string extension = Path.GetExtension(path).ToLowerInvariant();
+        return extension is ".webp" or ".heic" or ".heif" or ".avif" or ".jxr" or ".wdp"
+            ? $"Windows cannot open \"{name}\": the {extension.TrimStart('.').ToUpperInvariant()} format requires an extension from the Microsoft Store."
+            : $"Cannot open \"{name}\": the file is corrupt or is not an image.";
+    }
+
+    /// <summary>The EXIF orientation, the embedded color profiles and the stored pixel format, read without decoding the pixels.</summary>
+    private static (int Orientation, ReadOnlyCollection<ColorContext>? ColorContexts, PixelFormat Format) ReadFrameInfo(string path)
+    {
+        try
+        {
+            using var stream = File.OpenRead(path);
+            var frame = BitmapFrame.Create(stream, BitmapCreateOptions.DelayCreation | BitmapCreateOptions.PreservePixelFormat,
+                BitmapCacheOption.None);
+            return (ReadOrientation(frame.Metadata as BitmapMetadata), TryGet(() => frame.ColorContexts), frame.Format);
+        }
+        catch (Exception)
+        {
+            return (1, null, default);
+        }
+    }
+
+    /// <summary>
+    /// The frame's pixels as BGRA, and the profiles that describe them. An RGB profile goes with the pixels as stored. A CMYK or
+    /// grayscale profile can't describe RGB pixels, so the frame is converted with it to sRGB, the way color-managed viewers
+    /// show it, and the result is left untagged (untagged means sRGB). A profile WIC can't apply to the pixels (a grayscale
+    /// profile on a color image) is dropped.
+    /// </summary>
+    private static (ImageBuffer Image, ReadOnlyCollection<ColorContext>? ColorContexts) DecodePixels(
+        BitmapSource frame, ReadOnlyCollection<ColorContext>? colorContexts)
+    {
+        var image = new ImageBuffer(frame.PixelWidth, frame.PixelHeight);
+        var profile = colorContexts is { Count: > 0 } ? colorContexts[0] : null;
+        string? colorSpace = profile is null ? null : ColorSpace(profile);
+        if (profile is null || colorSpace == "RGB ")
+        {
+            CopyAsBgra32(frame, image);
+            return (image, colorContexts);
+        }
+
+        if (colorSpace == "GRAY")
+        {
+            // Gray levels convert through a 16-bit grayscale copy: from 8 bits WIC rounds dark levels off by up to 4. A grayscale
+            // image with alpha decodes as BGRA, so the alpha is set aside; a color image keeps its colors.
+            CopyAsBgra32(frame, image);
+            if (image.IsGrayscale()
+                && SrgbConversion(new FormatConvertedBitmap(frame, PixelFormats.Gray16, null, 0), profile) is { } converted)
+            {
+                var alpha = image.HasTransparency() ? image.ExtractAlpha() : null;
+                converted.CopyPixels(image.Pixels, image.Stride, 0);
+                if (alpha is not null)
+                    image.SetAlpha(alpha);
+            }
+        }
+        else if (SrgbConversion(frame, profile) is { } converted)
+        {
+            // CMYK pixels convert directly.
+            converted.CopyPixels(image.Pixels, image.Stride, 0);
+        }
+        else
+        {
+            CopyAsBgra32(frame, image);
+        }
+        return (image, null);
+    }
+
+    /// <summary>The pixels converted from <paramref name="profile"/> to sRGB, or null if WIC can't apply the profile to their format.</summary>
+    private static BitmapSource? SrgbConversion(BitmapSource source, ColorContext profile) =>
+        Srgb.Value is { } srgb
+            ? TryGet<BitmapSource>(() => new ColorConvertedBitmap(source, profile, srgb, PixelFormats.Bgra32))
+            : null;
+
+    private static void CopyAsBgra32(BitmapSource source, ImageBuffer image) =>
+        (source.Format == PixelFormats.Bgra32 ? source : new FormatConvertedBitmap(source, PixelFormats.Bgra32, null, 0))
+            .CopyPixels(image.Pixels, image.Stride, 0);
+
+    /// <summary>The color space of an ICC profile from its header ("RGB ", "CMYK", "GRAY" and so on), or null if it can't be read.</summary>
+    private static string? ColorSpace(ColorContext profile) => TryGet(() =>
+    {
+        using var stream = profile.OpenProfileStream();
+        var header = new byte[20];
+        stream.ReadExactly(header);
+        return Encoding.ASCII.GetString(header, 16, 4);
+    });
+
+    private static bool IsRgb(ColorContext profile) => ColorSpace(profile) == "RGB ";
+
+    private static BitmapSource ToDisplayBitmap(ImageBuffer image, ReadOnlyCollection<ColorContext>? colorContexts, bool convertInPlace)
+    {
+        if (DisplayProfile(colorContexts) is { } profile)
         {
             var converted = convertInPlace ? image : new ImageBuffer(image.Width, image.Height);
             ConvertToSrgb(image, converted, profile);
@@ -228,88 +368,14 @@ public static class ImageCodec
     }
 
     /// <summary>
-    /// A fast thumbnail that honors EXIF rotation and the color profile, like <see cref="ToBitmapSource"/>: WIC scales while
-    /// decoding (for JPEG, right in the DCT), so the full image never gets into memory.
-    /// </summary>
-    public static BitmapSource LoadThumbnail(string path, int height)
-    {
-        var bitmap = new BitmapImage();
-        bitmap.BeginInit();
-        bitmap.UriSource = new Uri(Path.GetFullPath(path));
-        bitmap.DecodePixelHeight = height;
-        bitmap.CacheOption = BitmapCacheOption.OnLoad;
-        // The profile is applied below, the same way as for the preview, rather than by WPF.
-        bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
-        bitmap.EndInit();
-
-        BitmapSource result = bitmap;
-        var (orientation, colorContexts) = ReadFrameInfo(path);
-        if (DisplayProfile(colorContexts) is { } profile && Srgb.Value is { } srgb)
-        {
-            // Converted right away (CachedBitmap) rather than lazily on the UI thread whenever WPF reads the pixels.
-            result = TryGet<BitmapSource>(() => new CachedBitmap(
-                new ColorConvertedBitmap(new FormatConvertedBitmap(bitmap, PixelFormats.Bgra32, null, 0), profile, srgb, PixelFormats.Bgra32),
-                BitmapCreateOptions.None, BitmapCacheOption.OnLoad)) ?? bitmap;
-        }
-
-        if (orientation is >= 2 and <= 8)
-        {
-            // Rotate clockwise first, then flip horizontally: this yields all eight EXIF variants.
-            (double angle, bool flip) = orientation switch
-            {
-                2 => (0, true),
-                3 => (180, false),
-                4 => (180, true),
-                5 => (90, true),
-                6 => (90, false),
-                7 => (270, true),
-                _ => (270, false), // 8
-            };
-            var transform = new TransformGroup();
-            transform.Children.Add(new RotateTransform(angle));
-            if (flip)
-                transform.Children.Add(new ScaleTransform(-1, 1));
-            var unrotated = result;
-            result = TryGet<BitmapSource>(() => new TransformedBitmap(unrotated, transform)) ?? unrotated;
-        }
-
-        result.Freeze();
-        return result;
-    }
-
-    /// <summary>A clear reason: Microsoft Store formats lack a codec, anything else is a corrupt file.</summary>
-    private static string DecodeError(string path)
-    {
-        string name = Path.GetFileName(path);
-        string extension = Path.GetExtension(path).ToLowerInvariant();
-        return extension is ".webp" or ".heic" or ".heif" or ".avif" or ".jxr" or ".wdp"
-            ? $"Windows cannot open \"{name}\": the {extension.TrimStart('.').ToUpperInvariant()} format requires an extension from the Microsoft Store."
-            : $"Cannot open \"{name}\": the file is corrupt or is not an image.";
-    }
-
-    /// <summary>The EXIF orientation and the embedded color profiles, read without decoding the pixels.</summary>
-    private static (int Orientation, ReadOnlyCollection<ColorContext>? ColorContexts) ReadFrameInfo(string path)
-    {
-        try
-        {
-            using var stream = File.OpenRead(path);
-            var frame = BitmapFrame.Create(stream, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
-            return (ReadOrientation(frame.Metadata as BitmapMetadata), TryGet(() => frame.ColorContexts));
-        }
-        catch (Exception)
-        {
-            return (1, null);
-        }
-    }
-
-    /// <summary>
-    /// The embedded profile to convert from for display, or null if there is nothing to convert: no profile, a profile that
-    /// matches sRGB within a couple of levels (most photos), or one WIC can't apply to RGB pixels (broken, grayscale, CMYK).
-    /// Decided by converting a grid of probe colors, so any form of the profile (matrix, table, ICC v2 or v4) is judged alike.
+    /// The embedded profile to convert from for display, or null if there is nothing to convert: no profile, one that isn't RGB
+    /// (<see cref="DecodePixels"/> has already applied a CMYK or grayscale profile), a profile that matches sRGB within a couple
+    /// of levels (most photos), or one WIC can't apply (broken). Decided by converting a grid of probe colors, so any form of
+    /// the profile (matrix, table, ICC v2 or v4) is judged alike.
     /// </summary>
     private static ColorContext? DisplayProfile(ReadOnlyCollection<ColorContext>? colorContexts)
     {
-        if (colorContexts is not { Count: > 0 } || Srgb.Value is not { } srgb)
+        if (colorContexts is not { Count: > 0 } || Srgb.Value is not { } srgb || !IsRgb(colorContexts[0]))
             return null;
 
         var profile = colorContexts[0];
@@ -393,11 +459,47 @@ public static class ImageCodec
             // The rotation is already applied to the pixels; reset the tag so viewers don't rotate the image again.
             if (clone.ContainsQuery("System.Photo.Orientation"))
                 clone.SetQuery("System.Photo.Orientation", (ushort)1);
+            RemoveProfile(clone);
             // An unfrozen clone belongs to the loading thread: an encoder on another thread (the app loads and saves in
             // separate Task.Run calls) fails on it, and the image would be saved without metadata and without the ICC profile.
             clone.Freeze();
             return clone;
         });
+    }
+
+    /// <summary>
+    /// Removes the copy of the ICC profile that PNG, TIFF and JPEG metadata holds. The profile goes to the result as a color
+    /// context only (see <see cref="Save"/>); the copy would come along even where it doesn't fit, such as a CMYK profile in
+    /// an RGB JPEG.
+    /// </summary>
+    private static void RemoveProfile(BitmapMetadata metadata)
+    {
+        var queries = new List<string> { "/iCCP", "/ifd/{ushort=34675}" };
+        // JPEG keeps the profile in APP2 segments, which WIC exposes as unknown blocks: "/unknown", "/[1]unknown" and so on.
+        foreach (string query in metadata)
+        {
+            if (query.EndsWith("unknown", StringComparison.Ordinal)
+                && TryGet(() => metadata.GetQuery(query + "/{}")) is BitmapMetadataBlob blob
+                && blob.GetBlobValue().AsSpan() is var bytes
+                && bytes[..Math.Min(bytes.Length, 32)].IndexOf("ICC_PROFILE\0"u8) >= 0)
+            {
+                queries.Add(query);
+            }
+        }
+
+        // The last one first: removing a block renumbers the ones after it.
+        for (int i = queries.Count - 1; i >= 0; i--)
+        {
+            try
+            {
+                if (metadata.ContainsQuery(queries[i]))
+                    metadata.RemoveQuery(queries[i]);
+            }
+            catch (Exception)
+            {
+                // Not a query this container knows.
+            }
+        }
     }
 
     private static T? TryGet<T>(Func<T?> getter)

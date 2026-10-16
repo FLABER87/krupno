@@ -6,6 +6,7 @@
 The models are a few hundred bytes each and live in git (tests/fixtures/models); the images are regenerated on every run.
 """
 import argparse
+import itertools
 import struct
 import sys
 from pathlib import Path
@@ -47,27 +48,25 @@ def resize_model(path, scale, dims, keep, meta=None):
     onnx.save(model, str(path))
 
 
-def display_p3_profile():
-    """A minimal ICC v2 Display P3 profile: P3 primaries adapted to D50, the sRGB tone curve. Windows ships no wide-gamut profile."""
-    def s15(*values):
-        return b"".join(struct.pack(">i", round(v * 65536)) for v in values)
+D50 = (0.9642, 1.0, 0.8249)
 
-    def xyz(*values):
-        return b"XYZ \0\0\0\0" + s15(*values)
 
-    name = b"Display P3 (Krupno test)\0"
-    x = np.linspace(0, 1, 1024)
-    curve = np.where(x <= 0.04045, x / 12.92, ((x + 0.055) / 1.055) ** 2.4)
-    trc = b"curv\0\0\0\0" + struct.pack(">I", 1024) + np.round(curve * 65535).astype(">u2").tobytes()
+def s15(*values):
+    return b"".join(struct.pack(">i", round(v * 65536)) for v in values)
+
+
+def xyz(*values):
+    return b"XYZ \0\0\0\0" + s15(*values)
+
+
+def icc_profile(device_class, color_space, pcs, name, tags):
+    """A minimal ICC v2 profile: the header, a description, a copyright and the D50 white point, then the given tags."""
+    name = name.encode() + b"\0"
     tags = [
         (b"desc", b"desc\0\0\0\0" + struct.pack(">I", len(name)) + name + bytes(4 + 4 + 2 + 1 + 67)),
         (b"cprt", b"text\0\0\0\0Public domain\0"),
-        (b"wtpt", xyz(0.9642, 1.0, 0.8249)),
-        (b"rXYZ", xyz(0.51512, 0.24119, -0.00105)),
-        (b"gXYZ", xyz(0.29198, 0.69224, 0.04188)),
-        (b"bXYZ", xyz(0.15710, 0.06657, 0.78407)),
-        (b"rTRC", trc), (b"gTRC", trc), (b"bTRC", trc),
-    ]
+        (b"wtpt", xyz(*D50)),
+    ] + tags
     data, table = b"", []
     start = 128 + 4 + 12 * len(tags)
     for sig, body in tags:
@@ -75,9 +74,55 @@ def display_p3_profile():
         table.append(struct.pack(">4sII", sig, start + len(data), len(body)))
         data += body
     size = start + len(data)
-    header = (struct.pack(">I", size) + bytes(4) + bytes([2, 0x10, 0, 0]) + b"mntrRGB XYZ " + bytes(12) + b"acsp"
-              + bytes(4 + 4 + 4 + 4 + 8 + 4) + s15(0.9642, 1.0, 0.8249)).ljust(128, b"\0")
+    header = (struct.pack(">I", size) + bytes(4) + bytes([2, 0x10, 0, 0]) + device_class + color_space + pcs + bytes(12) + b"acsp"
+              + bytes(4 + 4 + 4 + 4 + 8 + 4) + s15(*D50)).ljust(128, b"\0")
     return header + struct.pack(">I", len(tags)) + b"".join(table) + data
+
+
+def display_p3_profile():
+    """Display P3: P3 primaries adapted to D50, the sRGB tone curve. Windows ships no wide-gamut profile."""
+    x = np.linspace(0, 1, 1024)
+    curve = np.where(x <= 0.04045, x / 12.92, ((x + 0.055) / 1.055) ** 2.4)
+    trc = b"curv\0\0\0\0" + struct.pack(">I", 1024) + np.round(curve * 65535).astype(">u2").tobytes()
+    return icc_profile(b"mntr", b"RGB ", b"XYZ ", "Display P3 (Krupno test)", [
+        (b"rXYZ", xyz(0.51512, 0.24119, -0.00105)),
+        (b"gXYZ", xyz(0.29198, 0.69224, 0.04188)),
+        (b"bXYZ", xyz(0.15710, 0.06657, 0.78407)),
+        (b"rTRC", trc), (b"gTRC", trc), (b"bTRC", trc),
+    ])
+
+
+def gray_profile(gamma):
+    """A grayscale profile with a plain gamma curve, like Photoshop's "Gray Gamma 1.8"."""
+    trc = b"curv\0\0\0\0" + struct.pack(">IH", 1, round(gamma * 256))
+    return icc_profile(b"mntr", b"GRAY", b"XYZ ", f"Gray Gamma {gamma} (Krupno test)", [(b"kTRC", trc)])
+
+
+def lut16(inputs, outputs, grid, table):
+    """An ICC v2 lut16Type with identity curves: table holds grid ** inputs rows of outputs values in 0..1, the first input slowest."""
+    identity = struct.pack(">2H", 0, 65535)
+    return (b"mft2\0\0\0\0" + bytes([inputs, outputs, grid, 0]) + s15(1, 0, 0, 0, 1, 0, 0, 0, 1) + struct.pack(">2H", 2, 2)
+            + identity * inputs + np.round(np.clip(table, 0, 1) * 65535).astype(">u2").tobytes() + identity * outputs)
+
+
+def toy_cmyk_profile():
+    """A CMYK press with inks far from SWOP. WIC converts CMYK without a profile as SWOP, so only this profile shows whether the
+    embedded one was applied. Each grid node is white paper times the transmittance of every ink, taken as linear sRGB."""
+    levels = np.linspace(0, 1, 5)
+    inks = np.array([[0.2, 0.7, 0.95], [0.95, 0.25, 0.55], [0.98, 0.9, 0.1], [0.1, 0.1, 0.1]])  # C, M, Y, K
+    nodes = np.array(list(itertools.product(levels, repeat=4)))
+    rgb = np.prod(1 - nodes[:, :, None] * (1 - inks), axis=1)
+    srgb_to_xyz_d50 = np.array([[0.43607, 0.38515, 0.14308], [0.22250, 0.71688, 0.06062], [0.01393, 0.09710, 0.71417]])
+    t = rgb @ srgb_to_xyz_d50.T / D50
+    f = np.where(t > (6 / 29) ** 3, np.cbrt(t), t / (3 * (6 / 29) ** 2) + 4 / 29)
+    lab = np.stack([116 * f[:, 1] - 16, 500 * (f[:, 0] - f[:, 1]), 200 * (f[:, 1] - f[:, 2])], 1)
+    # The ICC v2 16-bit Lab encoding: L* 0..100 is 0..0xFF00, a* and b* -128..127.996 are 0..0xFFFF.
+    a2b = lut16(4, 3, len(levels), np.stack([lab[:, 0] * 652.8, (lab[:, 1] + 128) * 256, (lab[:, 2] + 128) * 256], 1) / 65535)
+    # Nothing converts to CMYK here, but Windows rejects a CMYK profile without all three intents both ways and a gamut tag.
+    b2a, gamut = lut16(3, 4, 2, np.zeros((8, 4))), lut16(3, 1, 2, np.zeros((8, 1)))
+    return icc_profile(b"prtr", b"CMYK", b"Lab ", "Toy press CMYK (Krupno test)", [
+        (b"A2B0", a2b), (b"A2B1", a2b), (b"A2B2", a2b), (b"B2A0", b2a), (b"B2A1", b2a), (b"B2A2", b2a), (b"gamt", gamut),
+    ])
 
 
 if args.models:
@@ -122,6 +167,20 @@ color.mkdir(parents=True, exist_ok=True)
 green = np.full((400, 600, 3), [60, 160, 70], np.uint8)
 Image.fromarray(green).save(color / "wide_p3.png", icc_profile=display_p3_profile())
 Image.fromarray(green).save(color / "srgb_untagged.png")
+
+# CMYK and grayscale profiles: an RGB result can't carry them, so the pixels are converted to sRGB on load.
+# Flat CMYK patches (96×64): paper, the four inks, a mix, a bright mix, half black. A separate folder again.
+profiles = root / "profiles"
+profiles.mkdir(parents=True, exist_ok=True)
+patches = [[0, 0, 0, 0], [255, 0, 0, 0], [0, 255, 0, 0], [0, 0, 255, 0], [0, 0, 0, 255], [128, 64, 32, 16], [40, 200, 120, 0], [0, 0, 0, 128]]
+cmyk = Image.frombytes("CMYK", (96, 64), np.array(patches, np.uint8).reshape(2, 4, 4).repeat(32, 0).repeat(24, 1).tobytes())
+swop_path = Path(r"C:\Windows\System32\spool\drivers\color\RSWOP.icm")
+if swop_path.exists():
+    cmyk.save(profiles / "cmyk_swop.jpg", quality=100, icc_profile=swop_path.read_bytes())
+cmyk.save(profiles / "cmyk_toy.tif", icc_profile=toy_cmyk_profile())
+gray = np.tile(np.arange(256, dtype=np.uint8), (32, 1))
+Image.fromarray(gray).save(profiles / "gray.png", icc_profile=gray_profile(1.8))
+Image.fromarray(np.dstack([gray, np.full_like(gray, 160)])).save(profiles / "gray_alpha.png", icc_profile=gray_profile(1.8))
 
 # A file with a .png extension that isn't an image: a read error, not a program crash.
 broken = root / "broken"
