@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>krupno-cli</AssemblyName>
+    <RootNamespace>Krupno.Cli</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Krupno.Core\Krupno.Core.csproj" />
+  </ItemGroup>
+
+</Project>

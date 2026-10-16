@@ -1,0 +1,132 @@
+# Release: self-contained publish, Inno Setup installer and portable ZIP (installer/build.ps1).
+# A v<version> tag (the version must match <Version> in Directory.Build.props) creates a draft release with these files;
+# the draft is published manually on GitHub. A manual run only builds the files into a workflow artifact.
+# SignPath signing is turned on by the SIGNPATH_ORGANIZATION_ID repository variable and the SIGNPATH_API_TOKEN secret
+# (see installer/signpath/README.md). Until they are set, the files are not signed.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  SIGNPATH_PROJECT: krupno
+  SIGNPATH_POLICY: release-signing
+
+jobs:
+  release:
+    name: Installer and ZIP
+    runs-on: windows-latest
+    # With signing, the job waits for manual approval of the SignPath requests (up to an hour each).
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Version
+        id: version
+        shell: pwsh
+        run: |
+          $version = ([xml](Get-Content -Raw Directory.Build.props)).SelectSingleNode("//Version").InnerText
+          if ($env:GITHUB_REF_TYPE -eq "tag" -and $env:GITHUB_REF_NAME -ne "v$version") {
+            throw "Tag $env:GITHUB_REF_NAME does not match <Version>$version</Version> in Directory.Build.props"
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      # 6.5+ is required to download models in the [Files] section. The version is pinned so the installer builds reproducibly.
+      - name: Inno Setup
+        run: choco install innosetup --version 6.7.1 -y --no-progress
+
+      - name: Publish
+        run: powershell -ExecutionPolicy Bypass -File installer\build.ps1 -Step publish
+
+      # Our exe and dll files (artifact configuration "app"). The .NET, ONNX Runtime and DirectML libraries are already signed by Microsoft.
+      - name: Upload app for signing
+        id: unsigned-app
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: unsigned-app
+          path: artifacts/app/
+          if-no-files-found: error
+
+      - name: Sign app
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ env.SIGNPATH_PROJECT }}
+          signing-policy-slug: ${{ env.SIGNPATH_POLICY }}
+          artifact-configuration-slug: app
+          github-artifact-id: ${{ steps.unsigned-app.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: artifacts/app-signed
+
+      - name: ZIP and installer
+        shell: pwsh
+        run: |
+          $app = if (Test-Path artifacts/app-signed) { "artifacts/app-signed" } else { "artifacts/app" }
+          powershell -ExecutionPolicy Bypass -File installer\build.ps1 -Step package -AppDir $app
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload installer for signing
+        id: unsigned-setup
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: unsigned-setup
+          path: artifacts/Krupno-${{ steps.version.outputs.version }}-setup-x64.exe
+          if-no-files-found: error
+
+      - name: Sign installer
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ env.SIGNPATH_PROJECT }}
+          signing-policy-slug: ${{ env.SIGNPATH_POLICY }}
+          artifact-configuration-slug: setup
+          github-artifact-id: ${{ steps.unsigned-setup.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: artifacts/setup-signed
+
+      - name: Signed installer and checksums
+        shell: pwsh
+        run: |
+          if (Test-Path artifacts/setup-signed) { Copy-Item artifacts/setup-signed/*.exe artifacts/ -Force }
+          powershell -ExecutionPolicy Bypass -File installer\build.ps1 -Step checksums
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Release files
+        uses: actions/upload-artifact@v7
+        with:
+          name: krupno-${{ steps.version.outputs.version }}
+          path: |
+            artifacts/Krupno-*-setup-x64.exe
+            artifacts/Krupno-*-win-x64.zip
+            artifacts/SHA256SUMS.txt
+          if-no-files-found: error
+
+      - name: Draft release
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create $env:GITHUB_REF_NAME --draft --verify-tag --title "Krupno $env:VERSION" --generate-notes `
+            "artifacts/Krupno-$env:VERSION-setup-x64.exe" "artifacts/Krupno-$env:VERSION-win-x64.zip" artifacts/SHA256SUMS.txt

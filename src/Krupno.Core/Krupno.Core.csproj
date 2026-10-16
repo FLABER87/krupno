@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- WPF is only needed for the WIC codecs (System.Windows.Media.Imaging). -->
+    <UseWPF>true</UseWPF>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>Krupno.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- UseWPF turns off the implicit using System.IO (Path name conflict). -->
+    <Using Include="System.IO" />
+  </ItemGroup>
+
+</Project>

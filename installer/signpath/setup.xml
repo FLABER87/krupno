@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SignPath artifact configuration "setup": the Krupno-<version>-setup-x64.exe installer, zipped by upload-artifact. -->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <zip-file>
+    <pe-file path="Krupno-*-setup-x64.exe" product-name="Krupno">
+      <authenticode-sign />
+    </pe-file>
+  </zip-file>
+</artifact-configuration>

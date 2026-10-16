@@ -1,0 +1,57 @@
+# Builds the solution and runs the synthetic CLI tests (tests/run_cli_tests.ps1).
+# The UI scripts (tests/gui_*.ps1) are not run here: they need a desktop and real models.
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  cli:
+    name: Build and CLI tests
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Test dependencies
+        run: python -m pip install numpy Pillow
+
+      - name: Build
+        run: dotnet build Krupno.slnx -c Release
+
+      # The runner has no GPU. DXGI reports "Microsoft Basic Render Driver" without the SOFTWARE flag, "-d auto" picks it,
+      # DirectML fails to initialize on it, and the work falls back to the CPU, so the "gpu" runs test the fallback. The device list is for the log.
+      - name: Devices
+        run: src\Krupno.Cli\bin\Release\net10.0-windows\win-x64\krupno-cli.exe --list-devices
+
+      - name: CLI tests
+        run: powershell -ExecutionPolicy Bypass -File tests\run_cli_tests.ps1
+
+      - name: Failed run output
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cli-tests-out
+          path: tests/out/cli
+          if-no-files-found: ignore

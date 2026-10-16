@@ -1,0 +1,85 @@
+Krupno third-party notices
+==========================
+
+Krupno is distributed under the MIT License (see LICENSE.txt). It ships with the
+components listed below and can download the models listed below; each comes under its
+own license. Full license texts of the runtime components are in the "licenses" folder
+next to this file.
+
+
+Runtime components (installed with Krupno)
+------------------------------------------
+
+.NET Runtime and Windows Desktop Runtime (WPF)
+  Copyright (c) .NET Foundation and Contributors. MIT License.
+  https://github.com/dotnet/runtime, https://github.com/dotnet/wpf
+  licenses\dotnet-LICENSE.txt, licenses\dotnet-THIRD-PARTY-NOTICES.txt,
+  licenses\windowsdesktop-LICENSE.txt
+
+ONNX Runtime (onnxruntime.dll, onnxruntime_providers_shared.dll, Microsoft.ML.OnnxRuntime.dll)
+  Copyright (c) Microsoft Corporation. MIT License.
+  https://github.com/microsoft/onnxruntime
+  licenses\onnxruntime-LICENSE.txt, licenses\onnxruntime-ThirdPartyNotices.txt
+  Krupno turns off ONNX Runtime telemetry events.
+
+DirectML (DirectML.dll)
+  Copyright (c) Microsoft Corporation. Microsoft Software License Terms for DirectML.
+  https://www.nuget.org/packages/Microsoft.AI.DirectML
+  licenses\DirectML-LICENSE.txt, licenses\DirectML-ThirdPartyNotices.txt
+
+
+Models (optional, downloaded during installation)
+-------------------------------------------------
+
+Download location: https://github.com/FLABER87/krupno/releases/tag/models-v2
+
+The models were converted from their authors' PyTorch weights to ONNX with
+tools/convert_to_onnx.py from https://github.com/FLABER87/krupno. Files with the "_fp16"
+suffix were also converted to half precision. No other changes were made to the weights.
+The converted files are shared under the same licenses as the original weights.
+
+4xBHI_realplksr_dysample_real.onnx, 4xBHI_dat2_real.onnx, 4xBHI_dat2_real_fp16.onnx
+  Author: Philip Hofmann (Phhofm)
+  License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+           https://creativecommons.org/licenses/by/4.0/
+  Source:  https://github.com/Phhofm/models/releases/tag/4xbhi_realplksr
+           https://github.com/Phhofm/models/releases/tag/4xBHI_dat2_real
+
+4x-UltraSharpV2.onnx
+  Author: Kim2091
+  License: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+           (CC BY-NC-SA 4.0), https://creativecommons.org/licenses/by-nc-sa/4.0/
+           NON-COMMERCIAL USE ONLY.
+  Source:  https://huggingface.co/Kim2091/UltraSharpV2
+
+RealESRGAN_x4plus.onnx, RealESRGAN_x4plus_fp16.onnx, realesr-general-x4v3.onnx
+  Real-ESRGAN, https://github.com/xinntao/Real-ESRGAN
+  License: BSD 3-Clause License
+
+  Copyright (c) 2021, Xintao Wang
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice, this
+     list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.
+
+  3. Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SignPath artifact configuration "app": the artifacts/app publish folder, zipped by upload-artifact.
+     Only our own files are signed: the .NET, ONNX Runtime and DirectML libraries are already signed by Microsoft,
+     and SignPath Foundation does not allow signing third-party files. -->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <zip-file>
+    <pe-file-set product-name="Krupno">
+      <include path="Krupno.exe" />
+      <include path="Krupno.dll" />
+      <include path="Krupno.Core.dll" />
+      <include path="krupno-cli.exe" />
+      <include path="krupno-cli.dll" />
+      <for-each>
+        <authenticode-sign />
+      </for-each>
+    </pe-file-set>
+  </zip-file>
+</artifact-configuration>

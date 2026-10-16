@@ -1,0 +1,5 @@
+# Test dependencies (tests/make_fixtures.py, tests/check_outputs.py).
+numpy
+Pillow
+# Only needed to regenerate the synthetic models: python tests/make_fixtures.py --models
+onnx

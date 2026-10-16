@@ -1,0 +1,61 @@
+namespace Krupno.Core.Inference;
+
+public sealed record ModelEntry(string Name, string Path)
+{
+    public override string ToString() => Name;
+}
+
+/// <summary>Finds .onnx models: first in the user folder, then next to the program.</summary>
+public static class ModelCatalog
+{
+    /// <summary>
+    /// The default model: nearly DAT2 quality at Real-ESRGAN speed, CC-BY-4.0 license
+    /// (README, "Which model to use").
+    /// </summary>
+    public const string DefaultModelName = "4xBHI_realplksr_dysample_real";
+
+    public static string AppDirectory { get; } = Path.Combine(AppContext.BaseDirectory, "models");
+
+    public static string UserDirectory { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Krupno", "models");
+
+    public static IReadOnlyList<string> SearchDirectories { get; } = [UserDirectory, AppDirectory];
+
+    public static IReadOnlyList<ModelEntry> Discover()
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var models = new List<ModelEntry>();
+        foreach (var directory in SearchDirectories)
+        {
+            if (!Directory.Exists(directory))
+                continue;
+
+            foreach (var file in Directory.EnumerateFiles(directory, "*.onnx"))
+            {
+                string name = Path.GetFileNameWithoutExtension(file);
+                if (seen.Add(name))
+                    models.Add(new ModelEntry(name, file));
+            }
+        }
+        models.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+        return models;
+    }
+
+    /// <summary>A file path or the name of a catalog model (with or without the .onnx extension).</summary>
+    public static string? Resolve(string nameOrPath)
+    {
+        if (File.Exists(nameOrPath))
+            return Path.GetFullPath(nameOrPath);
+
+        string name = nameOrPath.EndsWith(".onnx", StringComparison.OrdinalIgnoreCase) ? nameOrPath[..^5] : nameOrPath;
+        return Find(Discover(), name)?.Path;
+    }
+
+    /// <summary>The model named <paramref name="name"/> from the list (case-insensitive).</summary>
+    public static ModelEntry? Find(IEnumerable<ModelEntry> models, string? name) =>
+        name is null ? null : models.FirstOrDefault(m => m.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary><see cref="DefaultModelName"/> if it is installed, otherwise the first one alphabetically.</summary>
+    public static ModelEntry? PickDefault(IReadOnlyList<ModelEntry> models) =>
+        Find(models, DefaultModelName) ?? models.FirstOrDefault();
+}

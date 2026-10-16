@@ -1,0 +1,10 @@
+<Project>
+  <!-- Models from the models folder at the repository root are copied next to the executables.
+       The installer build turns this off (-p:KrupnoCopyModels=false): the installer downloads the models itself. -->
+  <ItemGroup Condition="'$(OutputType)' != 'Library' and '$(KrupnoCopyModels)' != 'false'">
+    <None Include="$(MSBuildThisFileDirectory)models\*.onnx"
+          Link="models\%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest"
+          Visible="false" />
+  </ItemGroup>
+</Project>

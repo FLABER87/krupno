@@ -1,0 +1,13 @@
+# Dependencies of the conversion script (development only; the app does not need them).
+# PyTorch with CUDA is installed separately following the instructions on pytorch.org; then take torchvision from the same index.
+# Only torch.export gives DAT/DAT2 a dynamic input: tested on PyTorch 2.14
+# (on 2.6 RealPLKSR with DySample exports this way, while DAT2 falls back to a static input).
+torch>=2.1
+torchvision
+spandrel>=0.4
+onnx>=1.15
+# Export via torch.export (dynamic input for DAT and DySample).
+onnxscript
+# For verifying the result after export (optional).
+onnxruntime>=1.17
+numpy

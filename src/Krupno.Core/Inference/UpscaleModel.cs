@@ -1,0 +1,328 @@
+using System.Globalization;
+using Microsoft.ML.OnnxRuntime;
+using Microsoft.ML.OnnxRuntime.Tensors;
+using Krupno.Core.Processing;
+
+namespace Krupno.Core.Inference;
+
+/// <summary>
+/// An ONNX upscaling model (input and output are NCHW, RGB, 0..1) and its ONNX Runtime sessions.
+/// </summary>
+public sealed class UpscaleModel : IDisposable
+{
+    /// <summary>Prefix of the metadata keys written by tools/convert_to_onnx.py.</summary>
+    public const string MetadataPrefix = "krupno.";
+
+    /// <summary>Prefix of models converted before the project was renamed (Upscalr); it is read as well.</summary>
+    public const string LegacyMetadataPrefix = "upscalr.";
+
+    /// <summary>Side multiple for models without metadata: leaves headroom for pixel-unshuffle and window attention.</summary>
+    private const int DefaultSizeMultiple = 8;
+    private const int ProbeSize = 32;
+    private const int MaxCachedSessions = 2;
+
+    private readonly Dictionary<(int Width, int Height), InferenceSession> _sessions = [];
+    private readonly Lock _lock = new();
+    private readonly bool _allowCpuFallback;
+    private (ExecutionDevice Device, int Tile)? _tileLimit;
+    private bool _disposed;
+
+    // Official ONNX Runtime builds for Windows write telemetry via TraceLogging by default, and Windows may
+    // send it to Microsoft. Krupno sends nothing over the network (see the code signing policy in the README), so turn it off.
+    static UpscaleModel() => OrtEnv.Instance().DisableTelemetryEvents();
+
+    private UpscaleModel(ModelInfo info, ExecutionDevice device, bool allowCpuFallback)
+    {
+        Info = info;
+        Device = device;
+        _allowCpuFallback = allowCpuFallback;
+    }
+
+    public ModelInfo Info { get; }
+
+    /// <summary>The device the model actually runs on (after resolving "Auto" and a possible fallback to CPU).</summary>
+    public ExecutionDevice Device { get; private set; }
+
+    /// <summary>Why DirectML failed to start and we fell back to CPU.</summary>
+    public string? FallbackReason { get; private set; }
+
+    /// <summary>
+    /// On the GPU the input shape is fixed when the session is created: DirectML compiles the graph for a specific size.
+    /// All tiles of one image share the same window size, so there is one compilation per image size.
+    /// </summary>
+    internal bool UsesStaticWindow =>
+        Device.Kind == DeviceKind.Gpu && Info.FixedWidth is null && Info.HasNamedSpatialDims;
+
+    /// <summary>
+    /// The tile the window had to be shrunk to after running out of memory on the current device; null if it wasn't shrunk.
+    /// Lives as long as the model: subsequent frames and passes start from it and don't waste time on attempts bound to fail.
+    /// </summary>
+    internal int? TileLimit
+    {
+        get
+        {
+            lock (_lock)
+                return _tileLimit is { } limit && limit.Device == Device ? limit.Tile : null;
+        }
+    }
+
+    /// <summary>Remembers that windows larger than tile <paramref name="tile"/> don't fit on the current device.</summary>
+    internal void LimitTile(int tile)
+    {
+        lock (_lock)
+        {
+            if (_tileLimit is not { } limit || limit.Device != Device || tile < limit.Tile)
+                _tileLimit = (Device, tile);
+        }
+    }
+
+    public static UpscaleModel Load(string path, ExecutionDevice device)
+    {
+        var info = Inspect(path);
+        return new UpscaleModel(info, device.Resolve(), allowCpuFallback: device.Kind == DeviceKind.Auto);
+    }
+
+    /// <summary>Reads the metadata and the input/output shape without touching the GPU.</summary>
+    public static ModelInfo Inspect(string path)
+    {
+        if (!File.Exists(path))
+            throw new FileNotFoundException($"Model file not found: {path}", path);
+
+        using var options = new SessionOptions
+        {
+            // Not DISABLE_ALL: without basic optimizations the CPU provider breaks on fp16 models with explicit Casts
+            // (DAT2: "Type Error ... InsertedPrecisionFreeCast"). BASIC costs almost nothing extra.
+            GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_BASIC,
+            LogSeverityLevel = OrtLoggingLevel.ORT_LOGGING_LEVEL_FATAL,
+        };
+        using var session = new InferenceSession(path, options);
+
+        if (session.InputMetadata.Count != 1 || session.OutputMetadata.Count < 1)
+            throw new NotSupportedException("Expected a model with a single image input.");
+
+        var (inputName, input) = session.InputMetadata.First();
+        var (outputName, output) = session.OutputMetadata.First();
+        if (!input.IsTensor || input.Dimensions.Length != 4 || !output.IsTensor || output.Dimensions.Length != 4)
+            throw new NotSupportedException("Expected an input and an output of shape [1, 3, H, W].");
+        if (input.Dimensions[1] > 0 && input.Dimensions[1] != 3)
+            throw new NotSupportedException($"Only RGB models are supported, but this model's input has {input.Dimensions[1]} channel{(input.Dimensions[1] == 1 ? "" : "s")}.");
+
+        bool inputIsHalf = IsHalf(input.ElementDataType);
+        bool outputIsHalf = IsHalf(output.ElementDataType);
+        var meta = session.ModelMetadata.CustomMetadataMap;
+
+        int? fixedHeight = input.Dimensions[2] > 0 ? input.Dimensions[2] : null;
+        int? fixedWidth = input.Dimensions[3] > 0 ? input.Dimensions[3] : null;
+        if (fixedHeight.HasValue != fixedWidth.HasValue)
+            throw new NotSupportedException("Models with only one fixed input side are not supported.");
+
+        int multiple = ReadInt(meta, "size_multiple") ?? (fixedWidth.HasValue ? 1 : DefaultSizeMultiple);
+        int minimum = ReadInt(meta, "size_minimum") ?? 1;
+        int? maximum = ReadInt(meta, "size_maximum") is int limit ? TilePlanner.AlignDown(limit, multiple) : null;
+        if (maximum < TilePlanner.AlignUp(minimum, multiple))
+            throw new NotSupportedException($"The model metadata is contradictory: the window must be at most {maximum} px but at least {minimum} px.");
+
+        int scale = ReadInt(meta, "scale")
+            ?? StaticScale(input.Dimensions, output.Dimensions)
+            ?? ProbeScale(session, inputName, outputName, inputIsHalf,
+                fixedWidth ?? TilePlanner.AlignUp(Math.Max(ProbeSize, minimum), multiple),
+                fixedHeight ?? TilePlanner.AlignUp(Math.Max(ProbeSize, minimum), multiple));
+
+        return new ModelInfo
+        {
+            Path = Path.GetFullPath(path),
+            Name = ReadText(meta, "name") ?? Path.GetFileNameWithoutExtension(path),
+            Scale = scale,
+            Architecture = ReadText(meta, "architecture"),
+            License = ReadText(meta, "license"),
+            IsHalfPrecision = ReadText(meta, "precision") == "fp16" || inputIsHalf,
+            FixedWidth = fixedWidth,
+            FixedHeight = fixedHeight,
+            SizeMultiple = Math.Max(1, multiple),
+            MinimumSize = Math.Max(1, minimum),
+            MaximumSize = maximum,
+            RequiresSquare = ReadInt(meta, "square") == 1,
+            InputName = inputName,
+            OutputName = outputName,
+            InputIsHalf = inputIsHalf,
+            OutputIsHalf = outputIsHalf,
+            BatchDimName = SymbolicDim(input, 0),
+            HeightDimName = SymbolicDim(input, 2),
+            WidthDimName = SymbolicDim(input, 3),
+        };
+    }
+
+    /// <summary>The window (network input) size for an image of the given size.</summary>
+    internal (int Width, int Height) ChooseWindow(int imageWidth, int imageHeight, int tileSize)
+    {
+        if (Info.FixedWidth is int fixedWidth && Info.FixedHeight is int fixedHeight)
+            return (fixedWidth, fixedHeight);
+
+        int multiple = Info.SizeMultiple;
+        int minimum = TilePlanner.AlignUp(Info.MinimumSize, multiple);
+        int maximum = Info.MaximumSize ?? int.MaxValue;
+        int Fit(int size) => Math.Max(TilePlanner.AlignUp(size, multiple), minimum);
+
+        // Without tiling the window is the whole image, but the model's limit always applies: above it the model computes wrong results.
+        int tile = tileSize <= 0 ? maximum : Math.Clamp(TilePlanner.AlignDown(tileSize, multiple), minimum, maximum);
+        // The window must not extend past the image: padding (mirrored or zero) changes what
+        // the network sees at the edge, and deep models like ESRGAN visibly spoil the edge.
+        int width = Math.Min(tile, Fit(imageWidth));
+        int height = Math.Min(tile, Fit(imageHeight));
+
+        if (Info.RequiresSquare)
+            width = height = Math.Max(width, height);
+        return (width, height);
+    }
+
+    internal InferenceSession GetSession(int width, int height)
+    {
+        lock (_lock)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+
+            var key = UsesStaticWindow ? (width, height) : (0, 0);
+            if (_sessions.TryGetValue(key, out var session))
+                return session;
+
+            if (_sessions.Count >= MaxCachedSessions)
+                ReleaseSessionsCore();
+
+            session = CreateSession(UsesStaticWindow ? (width, height) : null);
+            // After a fallback to CPU the shape becomes dynamic, so recompute the key.
+            _sessions[UsesStaticWindow ? (width, height) : (0, 0)] = session;
+            return session;
+        }
+    }
+
+    /// <summary>Releases the sessions (and GPU memory). The next run creates them again.</summary>
+    public void ReleaseSessions()
+    {
+        lock (_lock)
+            ReleaseSessionsCore();
+    }
+
+    public void Dispose()
+    {
+        lock (_lock)
+        {
+            if (_disposed)
+                return;
+            _disposed = true;
+            ReleaseSessionsCore();
+        }
+    }
+
+    private void ReleaseSessionsCore()
+    {
+        foreach (var session in _sessions.Values)
+            session.Dispose();
+        _sessions.Clear();
+    }
+
+    private InferenceSession CreateSession((int Width, int Height)? shape)
+    {
+        if (Device.Kind == DeviceKind.Gpu)
+        {
+            try
+            {
+                using var gpuOptions = CreateOptions(gpu: true, shape);
+                return new InferenceSession(Info.Path, gpuOptions);
+            }
+            catch (Exception ex) when (_allowCpuFallback && ex is OnnxRuntimeException or EntryPointNotFoundException or DllNotFoundException)
+            {
+                FallbackReason = ex.Message;
+                Device = ExecutionDevice.Cpu;
+            }
+        }
+
+        using var cpuOptions = CreateOptions(gpu: false, shape: null);
+        return new InferenceSession(Info.Path, cpuOptions);
+    }
+
+    private SessionOptions CreateOptions(bool gpu, (int Width, int Height)? shape)
+    {
+        var options = new SessionOptions
+        {
+            GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL,
+            // Errors arrive as exceptions anyway (and are handled); ORT's ERROR logs only clutter the console.
+            LogSeverityLevel = OrtLoggingLevel.ORT_LOGGING_LEVEL_FATAL,
+        };
+        try
+        {
+            if (gpu)
+            {
+                // DirectML EP requirements.
+                options.EnableMemoryPattern = false;
+                options.ExecutionMode = ExecutionMode.ORT_SEQUENTIAL;
+
+                if (shape.HasValue)
+                {
+                    var (width, height) = shape.Value;
+                    if (Info.BatchDimName is { } batch)
+                        options.AddFreeDimensionOverrideByName(batch, 1);
+                    options.AddFreeDimensionOverrideByName(Info.HeightDimName!, height);
+                    options.AddFreeDimensionOverrideByName(Info.WidthDimName!, width);
+                }
+                options.AppendExecutionProvider_DML(Device.AdapterIndex);
+            }
+            return options;
+        }
+        catch
+        {
+            options.Dispose();
+            throw;
+        }
+    }
+
+    private static bool IsHalf(TensorElementType type) => type switch
+    {
+        TensorElementType.Float => false,
+        TensorElementType.Float16 => true,
+        _ => throw new NotSupportedException($"Tensor type {type} is not supported; float32 or float16 is required."),
+    };
+
+    private static string? SymbolicDim(NodeMetadata node, int axis) =>
+        node.Dimensions[axis] <= 0 && node.SymbolicDimensions.Length > axis && !string.IsNullOrEmpty(node.SymbolicDimensions[axis])
+            ? node.SymbolicDimensions[axis]
+            : null;
+
+    /// <summary>The metadata key with the current prefix, or with the legacy one if it is missing.</summary>
+    private static string? ReadText(Dictionary<string, string> meta, string key) =>
+        meta.TryGetValue(MetadataPrefix + key, out var value) || meta.TryGetValue(LegacyMetadataPrefix + key, out value)
+            ? value
+            : null;
+
+    private static int? ReadInt(Dictionary<string, string> meta, string key) =>
+        int.TryParse(ReadText(meta, key), NumberStyles.Integer, CultureInfo.InvariantCulture, out int value) && value > 0
+            ? value
+            : null;
+
+    private static int? StaticScale(int[] input, int[] output)
+    {
+        if (input[2] <= 0 || input[3] <= 0 || output[2] <= 0 || output[3] <= 0)
+            return null;
+        if (output[2] % input[2] != 0 || output[2] / input[2] != output[3] / input[3])
+            return null;
+        return output[2] / input[2];
+    }
+
+    private static int ProbeScale(InferenceSession session, string inputName, string outputName, bool inputIsHalf, int width, int height)
+    {
+        long[] shape = [1, 3, height, width];
+        int length = 3 * width * height;
+        using var input = inputIsHalf
+            ? OrtValue.CreateTensorValueFromMemory(new Float16[length], shape)
+            : OrtValue.CreateTensorValueFromMemory(new float[length], shape);
+        using var runOptions = new RunOptions();
+        using var outputs = session.Run(runOptions, [inputName], [input], [outputName]);
+
+        long[] outShape = outputs[0].GetTensorTypeAndShape().Shape;
+        if (outShape.Length != 4 || outShape[2] % height != 0 || outShape[3] % width != 0 ||
+            outShape[2] / height != outShape[3] / width || outShape[2] < height)
+        {
+            throw new NotSupportedException($"Could not determine the model's scale from its output [{string.Join(", ", outShape)}].");
+        }
+        return (int)(outShape[2] / height);
+    }
+}
