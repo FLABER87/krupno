@@ -40,13 +40,15 @@ jobs:
       - name: Build
         run: dotnet build Krupno.slnx -c Release
 
-      # The runner has no GPU. DXGI reports "Microsoft Basic Render Driver" without the SOFTWARE flag, "-d auto" picks it,
-      # DirectML fails to initialize on it, and the work falls back to the CPU, so the "gpu" runs test the fallback. The device list is for the log.
+      # The runner has no GPU. DXGI reports "Microsoft Basic Render Driver" without the SOFTWARE flag, but Krupno drops it
+      # by VendorId/DeviceId, so the list has only auto and cpu, and "-d auto" goes straight to the CPU.
       - name: Devices
         run: src\Krupno.Cli\bin\Release\net10.0-windows\win-x64\krupno-cli.exe --list-devices
 
+      # -CheckFallback brings that adapter back (KRUPNO_BASIC_RENDER_DRIVER=1): "-d auto" picks it, DirectML fails to initialize on it,
+      # and every "gpu" run must fall back to the CPU, which is how the fallback is tested.
       - name: CLI tests
-        run: powershell -ExecutionPolicy Bypass -File tests\run_cli_tests.ps1
+        run: powershell -ExecutionPolicy Bypass -File tests\run_cli_tests.ps1 -CheckFallback
 
       - name: Failed run output
         if: failure()

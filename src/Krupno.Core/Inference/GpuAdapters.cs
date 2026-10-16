@@ -10,6 +10,11 @@ public static unsafe partial class GpuAdapters
 {
     private const int DxgiErrorNotFound = unchecked((int)0x887A0002);
     private const uint DxgiAdapterFlagSoftware = 2;
+    private const uint MicrosoftVendorId = 0x1414;
+    private const uint BasicRenderDriverDeviceId = 0x8C;
+
+    /// <summary>KRUPNO_BASIC_RENDER_DRIVER=1 keeps Basic Render Driver in the list, so the DirectML → CPU fallback can be tested on a machine without a GPU.</summary>
+    private static readonly bool KeepBasicRenderDriver = Environment.GetEnvironmentVariable("KRUPNO_BASIC_RENDER_DRIVER") == "1";
 
     // Method slots in the vtable.
     private const int ReleaseSlot = 2;
@@ -52,7 +57,7 @@ public static unsafe partial class GpuAdapters
                 {
                     var getDesc1 = (delegate* unmanaged<nint, AdapterDesc1*, int>)(*(nint**)adapter)[AdapterGetDesc1Slot];
                     AdapterDesc1 desc;
-                    if (getDesc1(adapter, &desc) >= 0 && (desc.Flags & DxgiAdapterFlagSoftware) == 0)
+                    if (getDesc1(adapter, &desc) >= 0 && !IsSoftware(desc))
                         result.Add(new GpuAdapter((int)i, new string(desc.Description), desc.DedicatedVideoMemory, desc.VendorId));
                 }
                 finally
@@ -67,6 +72,15 @@ public static unsafe partial class GpuAdapters
         }
         return result;
     }
+
+    /// <summary>
+    /// "Microsoft Basic Render Driver" (WARP, VendorId 0x1414, DeviceId 0x8C) is always present and is usually flagged SOFTWARE.
+    /// But on a machine without a GPU (a VM, a CI runner) the primary adapter has the same name and comes without the flag, so it
+    /// is recognized by VendorId and DeviceId. It renders on the same CPU, and DirectML does not start on it on the runner.
+    /// </summary>
+    private static bool IsSoftware(in AdapterDesc1 desc) =>
+        (desc.Flags & DxgiAdapterFlagSoftware) != 0
+        || (desc.VendorId == MicrosoftVendorId && desc.DeviceId == BasicRenderDriverDeviceId && !KeepBasicRenderDriver);
 
     private static void Release(nint unknown) =>
         ((delegate* unmanaged<nint, uint>)(*(nint**)unknown)[ReleaseSlot])(unknown);

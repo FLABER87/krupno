@@ -1,9 +1,12 @@
 ﻿# Synthetic tests for krupno-cli.exe: the models in tests/fixtures/models produce an exactly known result,
 # which tests/check_outputs.py verifies. Requires a Release build and Python with numpy and Pillow.
-#   powershell -File tests\run_cli_tests.ps1 [-Exe <krupno-cli.exe>] [-Python <python.exe>]
+#   powershell -File tests\run_cli_tests.ps1 [-Exe <krupno-cli.exe>] [-Python <python.exe>] [-CheckFallback]
+# -CheckFallback is for a machine without a GPU (CI): with KRUPNO_BASIC_RENDER_DRIVER=1, "-d auto" picks "Microsoft Basic Render Driver",
+# DirectML does not start on it, and every "gpu" run must fall back to the CPU. With a real GPU the switch makes the runs FAIL.
 param(
     [string]$Exe = "$PSScriptRoot\..\src\Krupno.Cli\bin\Release\net10.0-windows\win-x64\krupno-cli.exe",
-    [string]$Python = "python"
+    [string]$Python = "python",
+    [switch]$CheckFallback
 )
 $ErrorActionPreference = "Continue"
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
@@ -15,6 +18,7 @@ if ($LASTEXITCODE -ne 0) { Write-Error "Failed to prepare the test images (numpy
 # Remove old results, otherwise a failed run would "pass" on a file left over from the previous run.
 if (Test-Path -LiteralPath $out) { Remove-Item -LiteralPath $out -Recurse -Force }
 New-Item -ItemType Directory -Force $out | Out-Null
+if ($CheckFallback) { $env:KRUPNO_BASIC_RENDER_DRIVER = "1" }
 
 $script:failed = 0
 function Run([string]$Label, [string[]]$CliArgs, [int]$Expect = 0) {
@@ -24,6 +28,10 @@ function Run([string]$Label, [string[]]$CliArgs, [int]$Expect = 0) {
     $code = $LASTEXITCODE
     [IO.File]::WriteAllLines("$out\$Label.log", [string[]]$text, (New-Object Text.UTF8Encoding $false))
     $ok = $code -eq $Expect
+    if ($CheckFallback -and $Label.EndsWith("_gpu") -and -not ($text -match "DirectML is unavailable")) {
+        $ok = $false
+        $text += "Test error: no DirectML → CPU fallback"
+    }
     if (-not $ok) { $script:failed++ }
     "{0} {1,-18} exit={2} {3,5:0.0}s  {4}" -f $(if ($ok) { "OK  " } else { "FAIL" }), $Label, $code, $sw.Elapsed.TotalSeconds,
         (($text | Where-Object { $_ -match "Device|→|Error|DirectML|memory|Done" }) -join " | ")
@@ -50,5 +58,5 @@ Run "broken"          @("$fx\broken\broken.png", "-m", "$mod\nearest_red_x4.onnx
 
 & $Python "$PSScriptRoot\check_outputs.py" $fx $out
 $checkCode = $LASTEXITCODE
-if ($script:failed -gt 0) { "Runs with an unexpected exit code: $($script:failed)" }
+if ($script:failed -gt 0) { "Failed runs: $($script:failed)" }
 exit $(if ($script:failed -eq 0 -and $checkCode -eq 0) { 0 } else { 1 })
