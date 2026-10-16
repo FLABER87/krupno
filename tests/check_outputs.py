@@ -94,6 +94,16 @@ if (img / "icc_60x40.png").exists():
     check("icc_red.png", icc_out is not None and len(icc_out) == len(icc_in),
           f"icc in {len(icc_in or b'')} bytes, out {len(icc_out or b'')} bytes")
 
+# Display P3: the pixels are processed as stored (only the window converts them to sRGB, for display), and the profile goes along.
+if (out / "p3_red.png").exists():
+    got = load(out / "p3_red.png")
+    icc_in = Image.open(fixtures / "color" / "wide_p3.png").info.get("icc_profile")
+    icc_out = Image.open(out / "p3_red.png").info.get("icc_profile")
+    check("p3_red.png", got.shape == (1600, 2400, 3) and bool((got == [60, 0, 0]).all()) and icc_out == icc_in,
+          f"shape {got.shape}, colors {np.unique(got.reshape(-1, 3), axis=0)[:3].tolist()}, profile {'kept' if icc_out == icc_in else 'lost'}")
+else:
+    check("p3_red.png", False, "file missing")
+
 # Folder → folder: all images, name without a suffix, .png extension.
 sources = sorted(p for p in img.iterdir() if p.suffix.lower() in (".png", ".jpg"))
 missing = [p.name for p in sources if not (out / "batch" / (p.stem + ".png")).exists()]

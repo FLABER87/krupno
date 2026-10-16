@@ -81,14 +81,19 @@ function Keys($p, [string]$Keys) {
     Start-Sleep -Milliseconds 600
 }
 
-function Shot([IntPtr]$h, [string]$Name) {
-    Start-Sleep -Milliseconds 700
+# The window as drawn, with its top-left corner in screen coordinates.
+function Capture([IntPtr]$h) {
     $r = New-Object KrupnoUi.Win+RECT
     [KrupnoUi.Win]::GetWindowRect($h, [ref]$r) | Out-Null
     $bmp = New-Object System.Drawing.Bitmap ($r.R - $r.L), ($r.B - $r.T)
     $g = [System.Drawing.Graphics]::FromImage($bmp)
     $hdc = $g.GetHdc(); [KrupnoUi.Win]::PrintWindow($h, $hdc, 2) | Out-Null; $g.ReleaseHdc($hdc); $g.Dispose()  # 2 = PW_RENDERFULLCONTENT
-    $bmp.Save("$Out\$Name.png", [System.Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose()
+    return @{ Bitmap = $bmp; Left = $r.L; Top = $r.T }
+}
+function Shot([IntPtr]$h, [string]$Name) {
+    Start-Sleep -Milliseconds 700
+    $shot = Capture $h
+    $shot.Bitmap.Save("$Out\$Name.png", [System.Drawing.Imaging.ImageFormat]::Png); $shot.Bitmap.Dispose()
     "  screenshot: $Name"
 }
 

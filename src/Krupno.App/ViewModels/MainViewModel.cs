@@ -630,14 +630,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         try
         {
-            var before = await Task.Run(() => ImageCodec.ToBitmapSource(ImageCodec.Load(file.Path).Image), cancellationToken);
+            var before = await Task.Run(() => LoadPreview(file.Path), cancellationToken);
             BitmapSource? after = null;
             string? afterError = null;
             if (file.IsDone && file.OutputExists)
             {
                 try
                 {
-                    after = await Task.Run(() => ImageCodec.ToBitmapSource(ImageCodec.Load(file.OutputPath!).Image), cancellationToken);
+                    after = await Task.Run(() => LoadPreview(file.OutputPath!), cancellationToken);
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
@@ -672,6 +672,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             _previewGate.Release();
         }
+    }
+
+    /// <summary>A file decoded for display only: the decoded pixels aren't needed afterwards, so the color conversion reuses them.</summary>
+    private static BitmapSource LoadPreview(string path)
+    {
+        var loaded = ImageCodec.Load(path);
+        return ImageCodec.ToBitmapSource(loaded.Image, loaded, convertInPlace: true);
     }
 
     private void SetSourceSize((int Width, int Height)? size)
@@ -743,7 +750,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                     // so every step checks the selection again after an await.
                     if (CurrentFile == file)
                     {
-                        var before = await Task.Run(() => ImageCodec.ToBitmapSource(loaded.Image), cancellationToken);
+                        // Not in place: these pixels are upscaled next, as stored.
+                        var before = await Task.Run(() => ImageCodec.ToBitmapSource(loaded.Image, loaded), cancellationToken);
                         if (CurrentFile == file)
                         {
                             Before = before;
@@ -781,7 +789,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                         BitmapSource? after = null;
                         try
                         {
-                            after = await Task.Run(() => ImageCodec.ToBitmapSource(result));
+                            // The result is saved, so its pixels can be converted for display in place.
+                            after = await Task.Run(() => ImageCodec.ToBitmapSource(result, loaded, convertInPlace: true));
                         }
                         catch (OutOfMemoryException)
                         {

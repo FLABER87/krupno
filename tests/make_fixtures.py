@@ -6,6 +6,7 @@
 The models are a few hundred bytes each and live in git (tests/fixtures/models); the images are regenerated on every run.
 """
 import argparse
+import struct
 import sys
 from pathlib import Path
 
@@ -46,6 +47,39 @@ def resize_model(path, scale, dims, keep, meta=None):
     onnx.save(model, str(path))
 
 
+def display_p3_profile():
+    """A minimal ICC v2 Display P3 profile: P3 primaries adapted to D50, the sRGB tone curve. Windows ships no wide-gamut profile."""
+    def s15(*values):
+        return b"".join(struct.pack(">i", round(v * 65536)) for v in values)
+
+    def xyz(*values):
+        return b"XYZ \0\0\0\0" + s15(*values)
+
+    name = b"Display P3 (Krupno test)\0"
+    x = np.linspace(0, 1, 1024)
+    curve = np.where(x <= 0.04045, x / 12.92, ((x + 0.055) / 1.055) ** 2.4)
+    trc = b"curv\0\0\0\0" + struct.pack(">I", 1024) + np.round(curve * 65535).astype(">u2").tobytes()
+    tags = [
+        (b"desc", b"desc\0\0\0\0" + struct.pack(">I", len(name)) + name + bytes(4 + 4 + 2 + 1 + 67)),
+        (b"cprt", b"text\0\0\0\0Public domain\0"),
+        (b"wtpt", xyz(0.9642, 1.0, 0.8249)),
+        (b"rXYZ", xyz(0.51512, 0.24119, -0.00105)),
+        (b"gXYZ", xyz(0.29198, 0.69224, 0.04188)),
+        (b"bXYZ", xyz(0.15710, 0.06657, 0.78407)),
+        (b"rTRC", trc), (b"gTRC", trc), (b"bTRC", trc),
+    ]
+    data, table = b"", []
+    start = 128 + 4 + 12 * len(tags)
+    for sig, body in tags:
+        data += bytes(-len(data) % 4)
+        table.append(struct.pack(">4sII", sig, start + len(data), len(body)))
+        data += body
+    size = start + len(data)
+    header = (struct.pack(">I", size) + bytes(4) + bytes([2, 0x10, 0, 0]) + b"mntrRGB XYZ " + bytes(12) + b"acsp"
+              + bytes(4 + 4 + 4 + 4 + 8 + 4) + s15(0.9642, 1.0, 0.8249)).ljust(128, b"\0")
+    return header + struct.pack(">I", len(tags)) + b"".join(table) + data
+
+
 if args.models:
     m = root / "models"
     m.mkdir(parents=True, exist_ok=True)
@@ -80,6 +114,14 @@ Image.fromarray(stored).save(img / "orient6.jpg", quality=98, exif=exif)
 icc_path = Path(r"C:\Windows\System32\spool\drivers\color\sRGB Color Space Profile.icm")
 if icc_path.exists():
     Image.fromarray(rng.integers(0, 256, (40, 60, 3), np.uint8)).save(img / "icc_60x40.png", icc_profile=icc_path.read_bytes())
+
+# Color-managed preview (tests/gui_states.ps1 -Scenario color): one flat color tagged Display P3, where the window must show it
+# converted to sRGB, and the same pixels untagged, shown as they are. A separate folder, so the other tests don't pick them up.
+color = root / "color"
+color.mkdir(parents=True, exist_ok=True)
+green = np.full((400, 600, 3), [60, 160, 70], np.uint8)
+Image.fromarray(green).save(color / "wide_p3.png", icc_profile=display_p3_profile())
+Image.fromarray(green).save(color / "srgb_untagged.png")
 
 # A file with a .png extension that isn't an image: a read error, not a program crash.
 broken = root / "broken"

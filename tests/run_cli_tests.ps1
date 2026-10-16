@@ -52,6 +52,8 @@ Run "orient6_red"     @("$img\orient6.jpg", "-m", "$mod\nearest_red_x4.onnx", "-
 if (Test-Path -LiteralPath "$img\icc_60x40.png") {
     Run "icc_red"     @("$img\icc_60x40.png", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\icc_red.png")
 }
+# Display P3: the pixels are processed as stored, not converted to sRGB, and the profile goes along with them.
+Run "p3_red"          @("$fx\color\wide_p3.png", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\p3_red.png")
 Run "noise_legacy"    @("$img\noise_300x200.png", "-m", "$mod\legacy_x2.onnx", "-o", "$out\noise_legacy.png")
 Run "batch"           @($img, "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\batch")
 Run "broken"          @("$fx\broken\broken.png", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\broken.png") -Expect 1

@@ -37,6 +37,12 @@ public sealed record SaveOptions
 /// <summary>Reading and writing via WIC, the built-in Windows codecs, with no third-party libraries.</summary>
 public static class ImageCodec
 {
+    /// <summary>sRGB, the color space WPF draws in (the Windows system profile).</summary>
+    private static readonly Lazy<ColorContext?> Srgb = new(() => TryGet(() => new ColorContext(PixelFormats.Bgra32)));
+
+    /// <summary>One row of BGRA probe colors for <see cref="DisplayProfile"/>: every combination of five levels per channel.</summary>
+    private static readonly byte[] ProbeColors = MakeProbeColors();
+
     /// <summary>
     /// Extensions we try to open. WebP/HEIC/AVIF only work if the matching extensions
     /// from the Microsoft Store are installed.
@@ -75,7 +81,8 @@ public static class ImageCodec
         ImageBuffer image;
         try
         {
-            // IgnoreColorProfile: take the pixels as is and carry the ICC profile over to the result.
+            // IgnoreColorProfile: take the pixels as is and carry the ICC profile over to the result
+            // (only the preview converts them, see ToBitmapSource).
             decoder = BitmapDecoder.Create(stream,
                 BitmapCreateOptions.PreservePixelFormat | BitmapCreateOptions.IgnoreColorProfile,
                 BitmapCacheOption.OnLoad);
@@ -195,9 +202,25 @@ public static class ImageCodec
         }
     }
 
-    /// <summary>A frozen BitmapSource for display in WPF (can be created on a background thread).</summary>
-    public static BitmapSource ToBitmapSource(ImageBuffer image)
+    /// <summary>
+    /// A frozen BitmapSource for display in WPF (can be created on a background thread). WPF draws pixels as sRGB, so pixels
+    /// in another embedded profile (Adobe RGB, Display P3) are converted to sRGB here, for display only: what is processed
+    /// and saved keeps the original pixels and profile.
+    /// </summary>
+    /// <param name="source">The loaded image whose ICC profile describes the pixels: the original also for its upscaled result.</param>
+    /// <param name="convertInPlace">
+    /// The caller no longer needs <paramref name="image"/>: the conversion overwrites it instead of taking another full-size copy
+    /// (a result can take a gigabyte or two).
+    /// </param>
+    public static BitmapSource ToBitmapSource(ImageBuffer image, LoadedImage? source = null, bool convertInPlace = false)
     {
+        if (DisplayProfile(source?.ColorContexts) is { } profile)
+        {
+            var converted = convertInPlace ? image : new ImageBuffer(image.Width, image.Height);
+            ConvertToSrgb(image, converted, profile);
+            image = converted;
+        }
+
         var bitmap = BitmapSource.Create(image.Width, image.Height, 96, 96,
             PixelFormats.Bgra32, null, image.Pixels, image.Stride);
         bitmap.Freeze();
@@ -205,8 +228,8 @@ public static class ImageCodec
     }
 
     /// <summary>
-    /// A fast thumbnail that honors EXIF rotation: WIC scales while decoding (for JPEG, right in the DCT),
-    /// so the full image never gets into memory.
+    /// A fast thumbnail that honors EXIF rotation and the color profile, like <see cref="ToBitmapSource"/>: WIC scales while
+    /// decoding (for JPEG, right in the DCT), so the full image never gets into memory.
     /// </summary>
     public static BitmapSource LoadThumbnail(string path, int height)
     {
@@ -215,11 +238,20 @@ public static class ImageCodec
         bitmap.UriSource = new Uri(Path.GetFullPath(path));
         bitmap.DecodePixelHeight = height;
         bitmap.CacheOption = BitmapCacheOption.OnLoad;
+        // The profile is applied below, the same way as for the preview, rather than by WPF.
         bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
         bitmap.EndInit();
 
         BitmapSource result = bitmap;
-        int orientation = ReadOrientation(path);
+        var (orientation, colorContexts) = ReadFrameInfo(path);
+        if (DisplayProfile(colorContexts) is { } profile && Srgb.Value is { } srgb)
+        {
+            // Converted right away (CachedBitmap) rather than lazily on the UI thread whenever WPF reads the pixels.
+            result = TryGet<BitmapSource>(() => new CachedBitmap(
+                new ColorConvertedBitmap(new FormatConvertedBitmap(bitmap, PixelFormats.Bgra32, null, 0), profile, srgb, PixelFormats.Bgra32),
+                BitmapCreateOptions.None, BitmapCacheOption.OnLoad)) ?? bitmap;
+        }
+
         if (orientation is >= 2 and <= 8)
         {
             // Rotate clockwise first, then flip horizontally: this yields all eight EXIF variants.
@@ -237,7 +269,8 @@ public static class ImageCodec
             transform.Children.Add(new RotateTransform(angle));
             if (flip)
                 transform.Children.Add(new ScaleTransform(-1, 1));
-            result = TryGet<BitmapSource>(() => new TransformedBitmap(bitmap, transform)) ?? bitmap;
+            var unrotated = result;
+            result = TryGet<BitmapSource>(() => new TransformedBitmap(unrotated, transform)) ?? unrotated;
         }
 
         result.Freeze();
@@ -254,18 +287,79 @@ public static class ImageCodec
             : $"Cannot open \"{name}\": the file is corrupt or is not an image.";
     }
 
-    private static int ReadOrientation(string path)
+    /// <summary>The EXIF orientation and the embedded color profiles, read without decoding the pixels.</summary>
+    private static (int Orientation, ReadOnlyCollection<ColorContext>? ColorContexts) ReadFrameInfo(string path)
     {
         try
         {
             using var stream = File.OpenRead(path);
             var frame = BitmapFrame.Create(stream, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
-            return ReadOrientation(frame.Metadata as BitmapMetadata);
+            return (ReadOrientation(frame.Metadata as BitmapMetadata), TryGet(() => frame.ColorContexts));
         }
         catch (Exception)
         {
-            return 1;
+            return (1, null);
         }
+    }
+
+    /// <summary>
+    /// The embedded profile to convert from for display, or null if there is nothing to convert: no profile, a profile that
+    /// matches sRGB within a couple of levels (most photos), or one WIC can't apply to RGB pixels (broken, grayscale, CMYK).
+    /// Decided by converting a grid of probe colors, so any form of the profile (matrix, table, ICC v2 or v4) is judged alike.
+    /// </summary>
+    private static ColorContext? DisplayProfile(ReadOnlyCollection<ColorContext>? colorContexts)
+    {
+        if (colorContexts is not { Count: > 0 } || Srgb.Value is not { } srgb)
+            return null;
+
+        var profile = colorContexts[0];
+        return TryGet(() =>
+        {
+            int width = ProbeColors.Length / ImageBuffer.BytesPerPixel;
+            var probe = BitmapSource.Create(width, 1, 96, 96, PixelFormats.Bgra32, null, ProbeColors, ProbeColors.Length);
+            var converted = new byte[ProbeColors.Length];
+            new ColorConvertedBitmap(probe, profile, srgb, PixelFormats.Bgra32).CopyPixels(converted, ProbeColors.Length, 0);
+            for (int i = 0; i < converted.Length; i++)
+            {
+                if (Math.Abs(converted[i] - ProbeColors[i]) > 2)
+                    return profile;
+            }
+            return null;
+        });
+    }
+
+    /// <summary>
+    /// Converts the pixels from <paramref name="profile"/> to sRGB, a strip of rows at a time, so the conversion needs only
+    /// a few megabytes on top of the images. <paramref name="destination"/> may be <paramref name="source"/> itself.
+    /// </summary>
+    private static void ConvertToSrgb(ImageBuffer source, ImageBuffer destination, ColorContext profile)
+    {
+        var srgb = Srgb.Value!;
+        int stride = source.Stride;
+        int rows = Math.Clamp((4 << 20) / stride, 1, source.Height);
+        var strip = GC.AllocateUninitializedArray<byte>(rows * stride);
+        for (int y = 0; y < source.Height; y += rows)
+        {
+            int count = Math.Min(rows, source.Height - y);
+            Buffer.BlockCopy(source.Pixels, y * stride, strip, 0, count * stride);
+            var bitmap = BitmapSource.Create(source.Width, count, 96, 96, PixelFormats.Bgra32, null, strip, stride);
+            new ColorConvertedBitmap(bitmap, profile, srgb, PixelFormats.Bgra32).CopyPixels(destination.Pixels, stride, y * stride);
+        }
+    }
+
+    private static byte[] MakeProbeColors()
+    {
+        byte[] levels = [0, 64, 128, 192, 255];
+        var colors = new List<byte>();
+        foreach (byte b in levels)
+        {
+            foreach (byte g in levels)
+            {
+                foreach (byte r in levels)
+                    colors.AddRange([b, g, r, 255]);
+            }
+        }
+        return [.. colors];
     }
 
     private static void Encode(BitmapSource bitmap, string path, ImageFileFormat format, int jpegQuality,

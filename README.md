@@ -210,14 +210,14 @@ powershell -ExecutionPolicy Bypass -File tests\run_cli_tests.ps1
 The script creates the input images (`tests/make_fixtures.py`), runs `krupno-cli.exe` on the GPU and on the CPU, and puts the results and logs into `tests/out/cli`.
 Then `tests/check_outputs.py` compares them with the expectations, and the script exits with code 0 only if everything matches. A run takes about 15 s.
 Covered: tiling (including a model with a static 64×64 input and a run without tiling), a probe run of a model without metadata, reading `krupno.*` and `upscalr.*` metadata,
-fractional scale, ×8 in two passes, alpha channel (with the color fill under transparent pixels), EXIF rotation, ICC profile, folder processing,
+fractional scale, ×8 in two passes, alpha channel (with the color fill under transparent pixels), EXIF rotation, ICC profile (a Display P3 image keeps its pixels and profile), folder processing,
 output names that would overwrite a source or another result, and broken files.
 `python tests/make_fixtures.py --models` regenerates the models (it also needs the `onnx` package).
 On GitHub, the `.github/workflows/tests.yml` workflow (`windows-latest`) builds and runs these tests on every push and pull request. The runner has no GPU, and Krupno does not count "Microsoft Basic Render Driver" as one. So the workflow runs the script with the `-CheckFallback` switch: it sets `KRUPNO_BASIC_RENDER_DRIVER=1`, "Auto" picks that adapter, DirectML fails to start on it, and every "GPU" run must fall back to the CPU. This is how the fallback is tested. If the tests fail, `tests/out/cli` is uploaded as the `cli-tests-out` artifact.
 
 The UI scripts launch `Krupno.exe` and drive the window through UI Automation.
 They need real models in `models/`: `4xBHI_realplksr_dysample_real` and `4xBHI_dat2_real_fp16` by default; others are set with the `-Model` and `-SlowModel` parameters.
-- `tests\gui_states.ps1` walks through the window states (empty, tile-by-tile processing, result, side-by-side comparison, batch, error, light theme) and saves screenshots to `tests/out/gui`. The script itself only checks that the states are reached; a human looks at the screenshots. About 1.5 min.
+- `tests\gui_states.ps1` walks through the window states (empty, tile-by-tile processing, result, side-by-side comparison, batch, error, light theme) and saves screenshots to `tests/out/gui`. The script itself only checks that the states are reached; a human looks at the screenshots. The `color` scenario also checks pixels. A Display P3 image must look the way Windows' color-managed decoding shows it, before and after processing and in the filmstrip. An untagged copy must be shown unchanged, and the saved result must keep the stored pixels. About 2 min.
 - `tests\gui_keys.ps1` checks the keyboard shortcuts: preview zoom, Ctrl+Enter, Ctrl+C (image size on the clipboard) and Esc. The keys are sent through SendKeys, so it is best not to touch the keyboard and mouse during the run (about 30 s). If the Krupno window is not in the foreground, the script stops and sends no keys.
 
 Both scripts swap `%LOCALAPPDATA%\Krupno\settings.json` for the duration of the run and restore the previous one afterwards.
@@ -232,6 +232,7 @@ Both scripts swap `%LOCALAPPDATA%\Krupno\settings.json` for the duration of the 
 - **Any scale.** The network runs as many times as needed (×8 with a ×4 model is two passes), then the result is resized precisely with a Lanczos-3 filter. If the last pass would not fit in memory at full size (×8 of a 1920×1200 photo makes a 30720×19200 intermediate), its input is first reduced so that the pass lands just above the target size, and a message says so.
 - **The alpha channel** is scaled separately (Lanczos); the network processes RGB. The color under fully transparent pixels is first filled from the nearest visible pixel, so the edges don't pick up the color stored there (usually black), and the final resize weights colors by alpha.
 - **EXIF rotation** is applied to the pixels. The ICC profile is carried over to the result, and the metadata too if the output format matches the source.
+- **Color profiles.** The pixels are upscaled as stored: an Adobe RGB or Display P3 photo stays in its color space, and the result carries the same profile (BMP, which can't hold one, is converted to sRGB). WPF draws everything as sRGB, so the window converts the comparison and the filmstrip thumbnails from the embedded profile to sRGB, for display only. WIC does the conversion, so the colors match Windows' own color-managed decoding. Krupno converts to sRGB, not to the monitor's profile. Profiles that match sRGB within a couple of levels, and ones that don't apply to RGB pixels (grayscale, CMYK), are left alone. A large result is converted in place, a few megabytes at a time, without another full-size copy. Ctrl+C copies the result as it is shown, in sRGB.
 
 ## What's next
 
