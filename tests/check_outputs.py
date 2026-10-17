@@ -215,6 +215,7 @@ missing = [p.name for p in sources if not (out / "batch" / (p.stem + ".png")).ex
 check("batch", not missing and f"Done: {len(sources)} of {len(sources)}" in log("batch"),
       f"{len(sources) - len(missing)} of {len(sources)} files" + (f", missing: {', '.join(missing)}" if missing else ""))
 expect_nearest("noise_300x200.png", "batch/noise_300x200.png", 4, [1, 0, 0])
+expect_nearest("noise_300x200.png", "noise_red_tta.png", 4, [1, 0, 0])
 got = load(out / "batch" / "orient6.png") if (out / "batch" / "orient6.png").exists() else np.zeros((0, 0, 3))
 check("batch/orient6.png", got.shape == (160 * 4, 90 * 4, 3), f"shape {got.shape}")
 

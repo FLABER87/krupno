@@ -103,7 +103,7 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
     var upscaleOptions = new UpscaleOptions
     {
         Scale = options.Scale, Target = options.Target, TileSize = options.Tile, TilePadding = options.Padding,
-        Strength = options.Strength / 100.0,
+        Strength = options.Strength / 100.0, TestTimeAugmentation = options.TestTimeAugmentation,
     };
 
     Console.WriteLine($"Model:  {model.Info}{(model.Info.IsHalfPrecision ? ", fp16" : "")}");
