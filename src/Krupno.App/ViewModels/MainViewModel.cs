@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -90,6 +91,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string? _errorTechnical;
     private TaskbarItemProgressState _taskbarState;
     private FileItem? _lastDone;
+    private string? _errorReport;
+    /// <summary>The fallback to the CPU is logged once per run.</summary>
+    private bool _fallbackReported;
 
     public MainViewModel(AppSettings settings)
     {
@@ -135,6 +139,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ShowInFolderCommand = new RelayCommand(ShowInFolder, () => ResultFile is not null);
         CopyResultCommand = new RelayCommand(CopyResult, () => After is not null);
         PasteCommand = new RelayCommand(() => _ = PasteAsync(), () => !IsBusy);
+        CopyErrorDetailsCommand = new RelayCommand(CopyErrorDetails, () => ErrorReport is not null);
         BrowseOutputCommand = new RelayCommand(BrowseOutput, () => !IsBusy);
         ResetOutputCommand = new RelayCommand(() => OutputFolder = null, () => !IsBusy && OutputFolder is not null);
         RefreshModelsCommand = new RelayCommand(RefreshModels, () => !IsBusy);
@@ -486,6 +491,22 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         private set => SetProperty(ref _errorTechnical, value);
     }
 
+    /// <summary>The last run's errors for a bug report (see <see cref="BuildErrorReport"/>); null if it had none.</summary>
+    private string? ErrorReport
+    {
+        get => _errorReport;
+        set
+        {
+            if (SetProperty(ref _errorReport, value))
+            {
+                OnPropertyChanged(nameof(HasErrorReport));
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+    }
+
+    public bool HasErrorReport => _errorReport is not null;
+
     public TaskbarItemProgressState TaskbarState
     {
         get => _taskbarState;
@@ -504,6 +525,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand ShowInFolderCommand { get; }
     public ICommand CopyResultCommand { get; }
     public ICommand PasteCommand { get; }
+    public ICommand CopyErrorDetailsCommand { get; }
     public ICommand BrowseOutputCommand { get; }
     public ICommand ResetOutputCommand { get; }
     public ICommand RefreshModelsCommand { get; }
@@ -682,13 +704,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             After = after;
             SetSourceSize((before.PixelWidth, before.PixelHeight));
             if (afterError is not null)
+            {
+                Log.Warning($"Can't show the result {file.OutputPath}: {afterError}");
                 ShowToast($"Can't show the result: {afterError}");
+            }
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception ex)
         {
+            Log.Error($"Can't show {file.Path}", ex);
             if (version != _previewVersion)
                 return;
             Before = null;
@@ -721,10 +747,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private async Task UpscaleAsync()
     {
-        if (IsBusy || !HasFiles || SelectedModel is null)
+        if (IsBusy || !HasFiles || SelectedModel is not { } modelItem)
             return;
 
         var files = Files.ToList();
+        var deviceOption = SelectedDevice;
         var settings = (Scale: SelectedScale.Value, Tile: SelectedTile.Value, Strength: Strength, Format: SelectedFormat.Value,
             Quality: JpegQuality, Folder: OutputFolder);
         // All names up front: a result must not overwrite a queued source ("photo.png" → "photo_x4.png" while
@@ -760,6 +787,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         // The run may take many minutes without any input. The request is released on this (UI) thread, which made it:
         // the awaits below come back to it.
         using var keepAwake = new KeepAwake();
+        // What went wrong, for the log and "Copy error details": the file (null for the run as a whole) and the error.
+        var errors = new List<(string? File, Exception Error)>();
+        UpscaleModel? runModel = null;
+        ErrorReport = null;
+        _fallbackReported = false;
 
         try
         {
@@ -778,6 +810,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             }
 
             var model = await GetModelAsync();
+            runModel = model;
+            Log.Info("Run started\n" + DescribeRun());
             var upscaler = new Upscaler(model);
             var options = new UpscaleOptions { Scale = settings.Scale, TileSize = settings.Tile, Strength = settings.Strength / 100.0 };
 
@@ -795,6 +829,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 try
                 {
                     var loaded = await Task.Run(() => ImageCodec.Load(file.Path), cancellationToken);
+                    Log.Info($"File {index + 1} of {files.Count}: {file.Path} ({Text.Size(loaded.Image.Width, loaded.Image.Height)})");
                     // The user may be looking at another file of the batch meanwhile: the canvas shows only the selected one,
                     // so every step checks the selection again after an await.
                     if (CurrentFile == file)
@@ -849,6 +884,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 await pendingSave;
 
             string elapsed = Text.Seconds(total.Elapsed);
+            Log.Info($"Run finished in {elapsed}: {succeeded} of {Text.Files(files.Count)} done");
             if (succeeded == 0)
             {
                 // Every file of the batch failed: that is not a success, whatever the count.
@@ -882,6 +918,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             // A result already being written is finished: it is computed, and its file counts as done.
             if (pendingSave is not null)
                 await pendingSave;
+            Log.Info("Run canceled");
             foreach (var file in files.Where(f => f.IsProcessing))
                 file.State = FileState.Pending;
             Tiles = null;
@@ -891,6 +928,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
+            // A single file's error is rethrown here after it is recorded.
+            if (!errors.Any(e => e.Error == ex))
+            {
+                errors.Add((null, ex));
+                Log.Error("Run failed", ex);
+            }
             Tiles = null;
             ErrorDetail = Friendly(ex);
             ErrorTechnical = ex.Message;
@@ -903,6 +946,23 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _cts = null;
             IsBusy = false;
             ProgressNote = null;
+            if (errors.Count > 0)
+                ErrorReport = BuildErrorReport(DescribeRun(), errors);
+        }
+
+        // The model, the device and the settings, for the log and the error report.
+        string DescribeRun()
+        {
+            var info = runModel?.Info;
+            string modelLine = info is null
+                ? $"Model: {modelItem.Name} · {modelItem.Entry.Path}"
+                : $"Model: {info}{(info.IsHalfPrecision ? ", fp16" : "")} · {info.Path}";
+            string device = runModel?.Device.ToString() ?? deviceOption.Label;
+            string fallback = runModel?.FallbackReason is { } reason ? $"; DirectML is unavailable: {reason}" : "";
+            string tile = settings.Tile == 0 ? "no tiling" : $"tile {settings.Tile} px";
+            string format = settings.Format == ImageFileFormat.Jpeg ? $"JPEG {settings.Quality}" : settings.Format.ToString().ToUpperInvariant();
+            return $"{modelLine}\nDevice: {device} (selected: {deviceOption.Label}{fallback}) · {tile} · strength {settings.Strength}% · " +
+                   $"{Text.Scale(settings.Scale)} · {format} · {Text.Files(files.Count)} → {settings.Folder ?? "next to the originals"}";
         }
 
         // The file is written: record it, and show the result if its file is the one on the canvas.
@@ -913,6 +973,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _lastDone = file;
             lastBytes = new FileInfo(output).Length;
             succeeded++;
+            Log.Info($"Saved {output} ({Text.Bytes(lastBytes)})");
 
             if (CurrentFile == file)
             {
@@ -934,6 +995,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         void OnFailed(FileItem file, Exception ex)
         {
+            errors.Add((file.Path, ex));
+            Log.Error($"Failed: {file.Path}", ex);
             file.State = FileState.Error;
             file.Error = Friendly(ex);
             firstError ??= file.Error;
@@ -971,14 +1034,22 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         // The session is created lazily, and DirectML may have just fallen back to the CPU: say so, the run is much slower then.
         string device = Text.Device(model.Device);
-        if (model.FallbackReason is not null)
+        if (model.FallbackReason is { } reason)
+        {
             ProgressNote ??= "DirectML is unavailable, running on the CPU";
+            if (!_fallbackReported)
+                Log.Warning($"DirectML is unavailable, running on the CPU: {reason}");
+            _fallbackReported = true;
+        }
 
         if (p.Message is { } message)
         {
             // A warning stays visible for the rest of the run; a stage ("Resizing to …") only replaces the detail line.
             if (p.IsWarning)
+            {
                 ProgressNote = message;
+                Log.Warning(message);
+            }
             else
                 ProgressDetail = count > 1 ? $"File {index + 1} of {count} · {message}" : message;
             return;
@@ -1177,6 +1248,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
+            Log.Error($"Can't read the model {item.Entry.Path}", ex);
             item.Details = $"{Path.GetFileName(item.Entry.Path)}\nCan't read the model: {ex.Message}";
         }
     }
@@ -1296,6 +1368,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         catch (Exception ex)
         {
             // Nobody awaits this task, so every failure ends up here rather than vanishing.
+            Log.Error("Can't paste", ex);
             ShowToast(ex is ExternalException ? "The clipboard is in use by another app — try again" : $"Can't paste: {ex.Message}");
             return;
         }
@@ -1318,11 +1391,46 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
+            Log.Error("Can't save the pasted image", ex);
             ShowToast($"Can't save the pasted image: {ex.Message}");
             return;
         }
+        Log.Info($"Pasted image saved to {path}");
         await SetFilesAsync([path]);
         ShowToast($"Pasted image saved to {path}");
+    }
+
+    private void CopyErrorDetails()
+    {
+        if (ErrorReport is not { } report)
+            return;
+        try
+        {
+            Clipboard.SetText(report);
+            ShowToast("Error details copied — paste them into a bug report");
+        }
+        catch (Exception)
+        {
+            ShowToast("The clipboard is in use by another app — try again");
+        }
+    }
+
+    /// <summary>
+    /// What "Copy error details" puts on the clipboard: the computer, the run and its errors with their stack traces (the first
+    /// few; the log has every one), and where the log is.
+    /// </summary>
+    private static string BuildErrorReport(string run, IReadOnlyList<(string? File, Exception Error)> errors)
+    {
+        const int MaxErrors = 5;
+        var report = new StringBuilder();
+        report.AppendLine(SystemInfo.Describe()).AppendLine(run.ReplaceLineEndings());
+        foreach (var (file, error) in errors.Take(MaxErrors))
+            report.AppendLine().AppendLine(file is null ? "Error:" : $"Failed: {file}").AppendLine(error.ToString());
+        if (errors.Count > MaxErrors)
+            report.AppendLine().AppendLine($"… and {errors.Count - MaxErrors} more, see the log");
+        if (Log.FilePath is { } log)
+            report.AppendLine().AppendLine($"Log: {log}");
+        return report.ToString();
     }
 
     private void ShowToast(string message)

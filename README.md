@@ -48,7 +48,7 @@ Optional checkboxes:
 - the install folder in PATH, so `krupno-cli` can be run from any console;
 - an "Upscale with Krupno" item in the Explorer context menu for images and folders. It is shown when a single item is selected: with a command string, Explorer would open a window per file.
 
-Uninstalling removes all of the above and leaves `%LOCALAPPDATA%\Krupno` (settings and your own models) alone. The installer UI is English only.
+Uninstalling removes all of the above and leaves `%LOCALAPPDATA%\Krupno` (settings, logs and your own models) alone. The installer UI is English only.
 
 To build the installer and the portable ZIP, you also need Inno Setup 6.5+ (`winget install JRSoftware.InnoSetup`):
 
@@ -182,6 +182,7 @@ The preview is on the left, the settings panel on the right.
 - **Comparison:** a slider wipe or two frames side by side. Zoom is measured in output pixels (100% is pixel for pixel), the mouse wheel zooms toward the point under the cursor, the right or middle button pans the image, and a double click toggles "Fit to window" ↔ 1:1.
 - **During processing** finished tiles are highlighted on the preview, with the percentage, the remaining time and the tile number next to it. Progress also shows on the Windows taskbar icon. While processing runs, Windows does not go to sleep on idle (the display may still turn off; closing the lid or choosing Sleep works as usual).
 - **A batch** is shown as a strip of thumbnails with each file's status: processing, done, error. A file keeps the "processing" mark while its result is written, which in a batch overlaps with the next file (see [How it works](#how-it-works)). Clicking a thumbnail shows the comparison for that file.
+- **Errors and the log.** Each session of the window writes a log to `%LOCALAPPDATA%\Krupno\logs` (the 20 newest are kept). It starts with the versions of Krupno, Windows, .NET, ONNX Runtime and DirectML and the GPUs with their driver versions, then records each run (model, device, tile, strength, scale, format), every file and its result, warnings (a reduced tile, the fallback to the CPU) and every error with its stack trace. After a failed run, "Copy error details" puts the same facts for that run on the clipboard, ready for a bug report, with the path to the log. The log stays on the computer, and it holds file paths, so look it over before sharing it. The command-line tool writes no log: everything goes to the console.
 - **The theme** is light or dark to match the system, with the system accent color. On Windows 10 the window title bar turns dark too. The `KRUPNO_THEME=light|dark` variable forces a theme for testing.
 
 Keyboard shortcuts:

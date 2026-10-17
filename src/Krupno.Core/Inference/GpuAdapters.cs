@@ -3,7 +3,8 @@ using System.Runtime.InteropServices;
 namespace Krupno.Core.Inference;
 
 /// <param name="Index">Adapter index in DXGI; DirectML accepts the same index as device_id.</param>
-public sealed record GpuAdapter(int Index, string Name, ulong DedicatedMemory, uint VendorId);
+/// <param name="DriverVersion">The user-mode driver version ("32.0.15.6094"), for bug reports; null if DXGI doesn't report it.</param>
+public sealed record GpuAdapter(int Index, string Name, ulong DedicatedMemory, uint VendorId, string? DriverVersion = null);
 
 /// <summary>Enumerates GPUs directly via DXGI (COM calls through the vtable, no wrappers).</summary>
 public static unsafe partial class GpuAdapters
@@ -19,9 +20,11 @@ public static unsafe partial class GpuAdapters
     // Method slots in the vtable.
     private const int ReleaseSlot = 2;
     private const int FactoryEnumAdapters1Slot = 12;
+    private const int AdapterCheckInterfaceSupportSlot = 9;
     private const int AdapterGetDesc1Slot = 10;
 
     private static readonly Guid IidDxgiFactory1 = new("770aae78-f26f-4dba-a829-253c83d1b387");
+    private static readonly Guid IidDxgiDevice = new("54ec77fa-1377-44e6-8c32-88fd5f44c84c");
 
     public static IReadOnlyList<GpuAdapter> Enumerate()
     {
@@ -58,7 +61,10 @@ public static unsafe partial class GpuAdapters
                     var getDesc1 = (delegate* unmanaged<nint, AdapterDesc1*, int>)(*(nint**)adapter)[AdapterGetDesc1Slot];
                     AdapterDesc1 desc;
                     if (getDesc1(adapter, &desc) >= 0 && !IsSoftware(desc))
-                        result.Add(new GpuAdapter((int)i, new string(desc.Description), desc.DedicatedVideoMemory, desc.VendorId));
+                    {
+                        result.Add(new GpuAdapter((int)i, new string(desc.Description), desc.DedicatedVideoMemory, desc.VendorId,
+                            DriverVersion(adapter)));
+                    }
                 }
                 finally
                 {
@@ -81,6 +87,20 @@ public static unsafe partial class GpuAdapters
     private static bool IsSoftware(in AdapterDesc1 desc) =>
         (desc.Flags & DxgiAdapterFlagSoftware) != 0
         || (desc.VendorId == MicrosoftVendorId && desc.DeviceId == BasicRenderDriverDeviceId && !KeepBasicRenderDriver);
+
+    /// <summary>
+    /// IDXGIAdapter::CheckInterfaceSupport for IDXGIDevice returns the user-mode driver version as four 16-bit parts (the same
+    /// way Chromium reads it for its GPU info).
+    /// </summary>
+    private static string? DriverVersion(nint adapter)
+    {
+        var checkInterfaceSupport = (delegate* unmanaged<nint, Guid*, long*, int>)(*(nint**)adapter)[AdapterCheckInterfaceSupportSlot];
+        Guid iid = IidDxgiDevice;
+        long version;
+        return checkInterfaceSupport(adapter, &iid, &version) >= 0
+            ? $"{(version >> 48) & 0xFFFF}.{(version >> 32) & 0xFFFF}.{(version >> 16) & 0xFFFF}.{version & 0xFFFF}"
+            : null;
+    }
 
     private static void Release(nint unknown) =>
         ((delegate* unmanaged<nint, uint>)(*(nint**)unknown)[ReleaseSlot])(unknown);

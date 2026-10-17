@@ -250,6 +250,11 @@
                                     </StackPanel>
                                 </Button>
                             </UniformGrid>
+                            <Button Style="{StaticResource LinkButton}" Command="{Binding CopyErrorDetailsCommand}"
+                                    HorizontalAlignment="Center" Margin="0,10,0,0"
+                                    Visibility="{Binding HasErrorReport, Converter={StaticResource BoolToVisibility}}">
+                                <TextBlock Text="Copy error details" />
+                            </Button>
                             <TextBlock Style="{StaticResource Hint}" Text="Ctrl+C — copy the result" />
                         </StackPanel>
 
@@ -269,6 +274,10 @@
                             <Button Style="{DynamicResource AccentButtonStyle}" Command="{Binding UpscaleCommand}"
                                     HorizontalAlignment="Stretch" Height="40" FontSize="15" Margin="0,10,0,0">
                                 <TextBlock Text="Try again" />
+                            </Button>
+                            <Button Style="{StaticResource LinkButton}" Command="{Binding CopyErrorDetailsCommand}"
+                                    HorizontalAlignment="Center" Margin="0,10,0,0" ToolTip="For a bug report: versions, GPU, model, settings and the error">
+                                <TextBlock Text="Copy error details" />
                             </Button>
                         </StackPanel>
                     </Grid>
