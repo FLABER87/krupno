@@ -115,8 +115,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private TaskbarItemProgressState _taskbarState;
     private FileItem? _lastDone;
     private string? _errorReport;
-    /// <summary>The fallback to the CPU is logged once per run.</summary>
+    /// <summary>The fallback to the CPU and an accelerator that can't compile the model are logged once per run.</summary>
     private bool _fallbackReported;
+    private bool _compileFailureReported;
     /// <summary>When files last came from outside the window, see <see cref="OpenExternalAsync"/>.</summary>
     private DateTime _lastExternalOpen = DateTime.MinValue;
 
@@ -1019,6 +1020,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         bool finished = false;
         ErrorReport = null;
         _fallbackReported = false;
+        _compileFailureReported = false;
 
         try
         {
@@ -1277,6 +1279,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (!_fallbackReported)
                 Log.Warning($"DirectML is unavailable, running on the CPU: {reason}");
             _fallbackReported = true;
+        }
+        if (model.CompileFailure is { } compileFailure && !_compileFailureReported)
+        {
+            _compileFailureReported = true;
+            Log.Warning($"{model.Device} can't compile the model for the cache, so it builds the engine on every start: {compileFailure}");
         }
 
         if (p.Message is { } message)

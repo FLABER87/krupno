@@ -141,4 +141,30 @@ public class UpscalerTests
             Assert.Equal(tiles, progress.Reports.Count(p => p.Region is not null));
         }
     }
+
+    [Fact]
+    public void TilesArriveInOrderAndCancelStopsBetweenThem()
+    {
+        // The tiles are copied out on another thread, one behind the run; the progress still names them in order, one at a time.
+        var input = TestImages.Noise(300, 200, seed: 14);
+        var progress = new ProgressLog<UpscaleProgress>();
+        Run("legacy_x2.onnx", input, new UpscaleOptions { TileSize = 64, TilePadding = 8 }, progress);
+        var done = progress.Reports.Where(p => p.Region is not null).Select(p => p.Tile).ToList();
+        Assert.Equal(Enumerable.Range(1, done.Count), done);
+
+        using var model = UpscaleModel.Load(TestImages.Model("legacy_x2.onnx"), ExecutionDevice.Cpu);
+        using var cancel = new CancellationTokenSource();
+        var cancelling = new CallbackProgress(p =>
+        {
+            if (p.Tile == 3)
+                cancel.Cancel();
+        });
+        Assert.ThrowsAny<OperationCanceledException>(() => new Upscaler(model).Upscale(
+            input, new UpscaleOptions { TileSize = 64, TilePadding = 8 }, cancelling, cancel.Token));
+    }
+
+    private sealed class CallbackProgress(Action<UpscaleProgress> callback) : IProgress<UpscaleProgress>
+    {
+        public void Report(UpscaleProgress value) => callback(value);
+    }
 }

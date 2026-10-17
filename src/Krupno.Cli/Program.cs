@@ -170,6 +170,8 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
 
             if (model.FallbackReason is { } reason && i == 0)
                 Console.WriteLine($"  DirectML is unavailable, running on CPU: {reason}");
+            if (model.CompileFailure is { } compileFailure && i == 0)
+                Console.WriteLine($"  The accelerator can't compile the model for the cache, so it builds the engine on every start: {compileFailure}");
         }
     }
     finally
