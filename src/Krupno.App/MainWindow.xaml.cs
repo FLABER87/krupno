@@ -26,6 +26,12 @@ public partial class MainWindow : Window
         Height = Math.Min(Height, workArea.Height - 32);
         DataContext = _viewModel;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        _viewModel.RunFinished += (_, _) =>
+        {
+            // A batch can take an hour: if the user switched to another window meanwhile, the taskbar button asks for attention.
+            if (!IsActive)
+                TaskbarFlash.Start(this);
+        };
         Loaded += OnLoaded;
         SourceInitialized += (_, _) =>
         {
