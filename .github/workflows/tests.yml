@@ -1,4 +1,4 @@
-# Builds the solution and runs the synthetic CLI tests (tests/run_cli_tests.ps1).
+# Builds the solution and runs the unit tests (tests/Krupno.Core.Tests) and the synthetic CLI tests (tests/run_cli_tests.ps1).
 # The UI scripts (tests/gui_*.ps1) are not run here: they need a desktop and real models.
 name: Tests
 
@@ -39,6 +39,9 @@ jobs:
 
       - name: Build
         run: dotnet build Krupno.slnx -c Release
+
+      - name: Unit tests
+        run: dotnet test tests/Krupno.Core.Tests -c Release --no-build --logger "console;verbosity=normal"
 
       # The runner has no GPU. DXGI reports "Microsoft Basic Render Driver" without the SOFTWARE flag, but Krupno drops it
       # by VendorId/DeviceId, so the list has only auto and cpu, and "-d auto" goes straight to the CPU.

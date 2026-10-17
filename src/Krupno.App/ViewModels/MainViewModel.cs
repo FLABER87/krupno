@@ -86,6 +86,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private Option<ExecutionDevice> _selectedDevice;
     private Option<int> _selectedTile;
     private bool _seamlessTiles;
+    private bool _testTimeAugmentation;
     private PanelState _state = PanelState.Empty;
     private bool _isBusy;
     private bool _isDragOver;
@@ -145,6 +146,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         TileSizes = [new(384, "Auto"), new(256, "256 px"), new(512, "512 px"), new(768, "768 px"), new(1024, "1024 px"), new(0, "No tiling")];
         _selectedTile = TileSizes.FirstOrDefault(t => t.Value == _settings.TileSize) ?? TileSizes[0];
         _seamlessTiles = _settings.SeamlessTiles == true;
+        _testTimeAugmentation = _settings.TestTimeAugmentation == true;
 
         PrimaryCommand = new RelayCommand(() =>
         {
@@ -485,6 +487,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>Every pass in all 8 orientations, averaged: a little cleaner, eight times slower.</summary>
+    public bool TestTimeAugmentation
+    {
+        get => _testTimeAugmentation;
+        set
+        {
+            if (SetProperty(ref _testTimeAugmentation, value))
+            {
+                OnPropertyChanged(nameof(AdvancedSummary));
+                OnOutputSettingsChanged();
+            }
+        }
+    }
+
     public string AdvancedSummary
     {
         get
@@ -496,7 +512,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 384 when SelectedTile == TileSizes[0] => "auto tiles",
                 var size => $"{size} px tiles",
             };
-            return $"{Text.Device(device)} · {tile}{(SeamlessTiles ? ", seamless" : "")}";
+            return $"{Text.Device(device)} · {tile}{(SeamlessTiles ? ", seamless" : "")}{(TestTimeAugmentation ? ", TTA" : "")}";
         }
     }
 
@@ -901,6 +917,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var deviceOption = SelectedDevice;
         var settings = (Scale: choice.Scale, Target: choice.Target, Tile: SelectedTile.Value,
             Padding: SeamlessTiles ? SeamlessPadding : UpscaleOptions.Default.TilePadding, Strength: Strength,
+            Tta: TestTimeAugmentation,
             Format: SelectedFormat.Value, Quality: JpegQuality, Folder: OutputFolder);
         // All names up front: a result must not overwrite a queued source ("photo.png" → "photo_x4.png" while
         // "photo_x4.png" waits in the queue) or another result ("photo.jpg" and "photo.png" → "photo_x4.png").
@@ -965,7 +982,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             var options = new UpscaleOptions
             {
                 Scale = settings.Scale, Target = settings.Target, TileSize = settings.Tile, TilePadding = settings.Padding,
-                Strength = settings.Strength / 100.0,
+                Strength = settings.Strength / 100.0, TestTimeAugmentation = settings.Tta,
             };
 
             for (int i = 0; i < files.Count; i++)
@@ -1116,7 +1133,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 : $"Model: {info}{(info.IsHalfPrecision ? ", fp16" : "")} · {info.Path}";
             string device = runModel?.Device.ToString() ?? deviceOption.Label;
             string fallback = runModel?.FallbackReason is { } reason ? $"; DirectML is unavailable: {reason}" : "";
-            string tile = $"{(settings.Tile == 0 ? "no tiling" : $"tile {settings.Tile} px")}, overlap {settings.Padding} px";
+            string tile = $"{(settings.Tile == 0 ? "no tiling" : $"tile {settings.Tile} px")}, overlap {settings.Padding} px" +
+                          (settings.Tta ? ", TTA" : "");
             string format = settings.Format == ImageFileFormat.Jpeg ? $"JPEG {settings.Quality}" : settings.Format.ToString().ToUpperInvariant();
             return $"{modelLine}\nDevice: {device} (selected: {deviceOption.Label}{fallback}) · {tile} · strength {settings.Strength}% · " +
                    $"{Text.ScaleChoice(settings.Scale, settings.Target)} · {format} · {Text.Files(files.Count)} → {settings.Folder ?? "next to the originals"}";
@@ -1237,6 +1255,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             : "";
 
         string tileText = p.TileCount > 0 ? $"tile {p.Tile} of {p.TileCount}" : "";
+        if (p.RoundCount > 1)
+            tileText += $" · orientation {p.Round} of {p.RoundCount}";
         string pass = p.PassCount > 1 ? $" · pass {p.Pass} of {p.PassCount}" : "";
         ProgressDetail = count > 1
             ? $"File {index + 1} of {count} · {tileText}{pass}"
@@ -1246,6 +1266,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Finished tiles of the current pass for the overlay. Tiles finish row by row, so complete rows are merged into one
     /// rectangle: the overlay holds at most a row of tiles plus one, instead of growing with every tile (quadratic work on large images).
+    /// With test-time augmentation the image is turned, so a row of its tiles may be a column, and in any direction; the finished
+    /// rows or columns still make one rectangle along an edge.
     /// </summary>
     private sealed class TileProgress
     {
@@ -1260,8 +1282,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         public TileOverlay Add(Rect tile)
         {
-            // A tile at the left edge starts a new row, so the previous row is complete.
-            if (tile.X == 0 && _row.Count > 0)
+            // A tile out of line with the row starts a new one, so the previous row is complete. The first two tiles of a row
+            // tell whether it runs across (the same top) or down (the same left).
+            bool inRow = _row.Count switch
+            {
+                0 => true,
+                1 => tile.Y == _row[0].Y || tile.X == _row[0].X,
+                _ => _row[0].Y == _row[1].Y ? tile.Y == _row[0].Y : tile.X == _row[0].X,
+            };
+            if (!inRow)
             {
                 var rows = _rows ?? _row[0];
                 foreach (var done in _row)
@@ -1430,6 +1459,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _settings.OutputFolder = OutputFolder;
         _settings.TileSize = SelectedTile.Value;
         _settings.SeamlessTiles = SeamlessTiles;
+        _settings.TestTimeAugmentation = TestTimeAugmentation;
         _settings.Save();
     }
 

@@ -215,6 +215,7 @@ missing = [p.name for p in sources if not (out / "batch" / (p.stem + ".png")).ex
 check("batch", not missing and f"Done: {len(sources)} of {len(sources)}" in log("batch"),
       f"{len(sources) - len(missing)} of {len(sources)} files" + (f", missing: {', '.join(missing)}" if missing else ""))
 expect_nearest("noise_300x200.png", "batch/noise_300x200.png", 4, [1, 0, 0])
+expect_nearest("noise_300x200.png", "noise_red_tta.png", 4, [1, 0, 0])
 got = load(out / "batch" / "orient6.png") if (out / "batch" / "orient6.png").exists() else np.zeros((0, 0, 3))
 check("batch/orient6.png", got.shape == (160 * 4, 90 * 4, 3), f"shape {got.shape}")
 
@@ -245,6 +246,22 @@ check("bg_save_fail", "[1/2] Not saved:" in text and "Done: 1 of 2" in text
       and not (list(bgsave.glob("krupno-*.tmp")) if bgsave.exists() else []),
       " | ".join(line for line in text.splitlines() if "Not saved" in line or "Done" in line) or "empty output")
 expect_nearest("noise_300x200.png", "bgsave_out/b.png", 4, [1, 0, 0])
+
+# -r: the subfolder is repeated in the output folder. --skip-existing: with every result there nothing is loaded or written;
+# with one result deleted, only that one is made again.
+expect_nearest("noise_300x200.png", "tree_out/a.png", 4, [1, 0, 0])
+got = load(out / "tree_out" / "sub" / "b.png") if (out / "tree_out" / "sub" / "b.png").exists() else np.zeros((0, 0, 3))
+check("tree_out/sub/b.png", got.shape == (160 * 4, 90 * 4, 3), f"shape {got.shape}")
+text = log("skip_all")
+check("skip_all", "Skipping 2 of 2" in text and "Model:" not in text, " | ".join(text.splitlines()) or "empty output")
+text = log("skip_some")
+check("skip_some", "Skipping 1 of 2" in text and "sub" in text and "a.png" not in text.replace("Skipping", ""),
+      " | ".join(line for line in text.splitlines() if line.strip()) or "empty output")
+
+# A pattern and a file together: the pattern takes a.png and b.png but not c.jpg, and all go into one folder.
+multi = out / "multi_out"
+check("multi_pattern", sorted(p.name for p in multi.iterdir()) == ["a.png", "b.png", "orient6.png"] if multi.exists() else False,
+      ", ".join(sorted(p.name for p in multi.iterdir())) if multi.exists() else "folder missing")
 
 print("ALL OK" if failures == 0 else f"{failures} FAILED")
 sys.exit(1 if failures else 0)

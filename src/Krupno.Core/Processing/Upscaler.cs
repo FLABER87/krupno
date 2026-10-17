@@ -27,6 +27,10 @@ public sealed record UpscaleOptions
     /// the source: below 1 it tones down invented textures and oversharpening.</summary>
     public double Strength { get; init; } = 1;
 
+    /// <summary>Test-time augmentation: every pass runs on the image in all 8 rotations and mirrorings, and the results, turned
+    /// back, are averaged. Eight times slower; evens out noise and the network's preference for some directions.</summary>
+    public bool TestTimeAugmentation { get; init; }
+
     /// <summary>The final scale for an image of this size: from <see cref="Target"/>, <see cref="Scale"/> or the model's own.</summary>
     public double ScaleFor(int width, int height, int modelScale) =>
         Target?.ScaleFor(width, height) ?? (Scale > 0 ? Scale : modelScale);
@@ -35,13 +39,15 @@ public sealed record UpscaleOptions
 /// <summary>A finished tile as fractions of the current pass's image sides (0..1), for highlighting in the preview.</summary>
 public readonly record struct TileRegion(double Left, double Top, double Width, double Height);
 
-/// <param name="Region">The tile that was just processed; null for a message or the start of a pass.</param>
+/// <param name="Region">The tile that was just processed; null for a message or the start of a pass or round.</param>
+/// <param name="Round">With test-time augmentation, which of the <paramref name="RoundCount"/> orientations of the pass is running;
+/// each round goes through all the tiles again.</param>
 /// <param name="IsWarning">The message reports something the user should know about (the tile was reduced, memory ran out),
 /// not just the next stage of the work.</param>
 public readonly record struct UpscaleProgress(int Pass, int PassCount, int Tile, int TileCount, string? Message = null,
-    TileRegion? Region = null, bool IsWarning = false)
+    TileRegion? Region = null, bool IsWarning = false, int Round = 1, int RoundCount = 1)
 {
-    public double Fraction => TileCount == 0 ? 0 : (Pass - 1 + (double)Tile / TileCount) / PassCount;
+    public double Fraction => TileCount == 0 ? 0 : (Pass - 1 + (Round - 1 + (double)Tile / TileCount) / RoundCount) / PassCount;
 }
 
 public sealed class Upscaler(UpscaleModel model)
@@ -49,6 +55,8 @@ public sealed class Upscaler(UpscaleModel model)
     private const int MinimumTileSize = 128;
     private const int ShrinkGrid = 64;
     private const int FineShrinkLimit = 512;
+    /// <summary>The rounds of test-time augmentation: the 8 orientations.</summary>
+    private const int RoundCount = 8;
 
     /// <summary>The tile chosen after running out of memory has already been reported: once per batch, not for every frame and pass.</summary>
     private bool _tileLimitReported;
@@ -125,7 +133,7 @@ public sealed class Upscaler(UpscaleModel model)
         return current;
     }
 
-    private static int PassCount(double scale, int modelScale)
+    internal static int PassCount(double scale, int modelScale)
     {
         if (modelScale <= 1)
             return 1;
@@ -173,6 +181,86 @@ public sealed class Upscaler(UpscaleModel model)
     }
 
     private ImageBuffer RunPass(ImageBuffer source, UpscaleOptions options, int pass, int passCount,
+        IProgress<UpscaleProgress>? progress, CancellationToken cancellationToken)
+    {
+        if (!options.TestTimeAugmentation)
+            return RunOrientation(source, options, pass, passCount, progress, cancellationToken);
+
+        // The EXIF orientations 1–8 are exactly the 8 rotations and mirrorings. Each result is turned back and added up;
+        // the network output is opaque, so only the colors are summed (8 × 255 fits in a ushort).
+        ushort[]? sum = null;
+        ImageBuffer? result = null;
+        for (int orientation = 1; orientation <= RoundCount; orientation++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var turned = source.ApplyExifOrientation(orientation);
+            var roundProgress = progress is null ? null : new RoundProgress(progress, orientation);
+            result = RunOrientation(turned, options, pass, passCount, roundProgress, cancellationToken)
+                .ApplyExifOrientation(InverseOrientation(orientation));
+            sum ??= new ushort[result.Width * result.Height * 3];
+            AddColors(result.Pixels, sum);
+        }
+
+        // The last result becomes the average.
+        Average(sum!, RoundCount, result!.Pixels);
+        return result;
+    }
+
+    /// <summary>Adds the colors of BGRA pixels to <paramref name="sum"/>, three per pixel.</summary>
+    internal static void AddColors(ReadOnlySpan<byte> bgra, Span<ushort> sum)
+    {
+        for (int i = 0, s = 0; i < bgra.Length; i += ImageBuffer.BytesPerPixel, s += 3)
+        {
+            sum[s] += bgra[i];
+            sum[s + 1] += bgra[i + 1];
+            sum[s + 2] += bgra[i + 2];
+        }
+    }
+
+    /// <summary>Writes the colors of <paramref name="sum"/> divided by <paramref name="count"/>, rounded to the nearest level
+    /// (halves up), into BGRA pixels; alpha stays.</summary>
+    internal static void Average(ReadOnlySpan<ushort> sum, int count, Span<byte> bgra)
+    {
+        for (int i = 0, s = 0; i < bgra.Length; i += ImageBuffer.BytesPerPixel, s += 3)
+        {
+            bgra[i] = (byte)((sum[s] + count / 2) / count);
+            bgra[i + 1] = (byte)((sum[s + 1] + count / 2) / count);
+            bgra[i + 2] = (byte)((sum[s + 2] + count / 2) / count);
+        }
+    }
+
+    /// <summary>The orientation that turns an image in EXIF orientation <paramref name="orientation"/> back: the two quarter
+    /// turns undo each other, and every other one undoes itself.</summary>
+    internal static int InverseOrientation(int orientation) => orientation switch { 6 => 8, 8 => 6, _ => orientation };
+
+    /// <summary>
+    /// A tile of the turned image as a part of the image as it is (both as fractions of the sides): the inverse of the
+    /// pixel mapping in <see cref="ImageBuffer.ApplyExifOrientation"/>.
+    /// </summary>
+    internal static TileRegion Unturn(TileRegion r, int orientation) => orientation switch
+    {
+        2 => r with { Left = 1 - r.Left - r.Width },
+        3 => r with { Left = 1 - r.Left - r.Width, Top = 1 - r.Top - r.Height },
+        4 => r with { Top = 1 - r.Top - r.Height },
+        5 => new TileRegion(r.Top, r.Left, r.Height, r.Width),
+        6 => new TileRegion(r.Top, 1 - r.Left - r.Width, r.Height, r.Width),
+        7 => new TileRegion(1 - r.Top - r.Height, 1 - r.Left - r.Width, r.Height, r.Width),
+        8 => new TileRegion(1 - r.Top - r.Height, r.Left, r.Height, r.Width),
+        _ => r,
+    };
+
+    /// <summary>Marks the reports of one round and shows its tiles where they are on the image as it is.</summary>
+    private sealed class RoundProgress(IProgress<UpscaleProgress> inner, int orientation) : IProgress<UpscaleProgress>
+    {
+        public void Report(UpscaleProgress value) => inner.Report(value with
+        {
+            Round = orientation,
+            RoundCount = RoundCount,
+            Region = value.Region is { } region ? Unturn(region, orientation) : null,
+        });
+    }
+
+    private ImageBuffer RunOrientation(ImageBuffer source, UpscaleOptions options, int pass, int passCount,
         IProgress<UpscaleProgress>? progress, CancellationToken cancellationToken)
     {
         int scale = model.Info.Scale;

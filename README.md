@@ -19,7 +19,7 @@ Images are read and written with WIC (built into Windows), the UI is WPF, and GP
 src/Krupno.Core    library: model, tiling, inference, resampling, codecs
 src/Krupno.Cli     command-line tool krupno-cli.exe
 src/Krupno.App     WPF window (Krupno.exe)
-tests/             synthetic tests through the CLI and UI scripts
+tests/             unit tests (Krupno.Core.Tests), synthetic tests through the CLI and UI scripts
 installer/         Inno Setup installer and release build
 tools/             PyTorch → ONNX model conversion (Python, development only)
 models/            put .onnx files here (not committed to git)
@@ -157,14 +157,20 @@ krupno-cli photo.jpg -s 2 -f jpg -q 92        # ×2 result as JPEG
 krupno-cli C:\photos -o C:\photos_x4          # a whole folder
 krupno-cli photo.png -m realesr-general-x4v3 -d gpu1 -t 256
 krupno-cli photo.jpg --strength 70              # 70% network, 30% plain Lanczos resize
+krupno-cli photo.jpg --tta                      # all 8 rotations and mirrorings, averaged (8 times slower)
 krupno-cli C:\photos --long-side 3840           # every result 3840 px on its longer side
+krupno-cli C:\photos -r -o D:\x4                # subfolders too, repeated under D:\x4
+krupno-cli C:\photos -r -o D:\x4 --skip-existing   # resume: only the images without a result
+krupno-cli *.jpg scan.png -o C:\x4             # several inputs; krupno-cli expands the pattern itself
 krupno-cli --list-models --list-devices
 ```
 
 See `krupno-cli --help` for details. Ctrl+C cancels processing. While it runs, Windows does not go to sleep on idle.
 
 A result never replaces a source image or another result of the same run: if `-o` points at the source's own folder,
-or a folder has both `photo.jpg` and `photo.png`, the second name gets ` (2)` (`photo (2).png`). An existing file from an earlier run is overwritten.
+or a folder has both `photo.jpg` and `photo.png`, the second name gets ` (2)` (`photo (2).png`). An existing file from an earlier run is overwritten, unless `--skip-existing` is given: then that image is left out, and if nothing is left the model isn't even loaded.
+
+Several files, folders and patterns can be given at once. cmd and PowerShell don't expand `*.jpg` for a program like krupno-cli, so it expands patterns itself, in the file name only (`photos\*.jpg`, not `pho*\a.jpg`); `*.jpg` doesn't match `.jpeg`. A file or pattern without `-o` keeps its result next to the source, a folder fills `<folder>_upscaled`; with `-o` everything goes into that folder. With `-r` the images in subfolders are taken too, and their folders are repeated in the output folder. An image that is the result of another one in the same command is left out, so `*.png` next to the sources or `-o` inside the folder with `-r` doesn't upscale the results of an earlier run again.
 
 In a batch, a file's line (size, time, output path) is printed as soon as it is upscaled, while its result is still being written in the background. If that save fails, `[i/n] Not saved: …` follows once the next file is done, the file counts as failed, and the exit code is 1.
 
@@ -206,6 +212,19 @@ The app icon is drawn by `tools/make_icon.py` (requires Pillow and numpy).
 
 ## Tests
 
+The unit tests (`tests/Krupno.Core.Tests`, xUnit) run in a couple of seconds and need nothing besides the .NET SDK:
+
+```bash
+dotnet test tests/Krupno.Core.Tests -c Release
+```
+
+They cover the tile plan (cores that cover the image without gaps, real context around each, mirroring at the edges), output names that would clash,
+the Lanczos resizes (the blend for strength clips the plain resize to 0..255 first and leaves alpha alone; colors under transparency don't leak),
+target sizes and the number of passes, the SIMD packing of the network's output against the scalar conversion (NaN, infinities and values outside 0..1 included),
+the command-line options, and the whole pipeline on the CPU with the synthetic models below: exact results for every model, strength 50% against the formula,
+and `--pad 64` giving the same result in 35 tiles instead of 24 on a 1920×1200 image. They also hand paths from 12 clients at once to a window over the named pipe
+(`SingleInstance` from the app, compiled into the tests), and every path must arrive.
+
 The synthetic tests run the Release build through the command-line tool. The models in `tests/fixtures/models` are a few hundred bytes each.
 Each one upscales the image with nearest neighbor and keeps some of the color channels. So the correct result is known down to the pixel, and a mixed-up channel order shows immediately.
 Requires Python with numpy and Pillow:
@@ -224,7 +243,7 @@ strength (the blend is checked against the same Lanczos filter computed in numpy
 a save that fails in the background during a batch, target sizes (`--width` with the name it gives, `--long-side` after the EXIF rotation, `-s` together with a target size refused),
 output names that would overwrite a source or another result, and broken files.
 `python tests/make_fixtures.py --models` regenerates the models (it also needs the `onnx` package).
-On GitHub, the `.github/workflows/tests.yml` workflow (`windows-latest`) builds and runs these tests on every push and pull request. The runner has no GPU, and Krupno does not count "Microsoft Basic Render Driver" as one. So the workflow runs the script with the `-CheckFallback` switch: it sets `KRUPNO_BASIC_RENDER_DRIVER=1`, "Auto" picks that adapter, DirectML fails to start on it, and every "GPU" run must fall back to the CPU. This is how the fallback is tested. If the tests fail, `tests/out/cli` is uploaded as the `cli-tests-out` artifact.
+On GitHub, the `.github/workflows/tests.yml` workflow (`windows-latest`) builds and runs the unit tests and these tests on every push and pull request. The runner has no GPU, and Krupno does not count "Microsoft Basic Render Driver" as one. So the workflow runs the script with the `-CheckFallback` switch: it sets `KRUPNO_BASIC_RENDER_DRIVER=1`, "Auto" picks that adapter, DirectML fails to start on it, and every "GPU" run must fall back to the CPU. This is how the fallback is tested. If the tests fail, `tests/out/cli` is uploaded as the `cli-tests-out` artifact.
 Dependabot (`.github/dependabot.yml`) opens weekly update PRs for ONNX Runtime and the GitHub Actions, so these tests check every update before it is merged. The Python requirements are left out: `tools/requirements.txt` sets deliberate lower bounds, which Dependabot would raise.
 
 The UI scripts launch `Krupno.exe` and drive the window through UI Automation.
@@ -243,6 +262,7 @@ Both scripts swap `%LOCALAPPDATA%\Krupno\settings.json` for the duration of the 
 - **CPU fallback.** In "Auto" mode the GPU with the most memory is used; if DirectML fails to start, the work runs on the CPU, and the window says so during processing. Running out of video memory is not a reason to fall back: once DirectML has created a session for the model, or when the error reads as out of memory, the tile shrinks instead. The software "Microsoft Basic Render Driver" does not count as a GPU: on a machine without a GPU it is not in the device list, and "Auto" goes straight to the CPU.
 - **Any scale or size.** `--width`, `--height` and `--long-side` ("Other" in the window) set one side of the result in pixels instead of a scale: the scale is worked out for each image, the other side follows its proportions, and next to the source the name gets `_3840w`, `_2160h` or `_3840px`. The network runs as many times as needed (×8 with a ×4 model is two passes), then the result is resized precisely with a Lanczos-3 filter. If the last pass would not fit in memory at full size (×8 of a 1920×1200 photo makes a 30720×19200 intermediate), its input is first reduced so that the pass lands just above the target size, and a message says so. A size just above the model's own scale takes the second pass too: 3840 px wide from a 900 px photo is ×4.27, so a ×4 model runs twice (×16) and the result is reduced. The window shows the scale next to the output size for this reason.
 - **Strength.** Below 100%, the result is `plain + strength × (network − plain)`, where `plain` is a Lanczos resize of the pixels the network saw (with transparency, the colors filled in under alpha 0) to the output size, clipped to 0..255 like a saved image. The alpha stays as computed for the full-strength result. The mix is done band by band, so the plain resize never exists whole: for a 7680×4800 result it adds under a second on a 4-core CPU.
+- **Test-time augmentation** (`--tta`, "Test-time augmentation" in "Advanced"). Every network pass runs on the image in all 8 rotations and mirrorings, each result is turned back, and the 8 are averaged, rounded to the nearest level. Networks are not quite the same in every direction, so this evens out noise and artifacts that lean one way, at 8 times the time. Each orientation is tiled on its own, as an image of its own; the preview shows the tiles where they are on the image as it is. If the image is smaller than a tile on one side, a quarter turn also turns the window, and on the GPU that is a second compiled graph.
 - **Batches.** A result is written while the next file is loaded and upscaled, so the GPU doesn't wait for the encoder (compressing a 7680×4800 PNG can take seconds, most of a frame for a fast model). One save runs at a time, so files finish in order. The last file of a batch, and a result larger than 512 MB, are written right away instead: one more result in memory, plus the encoder's copy of it, could make a large batch run out of memory. On cancellation or an error, a result already being written is finished and counts as done.
 - **The alpha channel** is scaled separately (Lanczos); the network processes RGB. The color under fully transparent pixels is first filled from the nearest visible pixel, so the edges don't pick up the color stored there (usually black), and the final resize weights colors by alpha.
 - **EXIF rotation** is applied to the pixels. An RGB ICC profile is carried over to the result (see below), and the metadata too if the output format matches the source.
@@ -255,7 +275,6 @@ Both scripts swap `%LOCALAPPDATA%\Krupno\settings.json` for the duration of the 
 - WebP/AVIF output (WIC has no encoders for them; this needs a custom implementation or a separate library).
 - Overlapping the preparation of the next tile with inference of the current one.
 - A model catalog with downloads and license checks right in the window (currently only the installer downloads models).
-- Unit tests for `Krupno.Core`. The current tests are end-to-end: synthetic models through the CLI (also run in CI) and UI scripts (see [Tests](#tests)).
 
 ## License
 

@@ -16,4 +16,8 @@
     <Using Include="System.IO" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Krupno.Core.Tests" />
+  </ItemGroup>
+
 </Project>

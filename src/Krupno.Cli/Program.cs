@@ -20,7 +20,7 @@ catch (CliException ex)
     return 2;
 }
 
-if (options.Help || (options.Input is null && !options.ListModels && !options.ListDevices))
+if (options.Help || (options.Inputs.Count == 0 && !options.ListModels && !options.ListDevices))
 {
     Console.WriteLine(CliOptions.Usage);
     return options.Help ? 0 : 2;
@@ -44,7 +44,7 @@ if (options.ListModels)
         Console.WriteLine("  (* = default model)");
 }
 
-if (options.Input is null)
+if (options.Inputs.Count == 0)
     return 0;
 
 using var cts = new CancellationTokenSource();
@@ -77,27 +77,33 @@ catch (Exception ex) when (ex is CliException or IOException or NotSupportedExce
 
 static int Run(CliOptions options, CancellationToken cancellationToken)
 {
-    // Check the input before loading the model: inspecting a large model takes seconds.
-    string inputPath = Path.GetFullPath(options.Input!);
-    if (!Directory.Exists(inputPath) && !File.Exists(inputPath))
-        throw new CliException($"File or folder not found: {inputPath}");
-
+    // The jobs are planned before the model is loaded, which takes seconds: the model file is only inspected for its scale,
+    // and that inspection is cached for the load. A wrong path or a batch with nothing left to do fails or ends right away.
     string modelPath = ResolveModel(options.Model);
+    // Next to the source, the name says what was asked for: "_x4", "_x2.5", "_3840w".
+    string suffix = options.Target?.Suffix
+        ?? "_x" + (options.Scale > 0 ? options.Scale : UpscaleModel.Inspect(modelPath).Scale).ToString("0.##", CultureInfo.InvariantCulture);
+    var jobs = JobPlanner.Plan(options.Inputs, options.Output, options.Format, options.Recursive, suffix);
+    if (jobs.Count == 0)
+        throw new CliException($"No supported images found in {string.Join(", ", options.Inputs.Select(i => $"\"{i}\""))}.");
+    if (options.SkipExisting)
+    {
+        int planned = jobs.Count;
+        jobs.RemoveAll(job => File.Exists(job.Output));
+        if (jobs.Count < planned)
+            Console.WriteLine($"Skipping {planned - jobs.Count} of {planned} images: their results are already there.");
+        if (jobs.Count == 0)
+            return 0;
+    }
+
     using var keepAwake = new KeepAwake();
     var stopwatch = Stopwatch.StartNew();
     using var model = UpscaleModel.Load(modelPath, ParseDevice(options.Device));
-
-    // Next to the source, the name says what was asked for: "_x4", "_x2.5", "_3840w".
-    string suffix = options.Target?.Suffix
-        ?? "_x" + (options.Scale > 0 ? options.Scale : model.Info.Scale).ToString("0.##", CultureInfo.InvariantCulture);
-    var jobs = PlanJobs(options, suffix);
-    if (jobs.Count == 0)
-        throw new CliException($"No supported images found in \"{options.Input}\".");
     var upscaler = new Upscaler(model);
     var upscaleOptions = new UpscaleOptions
     {
         Scale = options.Scale, Target = options.Target, TileSize = options.Tile, TilePadding = options.Padding,
-        Strength = options.Strength / 100.0,
+        Strength = options.Strength / 100.0, TestTimeAugmentation = options.TestTimeAugmentation,
     };
 
     Console.WriteLine($"Model:  {model.Info}{(model.Info.IsHalfPrecision ? ", fp16" : "")}");
@@ -180,53 +186,6 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
         }
         pendingSave = null;
     }
-}
-
-static List<(string Input, string Output)> PlanJobs(CliOptions options, string suffix)
-{
-    string input = Path.GetFullPath(options.Input!);
-
-    if (Directory.Exists(input))
-    {
-        string outputDir = options.Output is null
-            ? input.TrimEnd(Path.DirectorySeparatorChar) + "_upscaled"
-            : Path.GetFullPath(options.Output);
-        var extension = ImageCodec.GetExtension(options.Format ?? ImageFileFormat.Png);
-        var files = Directory.EnumerateFiles(input)
-            .Where(ImageCodec.IsSupportedInput)
-            .Order(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-        var outputs = OutputPaths.MakeUnique(files,
-            files.Select(file => Path.Combine(outputDir, Path.GetFileNameWithoutExtension(file) + extension)).ToList());
-        return files.Zip(outputs).ToList();
-    }
-
-    if (!File.Exists(input))
-        throw new CliException($"File or folder not found: {input}");
-
-    string output;
-    if (options.Output is null)
-    {
-        var extension = ImageCodec.GetExtension(options.Format ?? ImageFileFormat.Png);
-        output = Path.Combine(Path.GetDirectoryName(input)!, Path.GetFileNameWithoutExtension(input) + suffix + extension);
-    }
-    else if (Directory.Exists(options.Output) || options.Output.EndsWith('\\') || options.Output.EndsWith('/'))
-    {
-        // The source's folder is a valid choice too: then the name gets " (2)" instead of replacing the source.
-        var extension = ImageCodec.GetExtension(options.Format ?? ImageFileFormat.Png);
-        output = OutputPaths.MakeUnique([input],
-            [Path.Combine(Path.GetFullPath(options.Output), Path.GetFileNameWithoutExtension(input) + extension)])[0];
-    }
-    else
-    {
-        output = Path.GetFullPath(options.Output);
-        if (string.Equals(output, input, StringComparison.OrdinalIgnoreCase))
-            throw new CliException("The output file is the source image itself; choose another name.");
-        // An unknown extension would get PNG data under a misleading name; a name without an extension stays PNG.
-        if (options.Format is null && Path.GetExtension(output) is { Length: > 0 } extension && ImageCodec.FormatFromExtension(output) is null)
-            throw new CliException($"Unknown output format \"{extension}\": use .png, .jpg, .tif or .bmp, or set it with -f.");
-    }
-    return [(input, output)];
 }
 
 static string ResolveModel(string? model)

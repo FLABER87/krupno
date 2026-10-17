@@ -4,4 +4,7 @@
     <Project Path="src/Krupno.Cli/Krupno.Cli.csproj" />
     <Project Path="src/Krupno.Core/Krupno.Core.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Krupno.Core.Tests/Krupno.Core.Tests.csproj" />
+  </Folder>
 </Solution>
