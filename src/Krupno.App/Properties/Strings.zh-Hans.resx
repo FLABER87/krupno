@@ -51,6 +51,12 @@
   <data name="Change" xml:space="preserve">
     <value>更改</value>
   </data>
+  <data name="CheckForUpdates" xml:space="preserve">
+    <value>检查更新</value>
+  </data>
+  <data name="CheckForUpdates_Description" xml:space="preserve">
+    <value>启动时向 github.com 查询 Krupno 的最新版本。不会发送其他任何内容，也不会下载任何内容。</value>
+  </data>
   <data name="Chip_Original" xml:space="preserve">
     <value>原图 · {0} × {1}</value>
   </data>
@@ -453,6 +459,15 @@
   </data>
   <data name="Unit_MB" xml:space="preserve">
     <value>{0} MB</value>
+  </data>
+  <data name="Update_Available" xml:space="preserve">
+    <value>Krupno {0} 已发布</value>
+  </data>
+  <data name="Update_Download" xml:space="preserve">
+    <value>下载</value>
+  </data>
+  <data name="Update_Hide" xml:space="preserve">
+    <value>隐藏</value>
   </data>
   <data name="Upscale" xml:space="preserve">
     <value>放大</value>

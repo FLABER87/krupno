@@ -45,9 +45,11 @@ function Restore-Settings {
     else { Remove-Item -LiteralPath $SettingsPath -ErrorAction SilentlyContinue }
 }
 # The window is set to English whatever the Windows language: the scripts find buttons and texts by their English names.
+# The update check is off: the scripts stay offline, and a newer release's notice doesn't change the screenshots.
 function Settings([string]$Model) {
     New-Item -ItemType Directory -Force (Split-Path $SettingsPath) | Out-Null
-    [IO.File]::WriteAllText($SettingsPath, "{ `"Model`": `"$Model`", `"DeviceKind`": `"Auto`", `"Language`": `"en`" }",
+    [IO.File]::WriteAllText($SettingsPath,
+        "{ `"Model`": `"$Model`", `"DeviceKind`": `"Auto`", `"Language`": `"en`", `"CheckForUpdates`": false }",
         (New-Object Text.UTF8Encoding $false))
 }
 

@@ -51,6 +51,12 @@
   <data name="Change" xml:space="preserve">
     <value>Thay đổi</value>
   </data>
+  <data name="CheckForUpdates" xml:space="preserve">
+    <value>Kiểm tra bản cập nhật</value>
+  </data>
+  <data name="CheckForUpdates_Description" xml:space="preserve">
+    <value>Khi khởi động, hỏi github.com bản phát hành Krupno mới nhất là bản nào. Không gửi gì khác và không tải xuống gì.</value>
+  </data>
   <data name="Chip_Original" xml:space="preserve">
     <value>Ảnh gốc · {0} × {1}</value>
   </data>
@@ -453,6 +459,15 @@
   </data>
   <data name="Unit_MB" xml:space="preserve">
     <value>{0} MB</value>
+  </data>
+  <data name="Update_Available" xml:space="preserve">
+    <value>Đã có Krupno {0}</value>
+  </data>
+  <data name="Update_Download" xml:space="preserve">
+    <value>Tải xuống</value>
+  </data>
+  <data name="Update_Hide" xml:space="preserve">
+    <value>Ẩn</value>
   </data>
   <data name="Upscale" xml:space="preserve">
     <value>Phóng to</value>

@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
@@ -89,6 +91,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private Option<int> _selectedTile;
     private bool _seamlessTiles;
     private bool _testTimeAugmentation;
+    private bool _checkForUpdates;
+    private readonly (bool Enabled, string SetAt)? _installerUpdateChoice;
+    /// <summary>A newer release that github.com named at startup (see UpdateCheck); null if there is none, or it was hidden.</summary>
+    private (Version Version, string Page)? _update;
     private IReadOnlyList<Option<ExecutionDevice>> _devices;
     private IReadOnlyList<AcceleratorPackage> _acceleratorPackages = [];
     /// <summary>Whether the accelerators are known yet: until then a saved accelerator must not be overwritten by "Auto".</summary>
@@ -160,6 +166,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _selectedTile = TileSizes.FirstOrDefault(t => t.Value == _settings.TileSize) ?? TileSizes[0];
         _seamlessTiles = _settings.SeamlessTiles == true;
         _testTimeAugmentation = _settings.TestTimeAugmentation == true;
+        // The user's own choice in the window, else the installer's, else on (the portable ZIP); a newer installation that
+        // turned the check off wins over the user's choice.
+        _installerUpdateChoice = UpdateCheck.InstallerChoice();
+        bool? updateChoice = _settings.CheckForUpdates;
+        string? updateChoiceSetAt = _settings.CheckForUpdatesSetAt;
+        _checkForUpdates = UpdateCheck.Decide(ref updateChoice, ref updateChoiceSetAt, _installerUpdateChoice);
+        if (updateChoice != _settings.CheckForUpdates || updateChoiceSetAt != _settings.CheckForUpdatesSetAt)
+        {
+            _settings.CheckForUpdates = updateChoice;
+            _settings.CheckForUpdatesSetAt = updateChoiceSetAt;
+            _settings.Save();
+        }
         Languages = [new(null, Strings.Language_Windows), .. UiLanguage.All.Select(l => new Option<string?>(l.Culture, l.Name))];
         _selectedLanguage = Languages.FirstOrDefault(l => l.Value == _settings.Language) ?? Languages[0];
         _startupLanguage = _selectedLanguage.Value;
@@ -189,7 +207,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ToggleAllModelsCommand = new RelayCommand(() => ShowAllModels = !ShowAllModels);
         InstallAcceleratorsCommand = new RelayCommand(() => _ = InstallAcceleratorsAsync(),
             () => !IsBusy && !_installingAccelerators && MissingAccelerators.Count > 0);
+        OpenUpdateCommand = new RelayCommand(OpenUpdate, () => _update is not null);
+        HideUpdateCommand = new RelayCommand(() => SetUpdate(null));
         _ = LoadAcceleratorsAsync();
+        if (_checkForUpdates)
+            _ = CheckForUpdatesAsync();
 
         _toastTimer.Tick += (_, _) =>
         {
@@ -541,6 +563,28 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>"Check for updates" in "Advanced" (see UpdateCheck). Turned on, it checks right away; turned off, the notice goes.</summary>
+    public bool CheckForUpdates
+    {
+        get => _checkForUpdates;
+        set
+        {
+            if (!SetProperty(ref _checkForUpdates, value))
+                return;
+            // Kept as the user's own choice from now on: it overrides the installer's, until an installation turns it off.
+            _settings.CheckForUpdates = value;
+            _settings.CheckForUpdatesSetAt = _installerUpdateChoice?.SetAt;
+            SaveSettings();
+            if (value)
+                _ = CheckForUpdatesAsync();
+            else
+                SetUpdate(null);
+        }
+    }
+
+    /// <summary>"Krupno 0.3.0 is available" above the settings; null while there is nothing newer.</summary>
+    public string? UpdateText => _update is { } update ? string.Format(Strings.Update_Available, update.Version.ToString(3)) : null;
+
     public IReadOnlyList<Option<string?>> Languages { get; }
 
     public Option<string?> SelectedLanguage
@@ -738,6 +782,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand OpenModelsFolderCommand { get; }
     public ICommand ToggleAllModelsCommand { get; }
     public ICommand InstallAcceleratorsCommand { get; }
+    public ICommand OpenUpdateCommand { get; }
+    public ICommand HideUpdateCommand { get; }
 
     private FileItem? ResultFile => CurrentFile is { IsDone: true } current ? current : _lastDone;
 
@@ -1813,6 +1859,51 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(HasAcceleratorOffer));
         OnPropertyChanged(nameof(AcceleratorOffer));
         CommandManager.InvalidateRequerySuggested();
+    }
+
+    // ── Updates ─────────────────────────────────────────────────────
+
+    /// <summary>Asks github.com once which release is the latest (see UpdateCheck); a failure only goes to the log.</summary>
+    private async Task CheckForUpdatesAsync()
+    {
+        var current = UpdateCheck.Current;
+        try
+        {
+            var newer = await UpdateCheck.FindNewerAsync(current);
+            Log.Info(newer is { } found
+                ? $"Update check: Krupno {found.Version.ToString(3)} is available, {found.Page}"
+                : $"Update check: no release newer than {current.ToString(3)}");
+            // Turned off while the request was on its way: then nothing is shown.
+            if (newer is not null && CheckForUpdates)
+                SetUpdate(newer);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or UriFormatException)
+        {
+            Log.Warning($"Update check failed: {ex.Message}");
+        }
+    }
+
+    private void SetUpdate((Version Version, string Page)? update)
+    {
+        _update = update;
+        OnPropertyChanged(nameof(UpdateText));
+        CommandManager.InvalidateRequerySuggested();
+    }
+
+    /// <summary>The release page in the browser: the installer and the ZIP are there, with what has changed.</summary>
+    private void OpenUpdate()
+    {
+        if (_update is not { } update)
+            return;
+        try
+        {
+            Process.Start(new ProcessStartInfo(update.Page) { UseShellExecute = true });
+        }
+        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
+        {
+            Log.Warning($"Can't open {update.Page}: {ex.Message}");
+            ShowToast(ex.Message);
+        }
     }
 
     private void ShowToast(string message)

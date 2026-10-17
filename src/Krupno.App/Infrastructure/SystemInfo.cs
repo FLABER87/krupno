@@ -35,7 +35,7 @@ public static class SystemInfo
 
     /// <summary>
     /// The version of a DLL next to the program, read from the file: DirectML.dll from System32 is never used (see
-    /// Directory.Build.props), and asking ONNX Runtime itself would start it before UpscaleModel turns off its telemetry.
+    /// Directory.Build.props), and asking ONNX Runtime itself would start its environment here rather than through OnnxEnvironment.
     /// </summary>
     private static string FileVersion(string name)
     {

@@ -125,6 +125,7 @@ Name: "models\general"; Description: "{cm:ModelGeneral}"; Types: full
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 Name: "path"; Description: "{cm:TaskPath}"; GroupDescription: "{cm:GroupCommandLine}"
 Name: "contextmenu"; Description: "{cm:TaskContextMenu}"; GroupDescription: "{cm:GroupExplorer}"
+Name: "updatecheck"; Description: "{cm:TaskUpdateCheck}"; GroupDescription: "{cm:GroupUpdates}"
 
 [Files]
 Source: "{#AppDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: app
@@ -159,6 +160,12 @@ Root: HKA; Subkey: "{#FolderVerb}"; ValueType: string; ValueData: "{cm:ContextMe
 Root: HKA; Subkey: "{#FolderVerb}"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\Krupno.exe,0"; Tasks: contextmenu
 Root: HKA; Subkey: "{#FolderVerb}"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Document"; Tasks: contextmenu
 Root: HKA; Subkey: "{#FolderVerb}\command"; ValueType: string; ValueData: """{app}\Krupno.exe"" ""%1"""; Tasks: contextmenu
+; The update check (src/Krupno.App/Infrastructure/UpdateCheck.cs) as chosen here: the app's default until the user changes
+; "Check for updates" in the window. With its time: a check turned off in an installation stays off even if the user had
+; turned it on in the window before, and the user can turn it on there again afterwards.
+Root: HKA; Subkey: "Software\Krupno"; ValueType: dword; ValueName: "CheckForUpdates"; ValueData: 1; Flags: uninsdeletekey; Tasks: updatecheck
+Root: HKA; Subkey: "Software\Krupno"; ValueType: dword; ValueName: "CheckForUpdates"; ValueData: 0; Flags: uninsdeletekey; Tasks: not updatecheck
+Root: HKA; Subkey: "Software\Krupno"; ValueType: string; ValueName: "CheckForUpdatesSetAt"; ValueData: "{code:InstallStamp}"; Flags: uninsdeletekey
 
 [UninstallDelete]
 ; The accelerators' compiled models: up to 2 GB, and the app compiles them again when needed.
@@ -291,6 +298,13 @@ begin
     Log('Could not write ' + Path)
   else
     Log('The app will start in ' + Culture + ', the language chosen for Setup');
+end;
+
+// When this installation made its update check choice (the [Registry] entries): the app tells a check turned off in this
+// installation from one turned off in an earlier one, after which the user may have turned it on in the window again.
+function InstallStamp(Param: String): String;
+begin
+  Result := GetDateTimeString('yyyy-mm-dd hh:nn:ss', '-', ':');
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);

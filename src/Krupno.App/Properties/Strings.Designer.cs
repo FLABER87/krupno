@@ -177,6 +177,24 @@ namespace Krupno.App.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Check for updates.
+        /// </summary>
+        public static string CheckForUpdates {
+            get {
+                return ResourceManager.GetString("CheckForUpdates", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to At startup, asks github.com which Krupno release is the latest. Nothing else is sent, and nothing is downloaded..
+        /// </summary>
+        public static string CheckForUpdates_Description {
+            get {
+                return ResourceManager.GetString("CheckForUpdates_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Original · {0} × {1}.
         /// </summary>
         public static string Chip_Original {
@@ -1380,6 +1398,33 @@ namespace Krupno.App.Properties {
         public static string Unit_MB {
             get {
                 return ResourceManager.GetString("Unit_MB", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Krupno {0} is available.
+        /// </summary>
+        public static string Update_Available {
+            get {
+                return ResourceManager.GetString("Update_Available", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Download.
+        /// </summary>
+        public static string Update_Download {
+            get {
+                return ResourceManager.GetString("Update_Download", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hide.
+        /// </summary>
+        public static string Update_Hide {
+            get {
+                return ResourceManager.GetString("Update_Hide", resourceCulture);
             }
         }
         
