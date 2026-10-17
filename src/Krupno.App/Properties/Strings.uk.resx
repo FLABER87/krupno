@@ -178,7 +178,7 @@
     <value>Файл не знайдено. Можливо, його переміщено або видалено.</value>
   </data>
   <data name="Friendly_Gpu" xml:space="preserve">
-    <value>GPU не впорався з цією моделлю. Виберіть інший пристрій або розмір плитки в розділі «Додатково» чи легшу модель.</value>
+    <value>GPU не впорався з цією моделлю. Виберіть інший пристрій або розмір плитки в розділі «Налаштування» чи легшу модель.</value>
   </data>
   <data name="Friendly_IO" xml:space="preserve">
     <value>Не вдалося прочитати або записати файл. {0}</value>
@@ -318,8 +318,8 @@
   <data name="SeamlessTiles_Description" xml:space="preserve">
     <value>Удвічі більше перекриття між плитками (64 px): жодних помітних швів навіть із глибокими моделями, але плиток більше — приблизно в 1,5 раза для фото 1920 × 1200 з авто плитками.</value>
   </data>
-  <data name="Section_Advanced" xml:space="preserve">
-    <value>Додатково</value>
+  <data name="Section_Settings" xml:space="preserve">
+    <value>Налаштування</value>
   </data>
   <data name="Section_Model" xml:space="preserve">
     <value>Модель</value>
@@ -371,6 +371,9 @@
   </data>
   <data name="Summary_NoTiling" xml:space="preserve">
     <value>без плиток</value>
+  </data>
+  <data name="Summary_NoUpdateCheck" xml:space="preserve">
+    <value>без перевірки оновлень</value>
   </data>
   <data name="Summary_Seamless" xml:space="preserve">
     <value>без швів</value>

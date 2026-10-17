@@ -59,20 +59,20 @@ public sealed class AppSettings
     /// <summary>Where results go; null means next to the originals.</summary>
     public string? OutputFolder { get; set; }
 
-    /// <summary>The tile size from "Advanced"; 0 means no tiling.</summary>
+    /// <summary>The tile size from "Settings"; 0 means no tiling.</summary>
     public int? TileSize { get; set; }
 
-    /// <summary>"Seamless tiles" in "Advanced": a 64 px tile overlap instead of 32.</summary>
+    /// <summary>"Seamless tiles" in "Settings": a 64 px tile overlap instead of 32.</summary>
     public bool? SeamlessTiles { get; set; }
 
-    /// <summary>"Test-time augmentation" in "Advanced": every pass in all 8 orientations, averaged.</summary>
+    /// <summary>"Test-time augmentation" in "Settings": every pass in all 8 orientations, averaged.</summary>
     public bool? TestTimeAugmentation { get; set; }
 
     /// <summary>The window's language (a culture name from <see cref="UiLanguage.All"/>); null follows Windows.</summary>
     public string? Language { get; set; }
 
     /// <summary>
-    /// "Check for updates" in "Advanced", once the user has changed it there; until then null, and the installer's choice applies
+    /// "Check for updates" in "Settings", once the user has changed it there; until then null, and the installer's choice applies
     /// (see <see cref="UpdateCheck.Decide"/>).
     /// </summary>
     public bool? CheckForUpdates { get; set; }

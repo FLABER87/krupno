@@ -178,7 +178,7 @@
     <value>File non trovato. Potrebbe essere stato spostato o eliminato.</value>
   </data>
   <data name="Friendly_Gpu" xml:space="preserve">
-    <value>La GPU non è riuscita a eseguire questo modello. Scegli un altro dispositivo o un'altra dimensione dei riquadri in «Avanzate», oppure un modello più leggero.</value>
+    <value>La GPU non è riuscita a eseguire questo modello. Scegli un altro dispositivo o un'altra dimensione dei riquadri in «Impostazioni», oppure un modello più leggero.</value>
   </data>
   <data name="Friendly_IO" xml:space="preserve">
     <value>Impossibile leggere o scrivere il file. {0}</value>
@@ -318,8 +318,8 @@
   <data name="SeamlessTiles_Description" xml:space="preserve">
     <value>Sovrapposizione doppia tra i riquadri (64 px): nessuna giuntura visibile anche con modelli profondi, ma più riquadri da elaborare, circa 1,5 volte tanti per una foto 1920 × 1200 con riquadri auto.</value>
   </data>
-  <data name="Section_Advanced" xml:space="preserve">
-    <value>Avanzate</value>
+  <data name="Section_Settings" xml:space="preserve">
+    <value>Impostazioni</value>
   </data>
   <data name="Section_Model" xml:space="preserve">
     <value>Modello</value>
@@ -371,6 +371,9 @@
   </data>
   <data name="Summary_NoTiling" xml:space="preserve">
     <value>senza riquadri</value>
+  </data>
+  <data name="Summary_NoUpdateCheck" xml:space="preserve">
+    <value>senza controllo aggiornamenti</value>
   </data>
   <data name="Summary_Seamless" xml:space="preserve">
     <value>senza giunture</value>

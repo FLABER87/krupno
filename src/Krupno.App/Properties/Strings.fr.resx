@@ -178,7 +178,7 @@
     <value>Fichier introuvable. Il a peut-être été déplacé ou supprimé.</value>
   </data>
   <data name="Friendly_Gpu" xml:space="preserve">
-    <value>Le GPU n'a pas pu exécuter ce modèle. Choisissez un autre appareil ou une autre taille de tuile dans « Avancé », ou un modèle plus léger.</value>
+    <value>Le GPU n'a pas pu exécuter ce modèle. Choisissez un autre appareil ou une autre taille de tuile dans « Paramètres », ou un modèle plus léger.</value>
   </data>
   <data name="Friendly_IO" xml:space="preserve">
     <value>Impossible de lire ou d'écrire le fichier. {0}</value>
@@ -318,8 +318,8 @@
   <data name="SeamlessTiles_Description" xml:space="preserve">
     <value>Chevauchement doublé entre les tuiles (64 px) : aucun raccord visible même avec des modèles profonds, mais davantage de tuiles à traiter, environ 1,5 fois plus pour une photo 1920 × 1200 en tuiles auto.</value>
   </data>
-  <data name="Section_Advanced" xml:space="preserve">
-    <value>Avancé</value>
+  <data name="Section_Settings" xml:space="preserve">
+    <value>Paramètres</value>
   </data>
   <data name="Section_Model" xml:space="preserve">
     <value>Modèle</value>
@@ -371,6 +371,9 @@
   </data>
   <data name="Summary_NoTiling" xml:space="preserve">
     <value>sans tuiles</value>
+  </data>
+  <data name="Summary_NoUpdateCheck" xml:space="preserve">
+    <value>sans recherche de mises à jour</value>
   </data>
   <data name="Summary_Seamless" xml:space="preserve">
     <value>sans raccords</value>

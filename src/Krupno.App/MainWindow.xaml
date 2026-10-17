@@ -428,14 +428,16 @@
                                        TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" ToolTip="{Binding OutputFolderDisplay}" />
                         </DockPanel>
 
-                        <!-- Advanced -->
+                        <!-- Settings: a section header like the others, with what is set inside on a second line, the way
+                             Windows Settings shows a collapsed group. Side by side on one line, the summary (a GPU first) read as
+                             a device picker, and it squeezed the header to a few letters in a long translation. -->
                         <Expander Margin="0,16,0,0" HorizontalAlignment="Stretch">
                             <Expander.Header>
-                                <DockPanel>
-                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource Caption}" Text="{Binding AdvancedSummary}"
-                                               VerticalAlignment="Center" Margin="8,0,4,0" />
-                                    <TextBlock Style="{StaticResource SectionHeader}" Text="{x:Static p:Strings.Section_Advanced}" />
-                                </DockPanel>
+                                <StackPanel Margin="0,2,8,2">
+                                    <TextBlock Style="{StaticResource SectionHeader}" Text="{x:Static p:Strings.Section_Settings}" />
+                                    <TextBlock Style="{StaticResource Caption}" Text="{Binding SettingsSummary}" Margin="0,2,0,0"
+                                               TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding SettingsSummary}" />
+                                </StackPanel>
                             </Expander.Header>
                             <StackPanel Margin="0,4,0,0">
                                 <TextBlock Style="{StaticResource Caption}" Text="{x:Static p:Strings.Device}" Margin="0,0,0,4" />

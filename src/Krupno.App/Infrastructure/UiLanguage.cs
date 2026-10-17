@@ -5,7 +5,7 @@ namespace Krupno.App.Infrastructure;
 /// <summary>The languages the window is translated into (Properties/Strings.*.resx), and the choice among them.</summary>
 public static class UiLanguage
 {
-    /// <summary>Culture names with the language's own name for it, as the list in "Advanced" shows them.</summary>
+    /// <summary>Culture names with the language's own name for it, as the list in "Settings" shows them.</summary>
     public static IReadOnlyList<(string Culture, string Name)> All { get; } =
     [
         ("en", "English"),

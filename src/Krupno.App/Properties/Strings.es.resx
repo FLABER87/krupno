@@ -178,7 +178,7 @@
     <value>No se encontró el archivo. Puede que se haya movido o eliminado.</value>
   </data>
   <data name="Friendly_Gpu" xml:space="preserve">
-    <value>La GPU no pudo ejecutar este modelo. Elija otro dispositivo u otro tamaño de mosaico en «Avanzado», o un modelo más ligero.</value>
+    <value>La GPU no pudo ejecutar este modelo. Elija otro dispositivo u otro tamaño de mosaico en «Configuración», o un modelo más ligero.</value>
   </data>
   <data name="Friendly_IO" xml:space="preserve">
     <value>No se pudo leer ni escribir el archivo. {0}</value>
@@ -318,8 +318,8 @@
   <data name="SeamlessTiles_Description" xml:space="preserve">
     <value>Doble solapamiento entre mosaicos (64 px): sin costuras visibles incluso con modelos profundos, pero con más mosaicos que procesar, unas 1,5 veces más para una foto de 1920 × 1200 con mosaico auto.</value>
   </data>
-  <data name="Section_Advanced" xml:space="preserve">
-    <value>Avanzado</value>
+  <data name="Section_Settings" xml:space="preserve">
+    <value>Configuración</value>
   </data>
   <data name="Section_Model" xml:space="preserve">
     <value>Modelo</value>
@@ -371,6 +371,9 @@
   </data>
   <data name="Summary_NoTiling" xml:space="preserve">
     <value>sin mosaico</value>
+  </data>
+  <data name="Summary_NoUpdateCheck" xml:space="preserve">
+    <value>sin buscar actualizaciones</value>
   </data>
   <data name="Summary_Seamless" xml:space="preserve">
     <value>sin costuras</value>

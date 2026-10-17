@@ -178,7 +178,7 @@
     <value>파일을 찾을 수 없습니다. 이동되었거나 삭제되었을 수 있습니다.</value>
   </data>
   <data name="Friendly_Gpu" xml:space="preserve">
-    <value>GPU가 이 모델을 처리하지 못했습니다. "고급"에서 다른 장치나 타일 크기를 선택하거나 더 가벼운 모델을 사용하세요.</value>
+    <value>GPU가 이 모델을 처리하지 못했습니다. "설정"에서 다른 장치나 타일 크기를 선택하거나 더 가벼운 모델을 사용하세요.</value>
   </data>
   <data name="Friendly_IO" xml:space="preserve">
     <value>파일을 읽거나 쓸 수 없습니다. {0}</value>
@@ -318,8 +318,8 @@
   <data name="SeamlessTiles_Description" xml:space="preserve">
     <value>타일 간 겹침을 두 배(64 px)로 늘립니다. 깊은 모델에서도 이음매가 보이지 않지만 처리할 타일이 많아집니다. 자동 타일로 1920 × 1200 사진을 처리하면 약 1.5배가 됩니다.</value>
   </data>
-  <data name="Section_Advanced" xml:space="preserve">
-    <value>고급</value>
+  <data name="Section_Settings" xml:space="preserve">
+    <value>설정</value>
   </data>
   <data name="Section_Model" xml:space="preserve">
     <value>모델</value>
@@ -371,6 +371,9 @@
   </data>
   <data name="Summary_NoTiling" xml:space="preserve">
     <value>타일 없음</value>
+  </data>
+  <data name="Summary_NoUpdateCheck" xml:space="preserve">
+    <value>업데이트 확인 안 함</value>
   </data>
   <data name="Summary_Seamless" xml:space="preserve">
     <value>이음매 없음</value>

@@ -178,7 +178,7 @@
     <value>ファイルが見つかりません。移動または削除された可能性があります。</value>
   </data>
   <data name="Friendly_Gpu" xml:space="preserve">
-    <value>GPU でこのモデルを処理できませんでした。「詳細設定」で別のデバイスまたはタイル サイズを選ぶか、より軽いモデルを選んでください。</value>
+    <value>GPU でこのモデルを処理できませんでした。「設定」で別のデバイスまたはタイル サイズを選ぶか、より軽いモデルを選んでください。</value>
   </data>
   <data name="Friendly_IO" xml:space="preserve">
     <value>ファイルの読み書きができませんでした。{0}</value>
@@ -318,8 +318,8 @@
   <data name="SeamlessTiles_Description" xml:space="preserve">
     <value>タイル間の重なりを 2 倍 (64 px) にします。深いモデルでも継ぎ目が見えなくなりますが、処理するタイルが増えます（自動タイルで 1920 × 1200 の写真なら約 1.5 倍）。</value>
   </data>
-  <data name="Section_Advanced" xml:space="preserve">
-    <value>詳細設定</value>
+  <data name="Section_Settings" xml:space="preserve">
+    <value>設定</value>
   </data>
   <data name="Section_Model" xml:space="preserve">
     <value>モデル</value>
@@ -371,6 +371,9 @@
   </data>
   <data name="Summary_NoTiling" xml:space="preserve">
     <value>タイル分割なし</value>
+  </data>
+  <data name="Summary_NoUpdateCheck" xml:space="preserve">
+    <value>更新確認なし</value>
   </data>
   <data name="Summary_Seamless" xml:space="preserve">
     <value>継ぎ目なし</value>

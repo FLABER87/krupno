@@ -178,7 +178,7 @@
     <value>Nie znaleziono pliku. Mógł zostać przeniesiony lub usunięty.</value>
   </data>
   <data name="Friendly_Gpu" xml:space="preserve">
-    <value>GPU nie poradził sobie z tym modelem. Wybierz inne urządzenie lub rozmiar kafelka w sekcji „Zaawansowane” albo lżejszy model.</value>
+    <value>GPU nie poradził sobie z tym modelem. Wybierz inne urządzenie lub rozmiar kafelka w sekcji „Ustawienia” albo lżejszy model.</value>
   </data>
   <data name="Friendly_IO" xml:space="preserve">
     <value>Nie można odczytać lub zapisać pliku. {0}</value>
@@ -318,8 +318,8 @@
   <data name="SeamlessTiles_Description" xml:space="preserve">
     <value>Dwukrotnie większe nakładanie się kafelków (64 px): brak widocznych szwów nawet przy głębokich modelach, ale więcej kafelków do przetworzenia — ok. 1,5 raza więcej dla zdjęcia 1920 × 1200 z kafelkami automatycznymi.</value>
   </data>
-  <data name="Section_Advanced" xml:space="preserve">
-    <value>Zaawansowane</value>
+  <data name="Section_Settings" xml:space="preserve">
+    <value>Ustawienia</value>
   </data>
   <data name="Section_Model" xml:space="preserve">
     <value>Model</value>
@@ -371,6 +371,9 @@
   </data>
   <data name="Summary_NoTiling" xml:space="preserve">
     <value>bez kafelków</value>
+  </data>
+  <data name="Summary_NoUpdateCheck" xml:space="preserve">
+    <value>bez sprawdzania aktualizacji</value>
   </data>
   <data name="Summary_Seamless" xml:space="preserve">
     <value>bez szwów</value>

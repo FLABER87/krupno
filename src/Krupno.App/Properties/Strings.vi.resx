@@ -178,7 +178,7 @@
     <value>Không tìm thấy tệp. Có thể tệp đã bị di chuyển hoặc xóa.</value>
   </data>
   <data name="Friendly_Gpu" xml:space="preserve">
-    <value>GPU không chạy được mô hình này. Hãy chọn thiết bị hoặc kích thước ô khác trong “Nâng cao”, hoặc một mô hình nhẹ hơn.</value>
+    <value>GPU không chạy được mô hình này. Hãy chọn thiết bị hoặc kích thước ô khác trong “Cài đặt”, hoặc một mô hình nhẹ hơn.</value>
   </data>
   <data name="Friendly_IO" xml:space="preserve">
     <value>Không thể đọc hoặc ghi tệp. {0}</value>
@@ -318,8 +318,8 @@
   <data name="SeamlessTiles_Description" xml:space="preserve">
     <value>Vùng chồng lấn giữa các ô gấp đôi (64 px): không thấy đường nối kể cả với mô hình sâu, nhưng phải xử lý nhiều ô hơn: khoảng 1,5 lần với ảnh 1920 × 1200 khi dùng ô tự động.</value>
   </data>
-  <data name="Section_Advanced" xml:space="preserve">
-    <value>Nâng cao</value>
+  <data name="Section_Settings" xml:space="preserve">
+    <value>Cài đặt</value>
   </data>
   <data name="Section_Model" xml:space="preserve">
     <value>Mô hình</value>
@@ -371,6 +371,9 @@
   </data>
   <data name="Summary_NoTiling" xml:space="preserve">
     <value>không chia ô</value>
+  </data>
+  <data name="Summary_NoUpdateCheck" xml:space="preserve">
+    <value>không kiểm tra cập nhật</value>
   </data>
   <data name="Summary_Seamless" xml:space="preserve">
     <value>liền mạch</value>
