@@ -30,6 +30,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        SingleInstance.Release();
         Log.Info("Session ended");
         Log.Close();
         base.OnExit(e);

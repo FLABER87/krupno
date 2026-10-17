@@ -108,19 +108,21 @@ Source: "models-README.txt"; DestDir: "{app}\models"; DestName: "README.txt"; Fl
 Name: "{autoprograms}\Krupno"; Filename: "{app}\Krupno.exe"
 Name: "{autodesktop}\Krupno"; Filename: "{app}\Krupno.exe"; Tasks: desktopicon
 
-; The menu item is shown only when a single file or folder is selected: with a command string, Explorer starts
-; one process per selected file. Several files are easier to drag into the window.
+; With a command string Explorer starts one Krupno.exe per selected item. Each one after the first hands its file to
+; the window already open (src/Krupno.App/Infrastructure/SingleInstance.cs), so a selection lands in one queue.
+; "Document" is Explorer's default: the item is offered for a selection of up to 15 items, which keeps a large
+; selection from starting hundreds of processes at once ("Player" would offer it for any number).
 ; If the checkbox is cleared on reinstall, the item is removed (deletekey with Tasks: not contextmenu).
 [Registry]
 Root: HKA; Subkey: "{#ImageVerb}"; Flags: deletekey; Tasks: not contextmenu
 Root: HKA; Subkey: "{#FolderVerb}"; Flags: deletekey; Tasks: not contextmenu
 Root: HKA; Subkey: "{#ImageVerb}"; ValueType: string; ValueData: "Upscale with Krupno"; Flags: uninsdeletekey; Tasks: contextmenu
 Root: HKA; Subkey: "{#ImageVerb}"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\Krupno.exe,0"; Tasks: contextmenu
-Root: HKA; Subkey: "{#ImageVerb}"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Single"; Tasks: contextmenu
+Root: HKA; Subkey: "{#ImageVerb}"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Document"; Tasks: contextmenu
 Root: HKA; Subkey: "{#ImageVerb}\command"; ValueType: string; ValueData: """{app}\Krupno.exe"" ""%1"""; Tasks: contextmenu
 Root: HKA; Subkey: "{#FolderVerb}"; ValueType: string; ValueData: "Upscale with Krupno"; Flags: uninsdeletekey; Tasks: contextmenu
 Root: HKA; Subkey: "{#FolderVerb}"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\Krupno.exe,0"; Tasks: contextmenu
-Root: HKA; Subkey: "{#FolderVerb}"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Single"; Tasks: contextmenu
+Root: HKA; Subkey: "{#FolderVerb}"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Document"; Tasks: contextmenu
 Root: HKA; Subkey: "{#FolderVerb}\command"; ValueType: string; ValueData: """{app}\Krupno.exe"" ""%1"""; Tasks: contextmenu
 
 [Run]

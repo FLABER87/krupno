@@ -1,5 +1,6 @@
 ﻿# Krupno.exe window hotkeys: preview zoom (Ctrl+1, Ctrl+0, Ctrl+plus), start (Ctrl+Enter),
 # copying the result (Ctrl+C), pasting an image (Ctrl+V) and cancel (Esc). Keys go through SendKeys: don't touch the mouse or keyboard during the run.
+# Also handing files over to an open window, the way Explorer's "Upscale with Krupno" does with a selection.
 # Requires a Release build, real models in models/ and the fixture images (python tests\make_fixtures.py).
 #   powershell -File tests\gui_keys.ps1 [-Image <file>] [-Model <name>] [-SlowModel <name>]
 param(
@@ -93,6 +94,29 @@ try {
         Keys $p "^{ENTER}"; Expect "Ctrl+Enter ($SlowModel)" (WaitFor $w '^Processing… [1-9]' 60 -Soft) { param($g) $null -ne $g }
         Keys $p "{ESC}"; Expect "Esc" (WaitFor $w 'canceled' 30 -Soft) { param($g) $null -ne $g }
     } finally { Close $p }
+
+    # Explorer starts a Krupno.exe per selected file: the ones after the first hand their file to the open window and exit,
+    # files a moment apart share one queue, and a later one replaces it. Skipped if a Krupno window is already open: it would take the files.
+    if (Get-Process Krupno -ErrorAction SilentlyContinue) {
+        "SKIP hand-over: close the open Krupno window first"
+    } else {
+        $second = Join-Path $Out "second.png"
+        Copy-Item -LiteralPath "$PSScriptRoot\fixtures\images\noise_300x200.png" $second -Force
+        Settings $Model
+        $p = Launch -SingleInstance
+        try {
+            $w = $AE::FromHandle($p.MainWindowHandle)
+            # Two at once, like Explorer with a selection of two files.
+            $others = @($sourceFile, $second) | ForEach-Object { Start-Process $Exe -ArgumentList ('"' + $_ + '"') -PassThru }
+            $exited = @($others | Where-Object { $_.WaitForExit(15000) }).Count
+            Expect "Krupno.exe for each file hands over and exits" "$exited of 2" { param($g) $g -eq "2 of 2" }
+            Expect "one queue for the selection" (WaitFor $w '^Upscale 2 files' 10 -Soft) { param($g) $null -ne $g }
+            Start-Sleep -Seconds 3
+            $other = Start-Process $Exe -ArgumentList ('"' + $second + '"') -PassThru
+            $other.WaitForExit(15000) | Out-Null
+            Expect "a later file replaces the queue" (WaitFor $w '^Upscale ×4$' 10 -Soft) { param($g) $null -ne $g }
+        } finally { Close $p }
+    }
 } finally {
     Restore-Settings
 }

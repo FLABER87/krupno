@@ -46,6 +46,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     /// <summary>The limits of "Other", the same as the command-line tool's.</summary>
     private const double MaxCustomScale = 64;
     private const int MaxTargetPixels = 1_000_000;
+    /// <summary>Files from outside that arrive closer together than this are one Explorer selection.</summary>
+    private static readonly TimeSpan ExternalSelectionGap = TimeSpan.FromSeconds(2);
 
     private readonly AppSettings _settings;
     private readonly List<ModelItem> _allModels = [];
@@ -104,6 +106,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string? _errorReport;
     /// <summary>The fallback to the CPU is logged once per run.</summary>
     private bool _fallbackReported;
+    /// <summary>When files last came from outside the window, see <see cref="OpenExternalAsync"/>.</summary>
+    private DateTime _lastExternalOpen = DateTime.MinValue;
 
     public MainViewModel(AppSettings settings)
     {
@@ -655,6 +659,24 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand ToggleAllModelsCommand { get; }
 
     private FileItem? ResultFile => CurrentFile is { IsDone: true } current ? current : _lastDone;
+
+    /// <summary>
+    /// Files from outside the window: its command line, or another Krupno.exe that handed its files over (see SingleInstance).
+    /// Explorer starts a Krupno.exe for every selected file, a moment apart, so files that arrive within a couple of seconds of
+    /// each other are one selection and share one queue; a later selection replaces the queue, like opening files.
+    /// </summary>
+    public async Task OpenExternalAsync(string[] paths, DateTime arrivedAt)
+    {
+        bool append = arrivedAt - _lastExternalOpen < ExternalSelectionGap;
+        _lastExternalOpen = arrivedAt;
+        if (IsBusy)
+        {
+            Log.Warning($"Processing is running, files not opened: {string.Join(", ", paths)}");
+            ShowToast("Processing is running: these files weren't opened. Open them when it ends.");
+            return;
+        }
+        await SetFilesAsync(paths, append);
+    }
 
     /// <summary>Accepts files and folders from the dialog, drag and drop, or the command line.</summary>
     public async Task SetFilesAsync(IEnumerable<string> paths, bool append = false)

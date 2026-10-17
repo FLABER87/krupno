@@ -49,9 +49,12 @@ function Settings([string]$Model) {
     [IO.File]::WriteAllText($SettingsPath, "{ `"Model`": `"$Model`", `"DeviceKind`": `"Auto`" }", (New-Object Text.UTF8Encoding $false))
 }
 
-function Launch([string[]]$Arguments = @(), [string]$Theme) {
+# --new-window: a window of its own even if Krupno is already open (otherwise the files would go to that window).
+# -SingleInstance leaves it out, to test handing files over to an open window.
+function Launch([string[]]$Arguments = @(), [string]$Theme, [switch]$SingleInstance) {
     $psi = New-Object System.Diagnostics.ProcessStartInfo $Exe
-    $psi.Arguments = ($Arguments | ForEach-Object { '"' + $_ + '"' }) -join ' '
+    $all = if ($SingleInstance) { @($Arguments) } else { @("--new-window") + @($Arguments) }
+    $psi.Arguments = ($all | ForEach-Object { '"' + $_ + '"' }) -join ' '
     $psi.UseShellExecute = $false
     if ($Theme) { $psi.Environment["KRUPNO_THEME"] = $Theme }
     $p = [System.Diagnostics.Process]::Start($psi)

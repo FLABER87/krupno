@@ -56,12 +56,24 @@ public partial class MainWindow : Window
             Dispatcher.BeginInvoke(() => WindowTheme.Apply(this));
     }
 
-    private async void OnLoaded(object sender, RoutedEventArgs e)
+    private void OnLoaded(object sender, RoutedEventArgs e)
     {
         // Files passed on the command line (for example, via "Open with").
-        var paths = Environment.GetCommandLineArgs().Skip(1).ToArray();
+        var paths = Environment.GetCommandLineArgs().Skip(1).Where(a => a != SingleInstance.NewWindowSwitch).ToArray();
         if (paths.Length > 0)
-            await _viewModel.SetFilesAsync(paths);
+            _ = _viewModel.OpenExternalAsync(paths, SingleInstance.StartedAt);
+        // The files of the Krupno.exe started after this one: one per file of an Explorer selection.
+        SingleInstance.Attach((handedOver, arrivedAt) => Dispatcher.BeginInvoke(() => OnHandedOver(handedOver, arrivedAt)));
+    }
+
+    /// <summary>Another Krupno.exe handed its files over (or none: it was started again): come forward and take them.</summary>
+    private void OnHandedOver(string[] paths, DateTime arrivedAt)
+    {
+        if (WindowState == WindowState.Minimized)
+            WindowState = WindowState.Normal;
+        Activate();
+        if (paths.Length > 0)
+            _ = _viewModel.OpenExternalAsync(paths, arrivedAt);
     }
 
     /// <summary>Progress on the taskbar button: TaskbarItemInfo is outside the visual tree, so it's easier to update from here.</summary>
