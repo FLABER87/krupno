@@ -83,6 +83,7 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
         throw new CliException($"File or folder not found: {inputPath}");
 
     string modelPath = ResolveModel(options.Model);
+    using var keepAwake = new KeepAwake();
     var stopwatch = Stopwatch.StartNew();
     using var model = UpscaleModel.Load(modelPath, ParseDevice(options.Device));
 

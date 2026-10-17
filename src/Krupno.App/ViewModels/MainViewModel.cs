@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -35,8 +36,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 {
     private const int CompactModelCount = 3;
     private const int ThumbnailHeight = 128;
+    /// <summary>The range of the quality slider.</summary>
+    private const int MinJpegQuality = 60, MaxJpegQuality = 100;
 
-    private readonly AppSettings _settings = AppSettings.Load();
+    private readonly AppSettings _settings;
     private readonly List<ModelItem> _allModels = [];
     private readonly DispatcherTimer _toastTimer = new() { Interval = TimeSpan.FromSeconds(2.5) };
     private bool _refreshingModels;
@@ -86,8 +89,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private TaskbarItemProgressState _taskbarState;
     private FileItem? _lastDone;
 
-    public MainViewModel()
+    public MainViewModel(AppSettings settings)
     {
+        _settings = settings;
         var autoDevice = ExecutionDevice.Auto.Resolve();
         Devices =
         [
@@ -98,14 +102,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var savedDevice = FindSavedDevice();
         _selectedDevice = Devices.FirstOrDefault(d => d.Value == savedDevice) ?? Devices[0];
 
+        // The choices from the last session; a value the window doesn't offer (an edited settings file) falls back to the default.
         Scales = [new(2, "×2"), new(3, "×3"), new(4, "×4"), new(8, "×8")];
-        _selectedScale = Scales[2];
+        _selectedScale = Scales.FirstOrDefault(s => s.Value == _settings.Scale) ?? Scales[2];
 
         Formats = [new(ImageFileFormat.Png, "PNG"), new(ImageFileFormat.Jpeg, "JPEG"), new(ImageFileFormat.Tiff, "TIFF")];
-        _selectedFormat = Formats[0];
+        _selectedFormat = Formats.FirstOrDefault(f => f.Value == _settings.Format) ?? Formats[0];
+        if (_settings.JpegQuality is int quality)
+            _jpegQuality = Math.Clamp(quality, MinJpegQuality, MaxJpegQuality);
+        _outputFolder = _settings.OutputFolder;
 
         TileSizes = [new(384, "Auto"), new(256, "256 px"), new(512, "512 px"), new(768, "768 px"), new(1024, "1024 px"), new(0, "No tiling")];
-        _selectedTile = TileSizes[0];
+        _selectedTile = TileSizes.FirstOrDefault(t => t.Value == _settings.TileSize) ?? TileSizes[0];
 
         PrimaryCommand = new RelayCommand(() =>
         {
@@ -122,6 +130,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         OpenResultCommand = new RelayCommand(OpenResult, () => ResultFile is not null);
         ShowInFolderCommand = new RelayCommand(ShowInFolder, () => ResultFile is not null);
         CopyResultCommand = new RelayCommand(CopyResult, () => After is not null);
+        PasteCommand = new RelayCommand(() => _ = PasteAsync(), () => !IsBusy);
         BrowseOutputCommand = new RelayCommand(BrowseOutput, () => !IsBusy);
         ResetOutputCommand = new RelayCommand(() => OutputFolder = null, () => !IsBusy && OutputFolder is not null);
         RefreshModelsCommand = new RelayCommand(RefreshModels, () => !IsBusy);
@@ -474,6 +483,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand OpenResultCommand { get; }
     public ICommand ShowInFolderCommand { get; }
     public ICommand CopyResultCommand { get; }
+    public ICommand PasteCommand { get; }
     public ICommand BrowseOutputCommand { get; }
     public ICommand ResetOutputCommand { get; }
     public ICommand RefreshModelsCommand { get; }
@@ -725,9 +735,26 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         int succeeded = 0, failed = 0;
         string? firstError = null;
         long lastBytes = 0;
+        // The run may take many minutes without any input. The request is released on this (UI) thread, which made it:
+        // the awaits below come back to it.
+        using var keepAwake = new KeepAwake();
 
         try
         {
+            if (settings.Folder is { } folder)
+            {
+                // The folder may come from an earlier session, on a drive that is gone now: fail before the work, not after it.
+                try
+                {
+                    await Task.Run(() => Directory.CreateDirectory(folder));
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    throw new InvalidOperationException(
+                        $"Can't save to the output folder: {ex.Message} Choose another folder or save next to the originals.", ex);
+                }
+            }
+
             var model = await GetModelAsync();
             var upscaler = new Upscaler(model);
             var options = new UpscaleOptions { Scale = settings.Scale, TileSize = settings.Tile };
@@ -1043,7 +1070,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private void OnModelSettingsChanged()
     {
-        SaveSelection();
+        SaveSettings();
         InvalidateResult();
         if (IsBusy)
             return;
@@ -1058,6 +1085,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         OnPropertyChanged(nameof(SizePreview));
         OnPropertyChanged(nameof(UpscaleButtonText));
+        SaveSettings();
         InvalidateResult();
     }
 
@@ -1091,7 +1119,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    private void SaveSelection()
+    private void SaveSettings()
     {
         if (_refreshingModels)
             return;
@@ -1102,6 +1130,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _settings.DeviceKind = device.Kind;
         _settings.DeviceName = device.AdapterName;
         _settings.DeviceIndex = device.Kind == DeviceKind.Gpu ? device.AdapterIndex : null;
+        _settings.Scale = SelectedScale.Value;
+        _settings.Format = SelectedFormat.Value;
+        _settings.JpegQuality = JpegQuality;
+        _settings.OutputFolder = OutputFolder;
+        _settings.TileSize = SelectedTile.Value;
         _settings.Save();
     }
 
@@ -1177,6 +1210,56 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             ShowToast("The clipboard is in use by another app — try again");
         }
+    }
+
+    /// <summary>
+    /// Ctrl+V: files copied in Explorer open as if dropped; an image (a screenshot, "Copy image" in a browser) is saved as a PNG
+    /// first, see <see cref="PastedImage"/>. Either one replaces the queue, like opening files.
+    /// </summary>
+    private async Task PasteAsync()
+    {
+        if (IsBusy)
+            return;
+
+        string[]? files = null;
+        PastedImage? image = null;
+        try
+        {
+            if (Clipboard.ContainsFileDropList())
+                files = [.. Clipboard.GetFileDropList().Cast<string>()];
+            else
+                image = PastedImage.FromClipboard();
+        }
+        catch (Exception ex)
+        {
+            // Nobody awaits this task, so every failure ends up here rather than vanishing.
+            ShowToast(ex is ExternalException ? "The clipboard is in use by another app — try again" : $"Can't paste: {ex.Message}");
+            return;
+        }
+
+        if (files is not null)
+        {
+            await SetFilesAsync(files);
+            return;
+        }
+        if (image is null)
+        {
+            ShowToast("The clipboard holds no image or files");
+            return;
+        }
+
+        string path;
+        try
+        {
+            path = await Task.Run(image.Save);
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"Can't save the pasted image: {ex.Message}");
+            return;
+        }
+        await SetFilesAsync([path]);
+        ShowToast($"Pasted image saved to {path}");
     }
 
     private void ShowToast(string message)

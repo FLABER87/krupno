@@ -159,7 +159,7 @@ krupno-cli photo.png -m realesr-general-x4v3 -d gpu1 -t 256
 krupno-cli --list-models --list-devices
 ```
 
-See `krupno-cli --help` for details. Ctrl+C cancels processing.
+See `krupno-cli --help` for details. Ctrl+C cancels processing. While it runs, Windows does not go to sleep on idle.
 
 A result never replaces a source image or another result of the same run: if `-o` points at the source's own folder,
 or a folder has both `photo.jpg` and `photo.png`, the second name gets ` (2)` (`photo (2).png`). An existing file from an earlier run is overwritten.
@@ -171,11 +171,12 @@ Without `-m`, `4xBHI_realplksr_dysample_real` is used, or the first model in alp
 The preview is on the left, the settings panel on the right.
 
 - **Opening files:** drag photos or a folder into the window, click "Select files", or pass a path on the command line. With Ctrl held, dropped files are added to the queue; without it, they replace it.
+- **Pasting:** Ctrl+V opens files copied in Explorer, or an image from the clipboard (a screenshot, "Copy image" in a browser). The queue works with files, so a pasted image is first saved as `Pictures\Krupno\Pasted <date> <time>.png`, and the result goes next to it like for any other file. A PNG on the clipboard (browsers and Office put one there) is saved as is, with transparency; a plain bitmap whose fourth byte is 0 everywhere, as most apps leave it, is taken as opaque.
 - **Models** are shown as cards with descriptive names ("Photo, fast", "Photo, maximum detail"…). The recommended and non-commercial models are marked, and technical details are in the tooltip. Known models are described in `ViewModels/ModelItem.cs`; the others are shown by file name.
 - **Scale and format** are picked with toggle buttons. The output size is shown right away, and JPEG has a quality slider.
 - **Device and tile size** are tucked away under "Advanced"; by default both are chosen automatically.
 - **Comparison:** a slider wipe or two frames side by side. Zoom is measured in output pixels (100% is pixel for pixel), the mouse wheel zooms toward the point under the cursor, the right or middle button pans the image, and a double click toggles "Fit to window" ↔ 1:1.
-- **During processing** finished tiles are highlighted on the preview, with the percentage, the remaining time and the tile number next to it. Progress also shows on the Windows taskbar icon.
+- **During processing** finished tiles are highlighted on the preview, with the percentage, the remaining time and the tile number next to it. Progress also shows on the Windows taskbar icon. While processing runs, Windows does not go to sleep on idle (the display may still turn off; closing the lid or choosing Sleep works as usual).
 - **A batch** is shown as a strip of thumbnails with each file's status: processing, done, error. Clicking a thumbnail shows the comparison for that file.
 - **The theme** is light or dark to match the system, with the system accent color. On Windows 10 the window title bar turns dark too. The `KRUPNO_THEME=light|dark` variable forces a theme for testing.
 
@@ -189,9 +190,10 @@ Keyboard shortcuts:
 | Ctrl+0 / Ctrl+1 | fit to window / pixel for pixel |
 | Ctrl+Plus / Ctrl+Minus | zoom in / zoom out |
 | Ctrl+C | copy the result |
+| Ctrl+V | paste files or an image |
 
-The window starts with the same default model and the "Auto" device. The last chosen model and device are saved in `%LOCALAPPDATA%\Krupno\settings.json`.
-The GPU is saved by name, since its DXGI index may change. If the saved model or GPU is gone, or the settings file is corrupt or missing, the window falls back to the defaults.
+The first launch starts with the default model, ×4, PNG and the "Auto" device and tile. Every choice is saved in `%LOCALAPPDATA%\Krupno\settings.json` as soon as it is made: the model, scale, format, JPEG quality, output folder, device and tile size. The window's size and position (and whether it was maximized) are saved when it closes; a window that would land on a monitor that is no longer connected is moved onto a visible one.
+The GPU is saved by name, since its DXGI index may change. If the saved model or GPU is gone, a value is not one the window offers, or the settings file is corrupt or missing, the window falls back to the defaults. A saved output folder is checked before processing starts: if its drive is gone, the window says so right away instead of after the first file.
 
 The app icon is drawn by `tools/make_icon.py` (requires Pillow and numpy).
 
@@ -214,11 +216,12 @@ fractional scale, ×8 in two passes, alpha channel (with the color fill under tr
 output names that would overwrite a source or another result, and broken files.
 `python tests/make_fixtures.py --models` regenerates the models (it also needs the `onnx` package).
 On GitHub, the `.github/workflows/tests.yml` workflow (`windows-latest`) builds and runs these tests on every push and pull request. The runner has no GPU, and Krupno does not count "Microsoft Basic Render Driver" as one. So the workflow runs the script with the `-CheckFallback` switch: it sets `KRUPNO_BASIC_RENDER_DRIVER=1`, "Auto" picks that adapter, DirectML fails to start on it, and every "GPU" run must fall back to the CPU. This is how the fallback is tested. If the tests fail, `tests/out/cli` is uploaded as the `cli-tests-out` artifact.
+Dependabot (`.github/dependabot.yml`) opens weekly update PRs for ONNX Runtime and the GitHub Actions, so these tests check every update before it is merged. The Python requirements are left out: `tools/requirements.txt` sets deliberate lower bounds, which Dependabot would raise.
 
 The UI scripts launch `Krupno.exe` and drive the window through UI Automation.
 They need real models in `models/`: `4xBHI_realplksr_dysample_real` and `4xBHI_dat2_real_fp16` by default; others are set with the `-Model` and `-SlowModel` parameters.
 - `tests\gui_states.ps1` walks through the window states (empty, tile-by-tile processing, result, side-by-side comparison, batch, error, light theme) and saves screenshots to `tests/out/gui`. The script itself only checks that the states are reached; a human looks at the screenshots. The `color` scenario also checks pixels. A Display P3 image must look the way Windows' color-managed decoding shows it, before and after processing and in the filmstrip. An untagged copy must be shown unchanged, and the saved result must keep the stored pixels. About 2 min.
-- `tests\gui_keys.ps1` checks the keyboard shortcuts: preview zoom, Ctrl+Enter, Ctrl+C (image size on the clipboard) and Esc. The keys are sent through SendKeys, so it is best not to touch the keyboard and mouse during the run (about 30 s). If the Krupno window is not in the foreground, the script stops and sends no keys.
+- `tests\gui_keys.ps1` checks the keyboard shortcuts: preview zoom, Ctrl+Enter, Ctrl+C (image size on the clipboard), Ctrl+V (a bitmap and a PNG pasted from the clipboard are saved to `Pictures\Krupno` with the right size; the script deletes them afterwards) and Esc. The keys are sent through SendKeys, so it is best not to touch the keyboard and mouse during the run (about 30 s). If the Krupno window is not in the foreground, the script stops and sends no keys.
 
 Both scripts swap `%LOCALAPPDATA%\Krupno\settings.json` for the duration of the run and restore the previous one afterwards.
 

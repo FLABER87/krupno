@@ -10,10 +10,12 @@ namespace Krupno.App;
 
 public partial class MainWindow : Window
 {
-    private readonly MainViewModel _viewModel = new();
+    private readonly AppSettings _settings = AppSettings.Load();
+    private readonly MainViewModel _viewModel;
 
     public MainWindow()
     {
+        _viewModel = new MainViewModel(_settings);
         InitializeComponent();
         // On a laptop at 200% scaling the height can be as little as ~720 logical pixels, so stay within the screen.
         // The minimum size gives way too: otherwise it wins over the smaller Width/Height and the window sticks out of the screen.
@@ -25,13 +27,24 @@ public partial class MainWindow : Window
         DataContext = _viewModel;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         Loaded += OnLoaded;
-        SourceInitialized += (_, _) => WindowTheme.Apply(this);
+        SourceInitialized += (_, _) =>
+        {
+            WindowTheme.Apply(this);
+            // The size and position from the last session replace the default ones set above.
+            if (_settings.Window is { } bounds)
+                WindowPlacement.Restore(this, bounds);
+        };
         SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
     }
 
     protected override void OnClosing(CancelEventArgs e)
     {
         SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
+        if (WindowPlacement.Read(this) is { } bounds)
+        {
+            _settings.Window = bounds;
+            _settings.Save();
+        }
         _viewModel.Dispose();
         base.OnClosing(e);
     }
@@ -89,6 +102,10 @@ public partial class MainWindow : Window
             case Key.C when Keyboard.FocusedElement is not TextBox:
                 if (_viewModel.CopyResultCommand.CanExecute(null))
                     _viewModel.CopyResultCommand.Execute(null);
+                break;
+            case Key.V when Keyboard.FocusedElement is not TextBox:
+                if (_viewModel.PasteCommand.CanExecute(null))
+                    _viewModel.PasteCommand.Execute(null);
                 break;
             default:
                 return;

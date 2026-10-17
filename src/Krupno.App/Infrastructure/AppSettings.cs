@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Krupno.Core.Imaging;
 using Krupno.Core.Inference;
 
 namespace Krupno.App.Infrastructure;
@@ -26,6 +27,21 @@ public sealed class AppSettings
     public string? DeviceName { get; set; }
 
     public int? DeviceIndex { get; set; }
+
+    /// <summary>The final scale (×2, ×3, ×4, ×8).</summary>
+    public double? Scale { get; set; }
+
+    public ImageFileFormat? Format { get; set; }
+
+    public int? JpegQuality { get; set; }
+
+    /// <summary>Where results go; null means next to the originals.</summary>
+    public string? OutputFolder { get; set; }
+
+    /// <summary>The tile size from "Advanced"; 0 means no tiling.</summary>
+    public int? TileSize { get; set; }
+
+    public WindowBounds? Window { get; set; }
 
     public static AppSettings Load()
     {

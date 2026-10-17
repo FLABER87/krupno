@@ -59,7 +59,7 @@
                         </StackPanel>
                     </Button>
                     <TextBlock Style="{StaticResource Hint}" Margin="0,14,0,0"
-                               Text="PNG, JPEG, TIFF, BMP, GIF, WebP, HEIC · Ctrl+O" />
+                               Text="PNG, JPEG, TIFF, BMP, GIF, WebP, HEIC · Ctrl+O · Ctrl+V to paste" />
                 </StackPanel>
             </Grid>
 
@@ -184,7 +184,7 @@
                                     HorizontalAlignment="Stretch" Height="40" FontSize="15">
                                 <TextBlock Text="Select files" />
                             </Button>
-                            <TextBlock Style="{StaticResource Hint}" Text="Ctrl+O" />
+                            <TextBlock Style="{StaticResource Hint}" Text="Ctrl+O · Ctrl+V to paste" />
                         </StackPanel>
 
                         <!-- Ready to start -->
