@@ -52,7 +52,10 @@ if (options.ListModels)
         Console.WriteLine($"  No models found. Search folders: {string.Join("; ", ModelCatalog.SearchDirectories)}");
     var defaultModel = ModelCatalog.PickDefault(models);
     foreach (var model in models)
-        Console.WriteLine($"{(model == defaultModel ? "* " : "  ")}{model.Name,-36} {model.Path}");
+    {
+        Console.WriteLine($"{(model == defaultModel ? "* " : "  ")}{model.Name,-36} {model.Path}" +
+                          (ModelCatalog.IsDenoiser(model) ? "  (noise removal, for --denoise)" : ""));
+    }
     if (defaultModel is not null)
         Console.WriteLine("  (* = default model)");
 }
@@ -100,6 +103,7 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
     // The jobs are planned before the model is loaded, which takes seconds: the model file is only inspected for its scale,
     // and that inspection is cached for the load. A wrong path or a batch with nothing left to do fails or ends right away.
     string modelPath = ResolveModel(options.Model);
+    string? denoiserPath = options.Denoise ? ResolveDenoiser() : null;
     // Next to the source, the name says what was asked for: "_x4", "_x2.5", "_3840w".
     string suffix = options.Target?.Suffix
         ?? "_x" + (options.Scale > 0 ? options.Scale : UpscaleModel.Inspect(modelPath).Scale).ToString("0.##", CultureInfo.InvariantCulture);
@@ -120,8 +124,10 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
 
     using var keepAwake = new KeepAwake();
     var stopwatch = Stopwatch.StartNew();
-    using var model = UpscaleModel.Load(modelPath, ParseDevice(options.Device));
-    var upscaler = new Upscaler(model);
+    var device = ParseDevice(options.Device);
+    using var model = UpscaleModel.Load(modelPath, device);
+    using var denoiser = denoiserPath is null ? null : UpscaleModel.Load(denoiserPath, device);
+    var upscaler = new Upscaler(model, denoiser);
     var upscaleOptions = new UpscaleOptions
     {
         Scale = options.Scale, Target = options.Target, TileSize = options.Tile, TilePadding = options.Padding,
@@ -129,6 +135,8 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
     };
 
     Console.WriteLine($"Model:  {model.Info}{(model.Info.IsHalfPrecision ? ", fp16" : "")}");
+    if (denoiser is not null)
+        Console.WriteLine($"Noise:  {denoiser.Info}{(denoiser.Info.IsHalfPrecision ? ", fp16" : "")}");
     Console.WriteLine($"Device: {model.Device}");
 
     int failed = 0;
@@ -183,6 +191,11 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
                 Console.WriteLine($"  DirectML is unavailable, running on CPU: {reason}");
             if (model.CompileFailure is { } compileFailure && i == 0)
                 Console.WriteLine($"  The accelerator can't compile the model for the cache, so it builds the engine on every start: {compileFailure}");
+            // The denoiser has sessions of its own, so it may fare differently on the same device.
+            if (denoiser?.FallbackReason is { } denoiserReason && model.FallbackReason is null && i == 0)
+                Console.WriteLine($"  DirectML is unavailable for the noise removal model, running it on CPU: {denoiserReason}");
+            if (denoiser?.CompileFailure is { } denoiserCompileFailure && i == 0)
+                Console.WriteLine($"  The accelerator can't compile the noise removal model for the cache, so it builds the engine on every start: {denoiserCompileFailure}");
         }
     }
     finally
@@ -225,6 +238,12 @@ static string ResolveModel(string? model)
             $"No models found. Put an .onnx file into {ModelCatalog.UserDirectory} or specify a path with -m.");
     return entry.Path;
 }
+
+static string ResolveDenoiser() =>
+    ModelCatalog.FindDenoiser(ModelCatalog.Discover())?.Path
+    ?? throw new CliException(
+        $"--denoise needs the noise removal model {ModelCatalog.DenoiseModelName}.onnx, which is not installed. Tick it when " +
+        $"installing Krupno, or download it from a models release at https://github.com/FLABER87/krupno/releases into {ModelCatalog.UserDirectory}.");
 
 static ExecutionDevice ParseDevice(string value)
 {

@@ -108,6 +108,15 @@
   <data name="CustomValue_Name" xml:space="preserve">
     <value>Масштаб или размер</value>
   </data>
+  <data name="Denoise" xml:space="preserve">
+    <value>Убрать шум</value>
+  </data>
+  <data name="Denoise_Description" xml:space="preserve">
+    <value>Перед увеличением отдельная модель убирает шум камеры и зерно. Медленнее, и мелкая текстура сглаживается: для чистых изображений не включайте.</value>
+  </data>
+  <data name="Denoise_Missing" xml:space="preserve">
+    <value>Модель для удаления шума не установлена: отметьте ее при установке Krupno или положите {0} в папку моделей.</value>
+  </data>
   <data name="Device" xml:space="preserve">
     <value>Устройство</value>
   </data>
@@ -278,6 +287,9 @@
   </data>
   <data name="PreviewError_Title" xml:space="preserve">
     <value>Не удается открыть этот файл</value>
+  </data>
+  <data name="Progress_Denoising" xml:space="preserve">
+    <value>удаление шума</value>
   </data>
   <data name="Progress_File" xml:space="preserve">
     <value>Файл {0} из {1}</value>

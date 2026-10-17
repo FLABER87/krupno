@@ -108,6 +108,15 @@
   <data name="CustomValue_Name" xml:space="preserve">
     <value>Skala lub rozmiar</value>
   </data>
+  <data name="Denoise" xml:space="preserve">
+    <value>Usuń szum</value>
+  </data>
+  <data name="Denoise_Description" xml:space="preserve">
+    <value>Przed powiększeniem osobny model usuwa szum aparatu i ziarno. Wolniej, a drobna faktura się wygładza: przy czystych obrazach zostaw wyłączone.</value>
+  </data>
+  <data name="Denoise_Missing" xml:space="preserve">
+    <value>Model usuwania szumu nie jest zainstalowany: zaznacz go podczas instalacji Krupno albo umieść {0} w folderze modeli.</value>
+  </data>
   <data name="Device" xml:space="preserve">
     <value>Urządzenie</value>
   </data>
@@ -278,6 +287,9 @@
   </data>
   <data name="PreviewError_Title" xml:space="preserve">
     <value>Nie można otworzyć tego pliku</value>
+  </data>
+  <data name="Progress_Denoising" xml:space="preserve">
+    <value>usuwanie szumu</value>
   </data>
   <data name="Progress_File" xml:space="preserve">
     <value>Plik {0} z {1}</value>

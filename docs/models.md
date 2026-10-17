@@ -47,6 +47,7 @@ But with `--no-verify` the dynamic size is not checked, so for DAT/HAT/DySample 
 - [Kim2091/UltraSharpV2](https://huggingface.co/Kim2091/UltraSharpV2): CC BY-NC-SA 4.0 license, non-commercial use only.
 - [Remacri](https://openmodeldb.info/models/4x-Remacri) by foolhardy: CC BY-NC-SA 4.0 license, non-commercial use only.
 - [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN/releases): BSD-3-Clause license.
+- [SCUNet](https://github.com/cszn/SCUNet) by Kai Zhang: denoisers, Apache-2.0 license; the weights are in the [KAIR v1.0](https://github.com/cszn/KAIR/releases/tag/v1.0) release.
 - [OpenModelDB](https://openmodeldb.info/): hundreds of community models. **Each has its own license**, many are for non-commercial use only.
 
 ## Which model to use
@@ -64,7 +65,7 @@ Speed: on an RTX 3080, 1920×1200 → 7680×4800 frame, second run, including re
 | `4x_foolhardy_Remacri_fp16` | ESRGAN | CC BY-NC-SA 4.0 | 5.8 s | for [text](#text); on photos it smears textures and draws streaks on rocks |
 
 All three modern models reproduce the structure of the rocks like the original, while Real-ESRGAN paints a forest in their place.
-The speeds in the table are for the models from the `models-v2` release (`models-v3` has the same files and Remacri): RealPLKSR, DAT2 fp16 and Remacri have a dynamic input (`torch.export` for the first two), DAT2 fp32 and UltraSharpV2 a static 256×256 one.
+The speeds in the table are for the models from the `models-v2` release (`models-v3` has the same files and Remacri, `models-v4` SCUNet as well): RealPLKSR, DAT2 fp16 and Remacri have a dynamic input (`torch.export` for the first two), DAT2 fp32 and UltraSharpV2 a static 256×256 one.
 In `models-v1` all three modern models had a static input. The difference between the two is shown below.
 
 ### Text
@@ -101,6 +102,33 @@ The lower it is, the less visible the tile seams are.
 - **RealPLKSR**: the dynamic input is faster and leaves smaller seams. With the same tile, the `torch.export` graph runs as fast as the static one.
 - **DAT2 fp16**: the dynamic input with a 448 tile (`-t 448`) pays off: 18% faster, with a 2.5 times smaller difference from the reference. A 512 window no longer fits in VRAM.
 - **DAT2 fp32 and UltraSharpV2** are better exported with a static input (`--no-dynamo`) on a 10 GB card. The same tile in the `torch.export` graph is 7–10% slower: DirectML optimizes its structure worse. A 384 window does not fit in memory, and Krupno reduces the tile to 320. The result is the same as with `-t 320`. About 10 s go to the failed attempt with 384, but only on the first frame of a batch: the following ones start with 320 right away. Previously the tile was halved, down to 192, and a frame took 71.5 s. A 352 window fits only by spilling into shared memory, without any error, and a frame takes 466 s. If you already have a dynamic model, use `-t 256` or `-t 320`.
+
+## Noise
+
+"Remove noise" (`--denoise`) runs `scunet_color_real_psnr_fp16` on the image at its original size, before the upscaler. The photo models already deal with light noise: they are trained on degraded photos. Strong noise they partly keep, or turn into texture of their own (hairs on skin, cracks on a wall), and Remacri keeps noise as it is, as it keeps everything else. So the option helps most with noisy photos and with Remacri.
+
+Tested on three sets:
+- real camera noise: 100 crops of 512×512 from the [PolyU dataset](https://github.com/csjunxu/PolyU-Real-World-Noisy-Images-Dataset) (Canon, Nikon and Sony cameras, ISO 1600–6400), compared with the average of hundreds of shots of the same scene. The ×4 results are reduced back to 512×512 for that, which shows whether the noise survived but not how sharp the result is;
+- added noise: 13 photos downscaled 4 times, with camera-like noise (stronger in light areas, separate in each channel, 6 or 12 levels) and JPEG q90 added, upscaled back and compared with the photo;
+- a noisy phone photo, compared by eye.
+
+LPIPS (lower is closer) and PSNR:
+
+| | Real noise, ×1 | Real noise, ×4 | Noise 6, ×4 | Noise 12, ×4 | No noise, ×4 |
+|---|---|---|---|---|---|
+| Source | 0.197 · 36.0 dB | | | | |
+| SCUNet | 0.063 · 38.0 dB | | | | |
+| Default model | | 0.094 · 32.9 dB | 0.184 · 27.4 dB | 0.264 · 25.2 dB | 0.139 · 29.3 dB |
+| SCUNet, then the default model | | 0.106 · 34.6 dB | 0.261 · 28.1 dB | 0.271 · 27.8 dB | 0.253 · 28.2 dB |
+| Remacri | | 0.166 · 34.4 dB | 0.361 · 26.3 dB | 0.509 · 23.8 dB | 0.163 · 28.3 dB |
+| SCUNet, then Remacri | | 0.070 · 35.3 dB | 0.305 · 28.4 dB | 0.319 · 28.2 dB | 0.290 · 28.4 dB |
+
+- On its own, SCUNet removes camera noise almost to the average of hundreds of shots, without inventing anything.
+- Before Remacri, it removes what Remacri would keep and enlarge: with 12 levels of noise, Remacri alone gives three times the original's detail, most of it noise.
+- Before the default model, it removes the noise and the texture the model would invent from it (on the phone photo, lines on the skin and cracks on the wall), and PSNR rises by 0.7–2.6 dB. But it smooths fine texture too: knitted fabric comes out flat, and the detail is 0.76 of the original's. So LPIPS gets worse with moderate noise (0.184 → 0.261), stays about the same with strong noise (0.264 → 0.271), and on a clean image the option only loses texture (0.139 → 0.253). That is why it is off by default.
+- `1xDeNoise_realplksr_otf` by Phhofm (CC BY 4.0), the obvious candidate with the default model's architecture, was rejected: it restores rather than denoises. It sharpens with halos, darkens by about 4 levels, draws cracks and eyelashes and turns small text into blocks; on real noise PSNR fell from 36.0 to 29.9 dB.
+
+SCUNet converts with a dynamic input (a multiple of 8, through `torch.export`). Its tiles leave no visible seams: with the default 32 px overlap the result differs from an untiled run by 0.07 levels on average, at most 7. The fp16 file differs from fp32 by 0.13 levels on average (at most 2) and is 24% faster. On a 1944×1300 photo on an RTX 3080 it takes 5.7 s, against 8.5 s for the default model's ×4.
 
 ## Publishing a new set of models
 

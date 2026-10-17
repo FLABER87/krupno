@@ -39,6 +39,9 @@
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>模型元数据相互矛盾：窗口必须不大于 {0} px，又不小于 {1} px。</value>
   </data>
+  <data name="Model_DenoiserScale" xml:space="preserve">
+    <value>去噪模型必须保持图像尺寸不变 (×1)，而 {0} 是 ×{1}。</value>
+  </data>
   <data name="Model_FileNotFound" xml:space="preserve">
     <value>未找到模型文件：{0}</value>
   </data>

@@ -108,6 +108,15 @@
   <data name="CustomValue_Name" xml:space="preserve">
     <value>Escala ou tamanho</value>
   </data>
+  <data name="Denoise" xml:space="preserve">
+    <value>Remover ruído</value>
+  </data>
+  <data name="Denoise_Description" xml:space="preserve">
+    <value>Antes de ampliar, um modelo à parte remove o ruído da câmera e a granulação. É mais lento e suaviza texturas finas: deixe desligado em imagens limpas.</value>
+  </data>
+  <data name="Denoise_Missing" xml:space="preserve">
+    <value>O modelo de remoção de ruído não está instalado: marque-o ao instalar o Krupno ou coloque {0} na pasta de modelos.</value>
+  </data>
   <data name="Device" xml:space="preserve">
     <value>Dispositivo</value>
   </data>
@@ -278,6 +287,9 @@
   </data>
   <data name="PreviewError_Title" xml:space="preserve">
     <value>Não é possível abrir este arquivo</value>
+  </data>
+  <data name="Progress_Denoising" xml:space="preserve">
+    <value>remoção de ruído</value>
   </data>
   <data name="Progress_File" xml:space="preserve">
     <value>Arquivo {0} de {1}</value>

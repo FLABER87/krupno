@@ -20,7 +20,7 @@ Get the latest version from [Releases](https://github.com/FLABER87/krupno/releas
   - the install folder in PATH, so `krupno-cli` runs from any console;
   - "Upscale with Krupno" in the Explorer context menu of images and folders;
   - the check for new versions at startup (ticked by default, see [Updates](#updates)).
-- **Portable ZIP** (`Krupno-<version>-win-x64.zip`): unpack it and run `Krupno.exe`. It comes without models: download them from the [models-v3](https://github.com/FLABER87/krupno/releases/tag/models-v3) release into its `models` folder or into `%LOCALAPPDATA%\Krupno\models`.
+- **Portable ZIP** (`Krupno-<version>-win-x64.zip`): unpack it and run `Krupno.exe`. It comes without models: download them from the [models-v4](https://github.com/FLABER87/krupno/releases/tag/models-v4) release into its `models` folder or into `%LOCALAPPDATA%\Krupno\models`.
 
 The files are not code-signed yet, so Windows SmartScreen may warn on the first launch ("More info" → "Run anyway"). Each release has a `SHA256SUMS.txt` to check the downloads against.
 Uninstalling keeps your settings, logs and own models in `%LOCALAPPDATA%\Krupno`.
@@ -30,6 +30,7 @@ Uninstalling keeps your settings, logs and own models in `%LOCALAPPDATA%\Krupno`
 Drop images or a folder into the window, click "Select files", paste with Ctrl+V or use "Upscale with Krupno" in Explorer. Then pick a model, a scale and a format, and click "Upscale".
 
 - **Strength** (10–100%) blends the network's result with a plain resize, to tone down the textures a model invents and its oversharpening.
+- **Remove noise** runs a separate model on the image before upscaling, to clean camera noise and grain that the upscaler would keep or turn into invented texture. It is slower and smooths fine texture as well, so it is off by default. With "Other" set to a scale of 1, it only removes the noise. It needs the SCUNet model, which the installer offers.
 - **Scale:** ×2, ×4 and so on, or "Other" for a scale of your own or a width, height or long side in pixels.
 - **Comparison:** a slider or two frames side by side; the mouse wheel zooms, a double click toggles "Fit to window" and 1:1.
 - **A batch** is shown as a strip of thumbnails with each file's status.
@@ -55,6 +56,8 @@ krupno-cli photo.jpg -s 2 -f jpg -q 92             # ×2 result as JPEG
 krupno-cli C:\photos -o C:\photos_x4               # a whole folder
 krupno-cli C:\photos -r -o D:\x4 --skip-existing   # subfolders too; only the images without a result
 krupno-cli photo.jpg --long-side 3840              # 3840 px on the longer side
+krupno-cli photo.jpg --denoise                     # remove noise first, then ×4
+krupno-cli photo.jpg --denoise -s 1                # only remove noise
 krupno-cli --list-models --list-devices
 ```
 
@@ -62,7 +65,7 @@ krupno-cli --list-models --list-devices
 
 ## Models
 
-Krupno runs ONNX upscaling models. The installer downloads the ones you tick from the [models-v3](https://github.com/FLABER87/krupno/releases/tag/models-v3) release; the ZIP comes without them.
+Krupno runs ONNX upscaling models. The installer downloads the ones you tick from the [models-v4](https://github.com/FLABER87/krupno/releases/tag/models-v4) release; the ZIP comes without them.
 
 | Model | In the window | License | Time¹ |
 |---|---|---|---|
@@ -75,6 +78,8 @@ Krupno runs ONNX upscaling models. The installer downloads the ones you tick fro
 
 ¹ A 1920×1200 photo upscaled ×4 on an RTX 3080.
 
+The installer also offers `scunet_color_real_psnr_fp16`, the model of "Remove noise" (`--denoise`): SCUNet, which removes noise at the original size before the upscaler runs, in about as much time again as the default model. It helps most with Remacri, which keeps noise as it is; see [Noise](docs/models.md#noise).
+
 Models make small text sharp, but they may also change it, digits included. Remacri keeps small text best and is worse than the others on photos; see [Text](docs/models.md#text). Check important numbers against the original whatever the model.
 
 **Each model has its own license**, which Krupno's MIT license does not cover:
@@ -82,6 +87,7 @@ Models make small text sharp, but they may also change it, digits included. Rema
 - The BHI models are by Philip Hofmann ([Phhofm/models](https://github.com/Phhofm/models)), under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/): commercial use is allowed, with attribution.
 - UltraSharpV2 is by [Kim2091](https://huggingface.co/Kim2091/UltraSharpV2) and Remacri by foolhardy ([OpenModelDB](https://openmodeldb.info/models/4x-Remacri)), both under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/): **non-commercial use only**. The window marks them as such.
 - The Real-ESRGAN models are by Xintao Wang ([Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)), under the BSD 3-Clause license.
+- SCUNet, the model of "Remove noise", is by Kai Zhang ([cszn/SCUNet](https://github.com/cszn/SCUNet)), under the Apache 2.0 license.
 
 Other models work too: put `.onnx` files into `%LOCALAPPDATA%\Krupno\models` ("Open models folder" in the window). To convert PyTorch weights (`.pth`, `.safetensors`), use `tools/convert_to_onnx.py`; see [docs/models.md](docs/models.md) for how, where to get weights and how the models compare. Community models, for example from [OpenModelDB](https://openmodeldb.info/), each have their own license, and many are for non-commercial use only.
 

@@ -43,6 +43,9 @@ public sealed class AppSettings
     /// <summary>How much of the network's result goes into the output, in percent.</summary>
     public int? Strength { get; set; }
 
+    /// <summary>"Remove noise": a denoiser runs on the image before the upscaler.</summary>
+    public bool? Denoise { get; set; }
+
     /// <summary>The final scale (×2, ×3, ×4, ×8); 0 for "Other", see <see cref="CustomScaleMode"/>.</summary>
     public double? Scale { get; set; }
 

@@ -108,6 +108,15 @@
   <data name="CustomValue_Name" xml:space="preserve">
     <value>Escala o tamaño</value>
   </data>
+  <data name="Denoise" xml:space="preserve">
+    <value>Eliminar el ruido</value>
+  </data>
+  <data name="Denoise_Description" xml:space="preserve">
+    <value>Antes de ampliar, un modelo aparte elimina el ruido de la cámara y el grano. Es más lento y suaviza las texturas finas: déjelo desactivado en imágenes limpias.</value>
+  </data>
+  <data name="Denoise_Missing" xml:space="preserve">
+    <value>El modelo para eliminar el ruido no está instalado: márquelo al instalar Krupno o coloque {0} en la carpeta de modelos.</value>
+  </data>
   <data name="Device" xml:space="preserve">
     <value>Dispositivo</value>
   </data>
@@ -278,6 +287,9 @@
   </data>
   <data name="PreviewError_Title" xml:space="preserve">
     <value>No se puede abrir este archivo</value>
+  </data>
+  <data name="Progress_Denoising" xml:space="preserve">
+    <value>eliminación del ruido</value>
   </data>
   <data name="Progress_File" xml:space="preserve">
     <value>Archivo {0} de {1}</value>

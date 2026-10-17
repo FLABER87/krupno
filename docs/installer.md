@@ -14,7 +14,7 @@ Optional tasks:
 
 ## Models
 
-The models are not bundled with the installer. You can tick them in the component list, and the installer downloads them from the [models-v3](https://github.com/FLABER87/krupno/releases/tag/models-v3) release and verifies their SHA-256.
+The models are not bundled with the installer. You can tick them in the component list, and the installer downloads them from the [models-v4](https://github.com/FLABER87/krupno/releases/tag/models-v4) release and verifies their SHA-256.
 When the app is updated, a model with the same SHA-256 is not downloaded again.
 
 ## A running Krupno
@@ -56,7 +56,7 @@ The script publishes `Krupno.exe` and `krupno-cli.exe` into one folder. Models f
 
 ## Model releases
 
-The installer lists the models in `installer/Krupno.iss` (file name, size, SHA-256). A new set of models is published as a separate release (`models-v4` and so on), and the link in `Krupno.iss` is updated. Old model releases are never overwritten: already built installers point to them. A model release is published without "Set as the latest release" (`gh release create models-v4 --latest=false`): the window finds a new version of Krupno through the latest release, and a model release in its place would hide one until the next release of the app.
+The installer lists the models in `installer/Krupno.iss` (file name, size, SHA-256). A new set of models is published as a separate release (`models-v5` and so on), and the link in `Krupno.iss` is updated. Old model releases are never overwritten: already built installers point to them. A model release is published without "Set as the latest release" (`gh release create models-v5 --latest=false`): the window finds a new version of Krupno through the latest release, and a model release in its place would hide one until the next release of the app.
 
 ## Releasing a version
 

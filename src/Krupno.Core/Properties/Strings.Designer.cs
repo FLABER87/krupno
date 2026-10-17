@@ -141,6 +141,15 @@ namespace Krupno.Core.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The noise removal model must keep the image size (×1), but {0} is ×{1}..
+        /// </summary>
+        internal static string Model_DenoiserScale {
+            get {
+                return ResourceManager.GetString("Model_DenoiserScale", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Model file not found: {0}.
         /// </summary>
         internal static string Model_FileNotFound {

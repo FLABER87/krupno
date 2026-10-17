@@ -39,6 +39,9 @@
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>Метаданные модели противоречивы: окно должно быть не больше {0} px, но не меньше {1} px.</value>
   </data>
+  <data name="Model_DenoiserScale" xml:space="preserve">
+    <value>Модель для удаления шума должна сохранять размер изображения (×1), а {0} — ×{1}.</value>
+  </data>
   <data name="Model_FileNotFound" xml:space="preserve">
     <value>Файл модели не найден: {0}</value>
   </data>

@@ -1,5 +1,5 @@
 ﻿; Krupno installer. It carries only the app itself (self-contained publish with .NET inside); the models are
-; downloaded during installation from the models-v3 release and verified by SHA-256. The wizard speaks the languages of
+; downloaded during installation from the models-v4 release and verified by SHA-256. The wizard speaks the languages of
 ; the app window: Inno Setup's own messages files, four unofficial ones in languages\ (taken from the is-6_7_1 tag of
 ; jrsoftware/issrc, as Inno Setup doesn't install them) and our text in messages.iss.
 ; Built by installer\build.ps1, which also passes the parameters:
@@ -22,11 +22,11 @@
 #endif
 
 #define RepoUrl "https://github.com/FLABER87/krupno"
-#define ModelsUrl RepoUrl + "/releases/download/models-v3"
+#define ModelsUrl RepoUrl + "/releases/download/models-v4"
 #define ImageVerb "Software\Classes\SystemFileAssociations\image\shell\Krupno"
 #define FolderVerb "Software\Classes\Directory\shell\Krupno"
 
-; A [Files] line for a model from the models-v3 release. When the app is updated, a model with the same SHA-256
+; A [Files] line for a model from the models-v4 release. When the app is updated, a model with the same SHA-256
 ; is not downloaded again (ModelNeeded in [Code]).
 #define Model(Component, File, Size, Hash) \
   'Source: "' + ModelsUrl + '/' + File + '"; DestDir: "{app}\models"; DestName: "' + File + '"; ' + \
@@ -121,7 +121,8 @@ Name: "full"; Description: "{cm:TypeFull}"
 Name: "compact"; Description: "{cm:TypeCompact}"
 Name: "custom"; Description: "{cm:TypeCustom}"; Flags: iscustom
 
-; Models are listed in the same order and with the same names as in the app window (ViewModels/ModelItem.cs).
+; Models are listed in the same order and with the same names as in the app window (ViewModels/ModelItem.cs); the model of
+; "Remove noise" comes last, with the name of its checkbox.
 [Components]
 Name: "app"; Description: "{cm:ComponentApp}"; Types: full compact custom; Flags: fixed
 Name: "models"; Description: "{cm:ComponentModels}"; Types: full compact
@@ -133,6 +134,7 @@ Name: "models\dat2"; Description: "{cm:ModelDat2}"; Types: full
 Name: "models\esrganfp16"; Description: "{cm:ModelEsrganFp16}"; Types: full
 Name: "models\esrgan"; Description: "{cm:ModelEsrgan}"; Types: full
 Name: "models\general"; Description: "{cm:ModelGeneral}"; Types: full
+Name: "models\denoise"; Description: "{cm:ModelDenoise}"; Types: full
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
@@ -153,6 +155,7 @@ Source: "models-README.txt"; DestDir: "{app}\models"; DestName: "README.txt"; Fl
 {#Model("esrganfp16", "RealESRGAN_x4plus_fp16.onnx", "33_770_922", "97b1d38c36492a7931c9844221d862c89680e5e47eb86e419ee262b4cea49d07")}
 {#Model("esrgan", "RealESRGAN_x4plus.onnx", "67_167_465", "12938ed2823438c7b32f86964af788f8a3a0d73f9d9b5200d72f34765a447547")}
 {#Model("general", "realesr-general-x4v3.onnx", "4_868_806", "5e3a288df65e2e1fe5e070317e16b2808846ea731434e91eab869046ae013da3")}
+{#Model("denoise", "scunet_color_real_psnr_fp16.onnx", "37_175_156", "6ddedf2955d1ae680ccbb54050d0f35266e4493a6b93440b8633c2d9d6de5d54")}
 
 [Icons]
 Name: "{autoprograms}\Krupno"; Filename: "{app}\Krupno.exe"

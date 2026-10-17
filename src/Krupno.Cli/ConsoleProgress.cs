@@ -28,7 +28,7 @@ internal sealed class ConsoleProgress : IProgress<UpscaleProgress>
         _lastPercent = percent;
 
         int filled = percent * BarWidth / 100;
-        string pass = value.PassCount > 1 ? $"  pass {value.Pass}/{value.PassCount}" : "";
+        string pass = value.Denoising ? "  removing noise" : value.PassCount > 1 ? $"  pass {value.Pass}/{value.PassCount}" : "";
         string round = value.RoundCount > 1 ? $"  orientation {value.Round}/{value.RoundCount}" : "";
         Console.Write($"\r  [{new string('#', filled)}{new string('.', BarWidth - filled)}] {percent,3}%  tile {value.Tile}/{value.TileCount}{round}{pass}   ");
     }

@@ -108,6 +108,15 @@
   <data name="CustomValue_Name" xml:space="preserve">
     <value>倍数或尺寸</value>
   </data>
+  <data name="Denoise" xml:space="preserve">
+    <value>去除噪点</value>
+  </data>
+  <data name="Denoise_Description" xml:space="preserve">
+    <value>放大前，由单独的模型去除相机噪点和颗粒。速度更慢，且会抹平细微纹理：干净的图像请保持关闭。</value>
+  </data>
+  <data name="Denoise_Missing" xml:space="preserve">
+    <value>未安装去噪模型：请在安装 Krupno 时勾选它，或将 {0} 放入模型文件夹。</value>
+  </data>
   <data name="Device" xml:space="preserve">
     <value>设备</value>
   </data>
@@ -278,6 +287,9 @@
   </data>
   <data name="PreviewError_Title" xml:space="preserve">
     <value>无法打开此文件</value>
+  </data>
+  <data name="Progress_Denoising" xml:space="preserve">
+    <value>去除噪点</value>
   </data>
   <data name="Progress_File" xml:space="preserve">
     <value>第 {0} 个文件，共 {1} 个</value>

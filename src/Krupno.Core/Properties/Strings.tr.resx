@@ -39,6 +39,9 @@
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>Model meta verileri çelişkili: pencere en fazla {0} px, ancak en az {1} px olmalı.</value>
   </data>
+  <data name="Model_DenoiserScale" xml:space="preserve">
+    <value>Gürültü giderme modeli görüntü boyutunu korumalıdır (×1), ancak {0} ×{1} ölçekli.</value>
+  </data>
   <data name="Model_FileNotFound" xml:space="preserve">
     <value>Model dosyası bulunamadı: {0}</value>
   </data>

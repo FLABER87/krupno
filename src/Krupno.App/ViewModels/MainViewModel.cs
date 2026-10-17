@@ -69,6 +69,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private readonly SemaphoreSlim _selectionGate = new(1, 1);
     private UpscaleModel? _model;
     private (string Path, ExecutionDevice Device) _modelKey;
+    /// <summary>The model of "Remove noise", kept like <see cref="_model"/>: its sessions last from one run to the next.</summary>
+    private UpscaleModel? _denoiser;
+    private (string Path, ExecutionDevice Device) _denoiserKey;
+    /// <summary>The installed model of "Remove noise"; null if there is none.</summary>
+    private ModelEntry? _denoiserEntry;
     private CancellationTokenSource? _cts;
 
     private FileItem? _currentFile;
@@ -80,6 +85,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private ModelItem? _selectedModel;
     private bool _showAllModels;
     private int _strength = MaxStrength;
+    /// <summary>The choice of "Remove noise", kept while its model is missing too (see <see cref="Denoise"/>).</summary>
+    private bool _denoise;
     private Option<double> _selectedScale;
     private readonly Option<double> _customScale = new(0, Strings.Scale_Other);
     private Option<CustomScaleMode> _selectedCustomMode;
@@ -142,6 +149,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     /// <summary>The fallback to the CPU and an accelerator that can't compile the model are logged once per run.</summary>
     private bool _fallbackReported;
     private bool _compileFailureReported;
+    private bool _denoiserCompileFailureReported;
     /// <summary>When files last came from outside the window, see <see cref="OpenExternalAsync"/>.</summary>
     private DateTime _lastExternalOpen = DateTime.MinValue;
 
@@ -156,6 +164,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         // The choices from the last session; a value the window doesn't offer (an edited settings file) falls back to the default.
         if (_settings.Strength is int strength)
             _strength = Math.Clamp(strength, MinStrength, MaxStrength);
+        _denoise = _settings.Denoise == true;
         // "Other" is saved as scale 0, with its mode and number alongside.
         Scales = [new(2, "×2"), new(3, "×3"), new(4, "×4"), new(8, "×8"), _customScale];
         _selectedScale = Scales.FirstOrDefault(s => s.Value == _settings.Scale) ?? Scales[2];
@@ -356,6 +365,32 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     }
 
     public string StrengthText => string.Format(Strings.Percent, Strength);
+
+    /// <summary>
+    /// "Remove noise": the denoiser runs on the image before the upscaler (see Upscaler). Off while its model isn't installed,
+    /// but the choice is kept for when it is.
+    /// </summary>
+    public bool Denoise
+    {
+        get => _denoise && CanDenoise;
+        set
+        {
+            if (!SetProperty(ref _denoise, value))
+                return;
+            OnOutputSettingsChanged();
+            // Its sessions hold video memory, which the upscaler can have while the checkbox is off.
+            if (!value && !IsBusy)
+                ReleaseDenoiser();
+        }
+    }
+
+    /// <summary>Whether the model of "Remove noise" is installed.</summary>
+    public bool CanDenoise => _denoiserEntry is not null;
+
+    /// <summary>Under the checkbox: what it does, or how to get the model it needs.</summary>
+    public string DenoiseDescription => CanDenoise
+        ? Strings.Denoise_Description
+        : string.Format(Strings.Denoise_Missing, ModelCatalog.DenoiseModelName + ".onnx");
 
     // ── Scale and saving ────────────────────────────────────────────
 
@@ -994,7 +1029,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _previewCts?.Cancel();
         // The session must not be touched while processing is running; the process is exiting anyway.
         if (!IsBusy)
+        {
             _model?.Dispose();
+            _denoiser?.Dispose();
+        }
     }
 
     private void OnFilesChanged()
@@ -1165,7 +1203,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var deviceOption = SelectedDevice;
         var settings = (Scale: choice.Scale, Target: choice.Target, Tile: SelectedTile.Value,
             Padding: SeamlessTiles ? SeamlessPadding : UpscaleOptions.Default.TilePadding, Strength: Strength,
-            Tta: TestTimeAugmentation,
+            Tta: TestTimeAugmentation, Denoiser: Denoise ? _denoiserEntry : null,
             Format: SelectedFormat.Value, Quality: JpegQuality, Folder: OutputFolder);
         // All names up front: a result must not overwrite a queued source ("photo.png" → "photo_x4.png" while
         // "photo_x4.png" waits in the queue) or another result ("photo.jpg" and "photo.png" → "photo_x4.png").
@@ -1202,11 +1240,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         using var keepAwake = new KeepAwake();
         // What went wrong, for the log and "Copy error details": the file (null for the run as a whole) and the error.
         var errors = new List<(string? File, Exception Error)>();
-        UpscaleModel? runModel = null;
+        UpscaleModel? runModel = null, runDenoiser = null;
         bool finished = false;
         ErrorReport = null;
         _fallbackReported = false;
         _compileFailureReported = false;
+        _denoiserCompileFailureReported = false;
 
         try
         {
@@ -1226,8 +1265,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
             var model = await GetModelAsync();
             runModel = model;
+            var denoiser = settings.Denoiser is { } denoiserEntry ? await GetDenoiserAsync(denoiserEntry, deviceOption.Value) : null;
+            runDenoiser = denoiser;
             Log.Info("Run started\n" + DescribeRun());
-            var upscaler = new Upscaler(model);
+            var upscaler = new Upscaler(model, denoiser);
             var options = new UpscaleOptions
             {
                 Scale = settings.Scale, Target = settings.Target, TileSize = settings.Tile, TilePadding = settings.Padding,
@@ -1272,7 +1313,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                     var tiles = new TileProgress();
                     work ??= Stopwatch.StartNew();
                     var progress = new Progress<UpscaleProgress>(p =>
-                        OnProgress(p, file, index, files.Count, model, tiles, work));
+                        OnProgress(p, file, index, files.Count, model, denoiser, tiles, work));
                     var result = await upscaler.UpscaleAsync(loaded.Image, options, progress, cancellationToken);
 
                     // One save at a time (see BatchSaving): the previous file is finished first.
@@ -1380,6 +1421,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             string modelLine = info is null
                 ? $"Model: {modelItem.Name} · {modelItem.Entry.Path}"
                 : $"Model: {info}{(info.IsHalfPrecision ? ", fp16" : "")} · {info.Path}";
+            if (settings.Denoiser is { } denoiserEntry)
+            {
+                modelLine += runDenoiser?.Info is { } denoiserInfo
+                    ? $"\nNoise removal: {denoiserInfo}{(denoiserInfo.IsHalfPrecision ? ", fp16" : "")} · {denoiserInfo.Path}"
+                    : $"\nNoise removal: {denoiserEntry.Name} · {denoiserEntry.Path}";
+                if (runDenoiser?.FallbackReason is { } denoiserReason && runModel?.FallbackReason is null)
+                    modelLine += $" (DirectML is unavailable for it, on the CPU: {denoiserReason})";
+            }
             string device = runModel?.Device.ToString() ?? deviceOption.Label;
             string fallback = runModel?.FallbackReason is { } reason ? $"; DirectML is unavailable: {reason}" : "";
             string tile = $"{(settings.Tile == 0 ? "no tiling" : $"tile {settings.Tile} px")}, overlap {settings.Padding} px" +
@@ -1454,12 +1503,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    private void OnProgress(UpscaleProgress p, FileItem file, int index, int count, UpscaleModel model, TileProgress tiles,
-        Stopwatch work)
+    private void OnProgress(UpscaleProgress p, FileItem file, int index, int count, UpscaleModel model, UpscaleModel? denoiser,
+        TileProgress tiles, Stopwatch work)
     {
         // The session is created lazily, and DirectML may have just fallen back to the CPU: say so, the run is much slower then.
-        string device = Text.Device(model.Device);
-        if (model.FallbackReason is { } reason)
+        // The denoiser has sessions of its own, so it may fall back by itself.
+        string device = Text.Device((p.Denoising ? denoiser : null)?.Device ?? model.Device);
+        if ((model.FallbackReason ?? denoiser?.FallbackReason) is { } reason)
         {
             ProgressNote ??= Strings.Note_DirectMLUnavailable;
             if (!_fallbackReported)
@@ -1470,6 +1520,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             _compileFailureReported = true;
             Log.Warning($"{model.Device} can't compile the model for the cache, so it builds the engine on every start: {compileFailure}");
+        }
+        if (denoiser?.CompileFailure is { } denoiserCompileFailure && !_denoiserCompileFailureReported)
+        {
+            _denoiserCompileFailureReported = true;
+            Log.Warning($"{denoiser.Device} can't compile the noise removal model for the cache, so it builds the engine on every start: " +
+                        denoiserCompileFailure);
         }
 
         if (p.Message is { } message)
@@ -1512,7 +1568,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         string tileText = p.TileCount > 0 ? string.Format(Strings.Progress_Tile, p.Tile, p.TileCount) : "";
         if (p.RoundCount > 1)
             tileText += " · " + string.Format(Strings.Progress_Orientation, p.Round, p.RoundCount);
-        string pass = p.PassCount > 1 ? " · " + string.Format(Strings.Progress_Pass, p.Pass, p.PassCount) : "";
+        string pass = p.Denoising ? " · " + Strings.Progress_Denoising
+            : p.PassCount > 1 ? " · " + string.Format(Strings.Progress_Pass, p.Pass, p.PassCount)
+            : "";
         ProgressDetail = count > 1
             ? $"{string.Format(Strings.Progress_File, index + 1, count)} · {tileText}{pass}"
             : $"{(tileText.Length > 0 ? char.ToUpper(tileText[0], CultureInfo.CurrentCulture) + tileText[1..] : "")}{pass} · {device}";
@@ -1576,6 +1634,26 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         return _model;
     }
 
+    /// <summary>The model of "Remove noise" on the device, kept between runs like the upscaler.</summary>
+    private async Task<UpscaleModel> GetDenoiserAsync(ModelEntry entry, ExecutionDevice device)
+    {
+        if (_denoiser is not null && _denoiserKey != (entry.Path, device))
+            ReleaseDenoiser();
+
+        if (_denoiser is null)
+        {
+            _denoiser = await Task.Run(() => UpscaleModel.Load(entry.Path, device));
+            _denoiserKey = (entry.Path, device);
+        }
+        return _denoiser;
+    }
+
+    private void ReleaseDenoiser()
+    {
+        _denoiser?.Dispose();
+        _denoiser = null;
+    }
+
     private static string Friendly(Exception ex) => ex switch
     {
         OnnxRuntimeException => Strings.Friendly_Gpu,
@@ -1594,8 +1672,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         try
         {
             string? selectedPath = SelectedModel?.Entry.Path;
+            var models = ModelCatalog.Discover();
+            // The model of "Remove noise" is not an upscaler: the checkbox uses it, and it has no card.
+            _denoiserEntry = ModelCatalog.FindDenoiser(models);
+            if (_denoiser is not null && _denoiserKey.Path != _denoiserEntry?.Path)
+                ReleaseDenoiser();
             _allModels.Clear();
-            _allModels.AddRange(ModelCatalog.Discover()
+            _allModels.AddRange(models
+                .Where(m => !ModelCatalog.IsDenoiser(m))
                 .Select(ModelItem.Create)
                 .OrderBy(m => m.Order)
                 .ThenBy(m => m.Title, StringComparer.CurrentCultureIgnoreCase));
@@ -1615,6 +1699,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(HasNoModels));
         OnPropertyChanged(nameof(HasMoreModels));
         OnPropertyChanged(nameof(AllModelsToggleText));
+        OnPropertyChanged(nameof(CanDenoise));
+        OnPropertyChanged(nameof(Denoise));
+        OnPropertyChanged(nameof(DenoiseDescription));
         // The main button depends on whether a model is selected.
         CommandManager.InvalidateRequerySuggested();
         if (SelectedModel is { } selected)
@@ -1651,6 +1738,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         _model?.Dispose();
         _model = null;
+        // The denoiser stays when only the upscaler changes, and goes with the device.
+        if (_denoiserKey.Device != SelectedDevice.Value)
+            ReleaseDenoiser();
         if (SelectedModel is { } selected && !_refreshingModels)
             _ = ShowModelDetailsAsync(selected);
     }
@@ -1710,6 +1800,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _settings.DeviceProvider = device.Provider;
         }
         _settings.Strength = Strength;
+        _settings.Denoise = _denoise;
         _settings.Scale = SelectedScale.Value;
         _settings.CustomScaleMode = SelectedCustomMode.Value;
         _settings.CustomScaleValue = CustomValueText;

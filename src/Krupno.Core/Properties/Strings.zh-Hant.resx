@@ -39,6 +39,9 @@
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>模型中繼資料互相矛盾：視窗必須不超過 {0} px，但又至少為 {1} px。</value>
   </data>
+  <data name="Model_DenoiserScale" xml:space="preserve">
+    <value>去雜訊模型必須保持影像尺寸不變 (×1)，而 {0} 是 ×{1}。</value>
+  </data>
   <data name="Model_FileNotFound" xml:space="preserve">
     <value>找不到模型檔案：{0}</value>
   </data>

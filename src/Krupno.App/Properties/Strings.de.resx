@@ -108,6 +108,15 @@
   <data name="CustomValue_Name" xml:space="preserve">
     <value>Maßstab oder Größe</value>
   </data>
+  <data name="Denoise" xml:space="preserve">
+    <value>Rauschen entfernen</value>
+  </data>
+  <data name="Denoise_Description" xml:space="preserve">
+    <value>Vor dem Hochskalieren entfernt ein eigenes Modell Kamerarauschen und Körnung. Langsamer, und feine Texturen werden geglättet: bei sauberen Bildern ausgeschaltet lassen.</value>
+  </data>
+  <data name="Denoise_Missing" xml:space="preserve">
+    <value>Das Modell zur Rauschentfernung ist nicht installiert: Wählen Sie es bei der Installation von Krupno aus oder legen Sie {0} in den Modellordner.</value>
+  </data>
   <data name="Device" xml:space="preserve">
     <value>Gerät</value>
   </data>
@@ -278,6 +287,9 @@
   </data>
   <data name="PreviewError_Title" xml:space="preserve">
     <value>Diese Datei kann nicht geöffnet werden</value>
+  </data>
+  <data name="Progress_Denoising" xml:space="preserve">
+    <value>Rauschentfernung</value>
   </data>
   <data name="Progress_File" xml:space="preserve">
     <value>Datei {0} von {1}</value>

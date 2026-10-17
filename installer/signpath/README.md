@@ -9,7 +9,7 @@ Until then, releases are built unsigned, and SmartScreen warns on the first laun
 The full list is at [signpath.org/terms](https://signpath.org/terms). The key points:
 
 - **The project must already be released.** You apply for a project that already has a release in the form that will be signed. So an unsigned release comes first.
-- **All components under OSI licenses, with no proprietary parts.** This is why the models are not bundled with the installer but downloaded during installation from the [models-v3](https://github.com/FLABER87/krupno/releases/tag/models-v3) release. `DirectML.dll` is distributed under a Microsoft license, not an open source one. If SignPath asks about it: it is a Windows system component that we ship next to the app so that an outdated copy from System32 is not picked up.
+- **All components under OSI licenses, with no proprietary parts.** This is why the models are not bundled with the installer but downloaded during installation from the [models-v4](https://github.com/FLABER87/krupno/releases/tag/models-v4) release. `DirectML.dll` is distributed under a Microsoft license, not an open source one. If SignPath asks about it: it is a Windows system component that we ship next to the app so that an outdated copy from System32 is not picked up.
 - **Only our own files are signed:** `Krupno.exe`, `Krupno.dll`, `Krupno.Core.dll`, `krupno-cli.exe`, `krupno-cli.dll` and the installer. The .NET, ONNX Runtime and DirectML files are already signed by Microsoft.
 - **Two-factor authentication** on GitHub and SignPath for everyone with access.
 - **Every release is approved manually** in SignPath (the Approver role).
@@ -48,7 +48,7 @@ Free code signing provided by [SignPath.io](https://about.signpath.io), certific
 
 Privacy policy: this program will not transfer any information to other networked systems unless specifically
 requested by the user or the person installing or operating it. The installer downloads only the models selected
-during installation, from this repository's [models-v3](https://github.com/FLABER87/krupno/releases/tag/models-v3) release.
+during installation, from this repository's [models-v4](https://github.com/FLABER87/krupno/releases/tag/models-v4) release.
 At startup the app asks github.com which of this repository's releases is the latest (one request to
 `github.com/FLABER87/krupno/releases/latest`, carrying only the app's version), to say when a newer version is
 available. Nothing else is sent. The check can be turned off during installation and in "Settings" in the app.
