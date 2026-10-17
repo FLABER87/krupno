@@ -284,25 +284,66 @@
                     </Grid>
                 </Border>
 
-                <!-- A newer release, found at startup (see UpdateCheck) -->
-                <Border DockPanel.Dock="Top" Padding="20,8,12,8" BorderThickness="0,0,0,1"
+                <!-- A newer release, found at startup (see UpdateCheck); "Update" downloads and installs it (UpdateInstall). -->
+                <Border DockPanel.Dock="Top" Padding="20,10,12,10" BorderThickness="0,0,0,1"
                         BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
                         Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                         Visibility="{Binding UpdateText, Converter={StaticResource NullToCollapsed}}">
                     <DockPanel>
                         <Button DockPanel.Dock="Right" Style="{StaticResource SubtleButton}" Command="{Binding HideUpdateCommand}"
-                                VerticalAlignment="Center" ToolTip="{x:Static p:Strings.Update_Hide}"
-                                AutomationProperties.Name="{x:Static p:Strings.Update_Hide}">
+                                VerticalAlignment="Top" Margin="0,-4,0,0" ToolTip="{Binding UpdateCloseText}"
+                                AutomationProperties.Name="{Binding UpdateCloseText}">
                             <TextBlock Style="{StaticResource Icon}" Text="&#xE711;" FontSize="12" />
                         </Button>
-                        <TextBlock Style="{StaticResource Icon}" Text="&#xE896;" Margin="0,0,10,0" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
-                        <WrapPanel VerticalAlignment="Center">
-                            <TextBlock Text="{Binding UpdateText}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                            <Button Style="{StaticResource LinkButton}" Command="{Binding OpenUpdateCommand}" VerticalAlignment="Center">
-                                <TextBlock Text="{x:Static p:Strings.Update_Download}" />
-                            </Button>
-                        </WrapPanel>
+                        <TextBlock DockPanel.Dock="Left" VerticalAlignment="Top" Margin="0,1,10,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource Icon}">
+                                    <Setter Property="Text" Value="&#xE896;" />
+                                    <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsUpdateFailed}" Value="True">
+                                            <Setter Property="Text" Value="&#xE7BA;" />
+                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding UpdateText}" TextWrapping="Wrap" />
+                            <ProgressBar Height="4" Margin="0,8,0,2" Minimum="0" Maximum="1" Value="{Binding UpdateProgress, Mode=OneWay}"
+                                         IsIndeterminate="{Binding IsInstallingUpdate}"
+                                         Visibility="{Binding ShowUpdateProgress, Converter={StaticResource BoolToVisibility}}" />
+                            <!-- Each link shows only in its stage; none during the download. -->
+                            <WrapPanel>
+                                <Button Style="{DynamicResource AccentButtonStyle}" Command="{Binding InstallUpdateCommand}"
+                                        Padding="14,3" Margin="0,8,14,0" VerticalAlignment="Center"
+                                        Visibility="{Binding ShowInstallUpdate, Converter={StaticResource BoolToVisibility}}">
+                                    <TextBlock Text="{x:Static p:Strings.Update_Install}" />
+                                </Button>
+                                <Button Style="{StaticResource LinkButton}" Command="{Binding InstallUpdateCommand}"
+                                        Margin="0,8,14,0" VerticalAlignment="Center"
+                                        Visibility="{Binding ShowRetryUpdate, Converter={StaticResource BoolToVisibility}}">
+                                    <TextBlock Text="{x:Static p:Strings.TryAgain}" />
+                                </Button>
+                                <Button Style="{StaticResource LinkButton}" Command="{Binding OpenSetupLogCommand}"
+                                        Margin="0,8,14,0" VerticalAlignment="Center"
+                                        Visibility="{Binding UpdateSetupLog, Converter={StaticResource NullToCollapsed}}">
+                                    <TextBlock Text="{x:Static p:Strings.Update_SetupLog}" />
+                                </Button>
+                                <Button Style="{StaticResource LinkButton}" Command="{Binding OpenUpdateCommand}"
+                                        Margin="0,8,14,0" VerticalAlignment="Center"
+                                        Visibility="{Binding ShowWhatsNew, Converter={StaticResource BoolToVisibility}}">
+                                    <TextBlock Text="{x:Static p:Strings.Update_WhatsNew}" />
+                                </Button>
+                                <!-- No installation to update (the ZIP, a build): the release page has the installer and the ZIP. -->
+                                <Button Style="{StaticResource LinkButton}" Command="{Binding OpenUpdateCommand}"
+                                        Margin="0,6,0,0" VerticalAlignment="Center"
+                                        Visibility="{Binding ShowDownloadUpdate, Converter={StaticResource BoolToVisibility}}">
+                                    <TextBlock Text="{x:Static p:Strings.Update_Download}" />
+                                </Button>
+                            </WrapPanel>
+                        </StackPanel>
                     </DockPanel>
                 </Border>
 
@@ -332,6 +373,19 @@
                                         ToolTip="{x:Static p:Strings.OpenModelsFolder}" AutomationProperties.Name="{x:Static p:Strings.OpenModelsFolder}"
                                         MinWidth="26" MinHeight="26" Padding="4">
                                     <TextBlock Style="{StaticResource Icon}" Text="&#xED25;" FontSize="13" />
+                                </Button>
+                                <!-- Settings, in a window of their own: the top right corner of the panel, set apart from the models' buttons. -->
+                                <Rectangle Style="{StaticResource ToolbarDivider}" Height="16" />
+                                <Button Style="{StaticResource SubtleButton}" Click="OnSettingsClick"
+                                        AutomationProperties.Name="{x:Static p:Strings.Section_Settings}"
+                                        MinWidth="26" MinHeight="26" Padding="4">
+                                    <Button.ToolTip>
+                                        <StackPanel MaxWidth="320">
+                                            <TextBlock Text="{x:Static p:Strings.Settings_ToolTip}" />
+                                            <TextBlock Text="{Binding SettingsSummary}" Margin="0,2,0,0" TextWrapping="Wrap" Opacity="0.75" />
+                                        </StackPanel>
+                                    </Button.ToolTip>
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE713;" FontSize="14" />
                                 </Button>
                             </StackPanel>
                             <TextBlock Style="{StaticResource SectionHeader}" Text="{x:Static p:Strings.Section_Model}" />
@@ -428,56 +482,6 @@
                                        TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" ToolTip="{Binding OutputFolderDisplay}" />
                         </DockPanel>
 
-                        <!-- Settings: a section header like the others, with what is set inside on a second line, the way
-                             Windows Settings shows a collapsed group. Side by side on one line, the summary (a GPU first) read as
-                             a device picker, and it squeezed the header to a few letters in a long translation. -->
-                        <Expander Margin="0,16,0,0" HorizontalAlignment="Stretch">
-                            <Expander.Header>
-                                <StackPanel Margin="0,2,8,2">
-                                    <TextBlock Style="{StaticResource SectionHeader}" Text="{x:Static p:Strings.Section_Settings}" />
-                                    <TextBlock Style="{StaticResource Caption}" Text="{Binding SettingsSummary}" Margin="0,2,0,0"
-                                               TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding SettingsSummary}" />
-                                </StackPanel>
-                            </Expander.Header>
-                            <StackPanel Margin="0,4,0,0">
-                                <TextBlock Style="{StaticResource Caption}" Text="{x:Static p:Strings.Device}" Margin="0,0,0,4" />
-                                <ComboBox ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}"
-                                          DisplayMemberPath="Label" HorizontalAlignment="Stretch" />
-                                <!-- The vendors' accelerators Windows ML can add for this computer (Windows 11 24H2+). -->
-                                <StackPanel Margin="0,6,0,0" Visibility="{Binding HasAcceleratorOffer, Converter={StaticResource BoolToVisibility}}"
-                                            ToolTip="{x:Static p:Strings.Accelerators_ToolTip}">
-                                    <TextBlock Style="{StaticResource Caption}" Text="{Binding AcceleratorOffer}"
-                                               Visibility="{Binding AcceleratorOffer, Converter={StaticResource NullToCollapsed}}" />
-                                    <TextBlock Style="{StaticResource Caption}" Text="{Binding AcceleratorStatus}"
-                                               Visibility="{Binding AcceleratorStatus, Converter={StaticResource NullToCollapsed}}" />
-                                    <Button Style="{StaticResource LinkButton}" Command="{Binding InstallAcceleratorsCommand}"
-                                            HorizontalAlignment="Left" Margin="0,4,0,0">
-                                        <TextBlock Text="{x:Static p:Strings.Accelerators_Download}" />
-                                    </Button>
-                                </StackPanel>
-                                <TextBlock Style="{StaticResource Caption}" Text="{x:Static p:Strings.TileSize}" Margin="0,12,0,4" />
-                                <ComboBox ItemsSource="{Binding TileSizes}" SelectedItem="{Binding SelectedTile}"
-                                          DisplayMemberPath="Label" HorizontalAlignment="Stretch" />
-                                <TextBlock Style="{StaticResource Caption}" Margin="0,6,0,0"
-                                           Text="{x:Static p:Strings.TileSize_Description}" />
-                                <CheckBox Content="{x:Static p:Strings.SeamlessTiles}" IsChecked="{Binding SeamlessTiles}" Margin="0,12,0,0" />
-                                <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0"
-                                           Text="{x:Static p:Strings.SeamlessTiles_Description}" />
-                                <CheckBox Content="{x:Static p:Strings.Tta}" IsChecked="{Binding TestTimeAugmentation}" Margin="0,12,0,0" />
-                                <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0"
-                                           Text="{x:Static p:Strings.Tta_Description}" />
-                                <TextBlock Style="{StaticResource Caption}" Text="{x:Static p:Strings.Language}" Margin="0,12,0,4" />
-                                <ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage}"
-                                          DisplayMemberPath="Label" HorizontalAlignment="Stretch"
-                                          AutomationProperties.Name="{x:Static p:Strings.Language}" />
-                                <TextBlock Style="{StaticResource Caption}" Margin="0,6,0,0" Text="{x:Static p:Strings.Language_Restart}"
-                                           Foreground="{DynamicResource SystemFillColorCautionBrush}"
-                                           Visibility="{Binding LanguageNeedsRestart, Converter={StaticResource BoolToVisibility}}" />
-                                <CheckBox Content="{x:Static p:Strings.CheckForUpdates}" IsChecked="{Binding CheckForUpdates}" Margin="0,12,0,0" />
-                                <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0"
-                                           Text="{x:Static p:Strings.CheckForUpdates_Description}" />
-                            </StackPanel>
-                        </Expander>
                     </StackPanel>
                 </ScrollViewer>
             </DockPanel>

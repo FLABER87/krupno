@@ -186,11 +186,20 @@ namespace Krupno.App.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to At startup, asks github.com which Krupno release is the latest. Nothing else is sent, and nothing is downloaded..
+        ///   Looks up a localized string similar to At startup, asks github.com which Krupno release is the latest. Nothing else is sent, and a new version is only downloaded when you ask for it..
         /// </summary>
         public static string CheckForUpdates_Description {
             get {
                 return ResourceManager.GetString("CheckForUpdates_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Close.
+        /// </summary>
+        public static string Close {
+            get {
+                return ResourceManager.GetString("Close", resourceCulture);
             }
         }
         
@@ -1041,6 +1050,33 @@ namespace Krupno.App.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Processing.
+        /// </summary>
+        public static string Settings_Processing {
+            get {
+                return ResourceManager.GetString("Settings_Processing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Settings (Ctrl+,).
+        /// </summary>
+        public static string Settings_ToolTip {
+            get {
+                return ResourceManager.GetString("Settings_ToolTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to General.
+        /// </summary>
+        public static string Settings_General {
+            get {
+                return ResourceManager.GetString("Settings_General", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Show in folder.
         /// </summary>
         public static string ShowInFolder {
@@ -1338,6 +1374,15 @@ namespace Krupno.App.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Krupno is being installed. Try again once the installer has finished..
+        /// </summary>
+        public static string SetupRunning {
+            get {
+                return ResourceManager.GetString("SetupRunning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Try again.
         /// </summary>
         public static string TryAgain {
@@ -1420,6 +1465,33 @@ namespace Krupno.App.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cancel the download.
+        /// </summary>
+        public static string Update_CancelDownload {
+            get {
+                return ResourceManager.GetString("Update_CancelDownload", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Couldn't start the installer of Krupno {0}: {1}.
+        /// </summary>
+        public static string Update_CantStart {
+            get {
+                return ResourceManager.GetString("Update_CantStart", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Close the other Krupno windows and the command-line tool first, then try again..
+        /// </summary>
+        public static string Update_CloseOthers {
+            get {
+                return ResourceManager.GetString("Update_CloseOthers", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Download.
         /// </summary>
         public static string Update_Download {
@@ -1429,11 +1501,92 @@ namespace Krupno.App.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Downloading Krupno {0}… {1}%.
+        /// </summary>
+        public static string Update_Downloading {
+            get {
+                return ResourceManager.GetString("Update_Downloading", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Couldn't download Krupno {0}: {1}.
+        /// </summary>
+        public static string Update_Failed {
+            get {
+                return ResourceManager.GetString("Update_Failed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Hide.
         /// </summary>
         public static string Update_Hide {
             get {
                 return ResourceManager.GetString("Update_Hide", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Update.
+        /// </summary>
+        public static string Update_Install {
+            get {
+                return ResourceManager.GetString("Update_Install", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Krupno has been updated to {0}.
+        /// </summary>
+        public static string Update_Installed {
+            get {
+                return ResourceManager.GetString("Update_Installed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Installing Krupno {0}….
+        /// </summary>
+        public static string Update_Installing {
+            get {
+                return ResourceManager.GetString("Update_Installing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to the downloaded file doesn't match the checksum published with the release.
+        /// </summary>
+        public static string Update_Mismatch {
+            get {
+                return ResourceManager.GetString("Update_Mismatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The update to Krupno {0} wasn't installed..
+        /// </summary>
+        public static string Update_NotInstalled {
+            get {
+                return ResourceManager.GetString("Update_NotInstalled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Setup log.
+        /// </summary>
+        public static string Update_SetupLog {
+            get {
+                return ResourceManager.GetString("Update_SetupLog", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to What's new.
+        /// </summary>
+        public static string Update_WhatsNew {
+            get {
+                return ResourceManager.GetString("Update_WhatsNew", resourceCulture);
             }
         }
         

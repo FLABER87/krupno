@@ -9,9 +9,10 @@ namespace Krupno.App.Infrastructure;
 /// <summary>
 /// Whether a newer Krupno has been released. One HEAD request to the repository's "latest release" page on github.com, which
 /// answers with a redirect to that release's tag (".../releases/tag/v0.3.0"): not the GitHub API, which allows an address
-/// 60 requests an hour without a token. Nothing else is sent, the redirect isn't followed, and nothing is downloaded. Only a
-/// tag of the form vX.Y.Z is a release of Krupno: the models are released too (models-v2), and are published without being
-/// marked as the latest. Off with "Check for updates" under "Settings", or with the installer's task (see <see cref="Decide"/>).
+/// 60 requests an hour without a token. Nothing else is sent, the redirect isn't followed, and nothing is downloaded: that
+/// waits for the user's "Update" (<see cref="UpdateInstall"/>). Only a tag of the form vX.Y.Z is a release of Krupno: the
+/// models are released too (models-v2), and are published without being marked as the latest. Off with "Check for updates"
+/// in "Settings", or with the installer's task (see <see cref="Decide"/>).
 /// </summary>
 internal static partial class UpdateCheck
 {
@@ -61,17 +62,22 @@ internal static partial class UpdateCheck
             : null;
     }
 
-    /// <summary>This program's version in three parts, as the tags have it; KRUPNO_UPDATE_FROM=0.1.0 pretends to be another one, to see the notice.</summary>
-    public static Version Current
-    {
-        get
-        {
-            if (Environment.GetEnvironmentVariable("KRUPNO_UPDATE_FROM") is { } pretend && Version.TryParse(pretend, out var pretended))
-                return new Version(pretended.Major, pretended.Minor, Math.Max(0, pretended.Build));
-            var version = typeof(UpdateCheck).Assembly.GetName().Version ?? new Version(0, 0, 0);
-            return new Version(version.Major, version.Minor, Math.Max(0, version.Build));
-        }
-    }
+    /// <summary>The variable that makes the window compare as another version (see <see cref="Current"/>).</summary>
+    public const string PretendVariable = "KRUPNO_UPDATE_FROM";
+
+    /// <summary>The version to compare with the latest release: <see cref="Own"/>, or with KRUPNO_UPDATE_FROM=0.1.0 another one, to see the notice.</summary>
+    public static Version Current =>
+        Environment.GetEnvironmentVariable(PretendVariable) is { } pretend && Version.TryParse(pretend, out var pretended)
+            ? new Version(pretended.Major, pretended.Minor, Math.Max(0, pretended.Build))
+            : Own;
+
+    /// <summary>This program's version in three parts, as the tags have it.</summary>
+    public static Version Own { get; } = typeof(UpdateCheck).Assembly.GetName().Version is { } version
+        ? new Version(version.Major, version.Minor, Math.Max(0, version.Build))
+        : new Version(0, 0, 0);
+
+    /// <summary>The page of the release of <paramref name="version"/>.</summary>
+    public static string ReleasePage(Version version) => $"https://github.com/FLABER87/krupno/releases/tag/v{version.ToString(3)}";
 
     /// <summary>
     /// Whether the installer's "Check for new versions" task was ticked, and when that installation ran. Null without an

@@ -55,7 +55,10 @@
     <value>检查更新</value>
   </data>
   <data name="CheckForUpdates_Description" xml:space="preserve">
-    <value>启动时向 github.com 查询 Krupno 的最新版本。不会发送其他任何内容，也不会下载任何内容。</value>
+    <value>启动时向 github.com 查询 Krupno 的最新版本。不会发送其他任何内容；新版本只在要求时才会下载。</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>关闭</value>
   </data>
   <data name="Chip_Original" xml:space="preserve">
     <value>原图 · {0} × {1}</value>
@@ -339,6 +342,14 @@
   <data name="SelectFiles" xml:space="preserve">
     <value>选择文件</value>
   </data>
+  <data name="Settings_Processing" xml:space="preserve">
+    <value>处理</value>
+  </data>
+  <data name="Settings_ToolTip" xml:space="preserve">
+    <value>设置 (Ctrl+,)</value>
+  </data>
+  <data name="Settings_General" xml:space="preserve">
+    <value>常规</value></data>
   <data name="ShowInFolder" xml:space="preserve">
     <value>在文件夹中显示</value>
   </data>
@@ -438,6 +449,8 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>结果已复制到剪贴板</value>
   </data>
+  <data name="SetupRunning" xml:space="preserve">
+    <value>正在安装 Krupno。请在安装程序完成后重试。</value></data>
   <data name="TryAgain" xml:space="preserve">
     <value>重试</value>
   </data>
@@ -466,11 +479,47 @@
   <data name="Update_Available" xml:space="preserve">
     <value>Krupno {0} 已发布</value>
   </data>
+  <data name="Update_CancelDownload" xml:space="preserve">
+    <value>取消下载</value>
+  </data>
+  <data name="Update_CantStart" xml:space="preserve">
+    <value>无法启动 Krupno {0} 的安装程序：{1}</value>
+  </data>
+  <data name="Update_CloseOthers" xml:space="preserve">
+    <value>请先关闭其他 Krupno 窗口和命令行工具，然后重试。</value>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>下载</value>
   </data>
+  <data name="Update_Downloading" xml:space="preserve">
+    <value>正在下载 Krupno {0}… {1}%</value>
+  </data>
+  <data name="Update_Failed" xml:space="preserve">
+    <value>无法下载 Krupno {0}：{1}</value>
+  </data>
   <data name="Update_Hide" xml:space="preserve">
     <value>隐藏</value>
+  </data>
+  <data name="Update_Install" xml:space="preserve">
+    <value>更新</value>
+  </data>
+  <data name="Update_Installed" xml:space="preserve">
+    <value>Krupno 已更新到 {0}</value>
+  </data>
+  <data name="Update_Installing" xml:space="preserve">
+    <value>正在安装 Krupno {0}…</value>
+  </data>
+  <data name="Update_Mismatch" xml:space="preserve">
+    <value>下载的文件与随版本发布的校验和不一致</value>
+  </data>
+  <data name="Update_NotInstalled" xml:space="preserve">
+    <value>未能安装 Krupno {0} 更新。</value>
+  </data>
+  <data name="Update_SetupLog" xml:space="preserve">
+    <value>安装日志</value>
+  </data>
+  <data name="Update_WhatsNew" xml:space="preserve">
+    <value>新功能</value>
   </data>
   <data name="Upscale" xml:space="preserve">
     <value>放大</value>

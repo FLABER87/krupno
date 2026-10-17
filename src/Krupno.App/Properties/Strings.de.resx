@@ -55,7 +55,10 @@
     <value>Nach Updates suchen</value>
   </data>
   <data name="CheckForUpdates_Description" xml:space="preserve">
-    <value>Fragt beim Start github.com, welche Krupno-Version die neueste ist. Sonst wird nichts gesendet und nichts heruntergeladen.</value>
+    <value>Fragt beim Start github.com, welche Krupno-Version die neueste ist. Sonst wird nichts gesendet, und eine neue Version wird nur heruntergeladen, wenn Sie es möchten.</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Schließen</value>
   </data>
   <data name="Chip_Original" xml:space="preserve">
     <value>Original · {0} × {1}</value>
@@ -339,6 +342,14 @@
   <data name="SelectFiles" xml:space="preserve">
     <value>Dateien auswählen</value>
   </data>
+  <data name="Settings_Processing" xml:space="preserve">
+    <value>Verarbeitung</value>
+  </data>
+  <data name="Settings_ToolTip" xml:space="preserve">
+    <value>Einstellungen (Strg+,)</value>
+  </data>
+  <data name="Settings_General" xml:space="preserve">
+    <value>Allgemein</value></data>
   <data name="ShowInFolder" xml:space="preserve">
     <value>Im Ordner anzeigen</value>
   </data>
@@ -438,6 +449,8 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>Ergebnis in die Zwischenablage kopiert</value>
   </data>
+  <data name="SetupRunning" xml:space="preserve">
+    <value>Krupno wird gerade installiert. Versuchen Sie es erneut, wenn das Setup abgeschlossen ist.</value></data>
   <data name="TryAgain" xml:space="preserve">
     <value>Erneut versuchen</value>
   </data>
@@ -466,11 +479,47 @@
   <data name="Update_Available" xml:space="preserve">
     <value>Krupno {0} ist verfügbar</value>
   </data>
+  <data name="Update_CancelDownload" xml:space="preserve">
+    <value>Download abbrechen</value>
+  </data>
+  <data name="Update_CantStart" xml:space="preserve">
+    <value>Das Installationsprogramm von Krupno {0} konnte nicht gestartet werden: {1}</value>
+  </data>
+  <data name="Update_CloseOthers" xml:space="preserve">
+    <value>Schließen Sie zuerst die anderen Krupno-Fenster und das Befehlszeilentool und versuchen Sie es dann erneut.</value>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>Herunterladen</value>
   </data>
+  <data name="Update_Downloading" xml:space="preserve">
+    <value>Krupno {0} wird heruntergeladen… {1} %</value>
+  </data>
+  <data name="Update_Failed" xml:space="preserve">
+    <value>Krupno {0} konnte nicht heruntergeladen werden: {1}</value>
+  </data>
   <data name="Update_Hide" xml:space="preserve">
     <value>Ausblenden</value>
+  </data>
+  <data name="Update_Install" xml:space="preserve">
+    <value>Aktualisieren</value>
+  </data>
+  <data name="Update_Installed" xml:space="preserve">
+    <value>Krupno wurde auf {0} aktualisiert</value>
+  </data>
+  <data name="Update_Installing" xml:space="preserve">
+    <value>Krupno {0} wird installiert…</value>
+  </data>
+  <data name="Update_Mismatch" xml:space="preserve">
+    <value>die heruntergeladene Datei stimmt nicht mit der Prüfsumme überein, die mit dem Release veröffentlicht wurde</value>
+  </data>
+  <data name="Update_NotInstalled" xml:space="preserve">
+    <value>Das Update auf Krupno {0} wurde nicht installiert.</value>
+  </data>
+  <data name="Update_SetupLog" xml:space="preserve">
+    <value>Setup-Protokoll</value>
+  </data>
+  <data name="Update_WhatsNew" xml:space="preserve">
+    <value>Neuigkeiten</value>
   </data>
   <data name="Upscale" xml:space="preserve">
     <value>Hochskalieren</value>

@@ -59,7 +59,7 @@ public sealed class AppSettings
     /// <summary>Where results go; null means next to the originals.</summary>
     public string? OutputFolder { get; set; }
 
-    /// <summary>The tile size from "Settings"; 0 means no tiling.</summary>
+    /// <summary>The tile size in "Settings"; 0 means no tiling.</summary>
     public int? TileSize { get; set; }
 
     /// <summary>"Seamless tiles" in "Settings": a 64 px tile overlap instead of 32.</summary>
@@ -79,6 +79,12 @@ public sealed class AppSettings
 
     /// <summary>The installation (its time) that was the last one when <see cref="CheckForUpdates"/> was chosen or reset.</summary>
     public string? CheckForUpdatesSetAt { get; set; }
+
+    /// <summary>
+    /// The version "Update" started Setup for, until the next start: then the window says whether it was installed (see
+    /// <see cref="UpdateInstall"/>).
+    /// </summary>
+    public string? UpdatingTo { get; set; }
 
     public WindowBounds? Window { get; set; }
 

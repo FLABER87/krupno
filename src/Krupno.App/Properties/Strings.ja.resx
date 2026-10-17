@@ -55,7 +55,10 @@
     <value>更新を確認する</value>
   </data>
   <data name="CheckForUpdates_Description" xml:space="preserve">
-    <value>起動時に github.com に Krupno の最新リリースを問い合わせます。それ以外は何も送信せず、何もダウンロードしません。</value>
+    <value>起動時に github.com に Krupno の最新リリースを問い合わせます。それ以外は何も送信せず、新しいバージョンは指示したときにだけダウンロードします。</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>閉じる</value>
   </data>
   <data name="Chip_Original" xml:space="preserve">
     <value>元画像 · {0} × {1}</value>
@@ -339,6 +342,14 @@
   <data name="SelectFiles" xml:space="preserve">
     <value>ファイルを選択</value>
   </data>
+  <data name="Settings_Processing" xml:space="preserve">
+    <value>処理</value>
+  </data>
+  <data name="Settings_ToolTip" xml:space="preserve">
+    <value>設定 (Ctrl+,)</value>
+  </data>
+  <data name="Settings_General" xml:space="preserve">
+    <value>全般</value></data>
   <data name="ShowInFolder" xml:space="preserve">
     <value>フォルダーに表示</value>
   </data>
@@ -438,6 +449,8 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>結果をクリップボードにコピーしました</value>
   </data>
+  <data name="SetupRunning" xml:space="preserve">
+    <value>Krupno をインストールしています。インストーラーの完了後にもう一度お試しください。</value></data>
   <data name="TryAgain" xml:space="preserve">
     <value>再試行</value>
   </data>
@@ -466,11 +479,47 @@
   <data name="Update_Available" xml:space="preserve">
     <value>Krupno {0} が公開されています</value>
   </data>
+  <data name="Update_CancelDownload" xml:space="preserve">
+    <value>ダウンロードをキャンセル</value>
+  </data>
+  <data name="Update_CantStart" xml:space="preserve">
+    <value>Krupno {0} のインストーラーを起動できませんでした：{1}</value>
+  </data>
+  <data name="Update_CloseOthers" xml:space="preserve">
+    <value>先にほかの Krupno のウィンドウとコマンドライン ツールを閉じてから、もう一度お試しください。</value>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>ダウンロード</value>
   </data>
+  <data name="Update_Downloading" xml:space="preserve">
+    <value>Krupno {0} をダウンロードしています… {1}%</value>
+  </data>
+  <data name="Update_Failed" xml:space="preserve">
+    <value>Krupno {0} をダウンロードできませんでした：{1}</value>
+  </data>
   <data name="Update_Hide" xml:space="preserve">
     <value>非表示</value>
+  </data>
+  <data name="Update_Install" xml:space="preserve">
+    <value>更新</value>
+  </data>
+  <data name="Update_Installed" xml:space="preserve">
+    <value>Krupno を {0} に更新しました</value>
+  </data>
+  <data name="Update_Installing" xml:space="preserve">
+    <value>Krupno {0} をインストールしています…</value>
+  </data>
+  <data name="Update_Mismatch" xml:space="preserve">
+    <value>ダウンロードしたファイルが、リリースと一緒に公開されたチェックサムと一致しません</value>
+  </data>
+  <data name="Update_NotInstalled" xml:space="preserve">
+    <value>Krupno {0} への更新はインストールされませんでした。</value>
+  </data>
+  <data name="Update_SetupLog" xml:space="preserve">
+    <value>セットアップのログ</value>
+  </data>
+  <data name="Update_WhatsNew" xml:space="preserve">
+    <value>新機能</value>
   </data>
   <data name="Upscale" xml:space="preserve">
     <value>拡大</value>

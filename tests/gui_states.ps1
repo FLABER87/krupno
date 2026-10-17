@@ -1,10 +1,10 @@
 ﻿# Screenshots of the Krupno.exe window in its main states: empty, ready to start, processing, result, batch, error,
-# light theme. Checks that the states are reached; the screenshots (tests/out/gui) are reviewed by a human.
+# light theme, the settings window. Checks that the states are reached; the screenshots (tests/out/gui) are reviewed by a human.
 # The color scenario also checks pixels: a Display P3 image must be shown converted to sRGB, as Windows decodes it.
 # Requires a Release build, real models in models/ and the fixture images (python tests\make_fixtures.py).
-#   powershell -File tests\gui_states.ps1 [-Scenario single,batch,error,light,color] [-Image <file>] [-Batch <folder>]
+#   powershell -File tests\gui_states.ps1 [-Scenario single,batch,error,light,color,settings] [-Image <file>] [-Batch <folder>]
 param(
-    [string[]]$Scenario = @("single", "batch", "error", "light", "color"),
+    [string[]]$Scenario = @("single", "batch", "error", "light", "color", "settings"),
     [string]$Exe = "$PSScriptRoot\..\src\Krupno.App\bin\Release\net10.0-windows10.0.19041.0\win-x64\Krupno.exe",
     [string]$Image = "$PSScriptRoot\fixtures\images\big_1500x1000.png",
     [string]$Batch = "$PSScriptRoot\fixtures\images",
@@ -166,7 +166,30 @@ try {
                         Expect-Color $h "P3 original reloaded" (Before-Point $w) $managed 3
                     } finally { Close $p }
                 }
-                default { throw "unknown scenario (available: single, batch, error, light, color)" }
+                "settings" {
+                    # The gear button opens "Settings" in a window of its own, over the main one; "Close" closes it.
+                    Settings $Model
+                    $p = Launch @($single)
+                    try {
+                        $w = $AE::FromHandle($p.MainWindowHandle)
+                        Invoke-Named $w "^Settings$"
+                        $windows = New-Object System.Windows.Automation.PropertyCondition ($AE::ControlTypeProperty), ([System.Windows.Automation.ControlType]::Window)
+                        $deadline = (Get-Date).AddSeconds(10)
+                        do {
+                            Start-Sleep -Milliseconds 300
+                            $dialog = @($w.FindAll($Tree::Descendants, $windows)) | Where-Object { $_.Current.Name -eq "Settings" } | Select-Object -First 1
+                        } while (-not $dialog -and (Get-Date) -lt $deadline)
+                        if (-not $dialog) { throw "the settings window did not open" }
+                        foreach ($element in "^Device$", "^Tile size$", "^Language$", "^Check for updates$") {
+                            if (-not (FindName $dialog $element)) { throw "'$element' is missing from the settings window" }
+                        }
+                        Shot ([IntPtr]$dialog.Current.NativeWindowHandle) "15-settings"
+                        Invoke-Named $dialog "^Close$"
+                        Start-Sleep -Seconds 1
+                        if (@($w.FindAll($Tree::Descendants, $windows)).Count -gt 0) { throw "the settings window did not close" }
+                    } finally { Close $p }
+                }
+                default { throw "unknown scenario (available: single, batch, error, light, color, settings)" }
             }
             "OK   $name"
         } catch {

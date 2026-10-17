@@ -10,6 +10,8 @@ Console.OutputEncoding = Encoding.UTF8;
 // The command-line tool speaks English whatever the Windows language: scripts read its output, and the messages it passes on
 // from Krupno.Core (progress, errors) would otherwise follow the language the window is translated into.
 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
+// For the installer: it asks for Krupno to be closed instead of stopping a run halfway through to replace these files.
+RunningMarker.Hold();
 
 CliOptions options;
 try
@@ -57,6 +59,13 @@ if (options.ListModels)
 
 if (options.Inputs.Count == 0)
     return 0;
+
+// Setup is replacing these files, and would stop the run halfway through.
+if (RunningMarker.SetupRunning())
+{
+    Console.Error.WriteLine("Krupno is being installed or updated. Run this again once Setup has finished.");
+    return 1;
+}
 
 using var cts = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) =>

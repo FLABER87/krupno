@@ -36,6 +36,8 @@ public partial class MainWindow : Window
             if (!IsActive)
                 TaskbarFlash.Start(this);
         };
+        // "Update" started Setup, which replaces this program's files and starts it again.
+        _viewModel.ExitRequested += (_, _) => Close();
         Loaded += OnLoaded;
         SourceInitialized += (_, _) =>
         {
@@ -144,6 +146,19 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OnSettingsClick(object sender, RoutedEventArgs e) => OpenSettings();
+
+    /// <summary>
+    /// "Settings" in a dialog of its own, bound to the same view model: a choice applies at once, as it did in the panel. Not while
+    /// processing runs, like the rest of the panel.
+    /// </summary>
+    private void OpenSettings()
+    {
+        if (!_viewModel.IsIdle || !IsLoaded || _closing || _closingAfterRun)
+            return;
+        new SettingsWindow { Owner = this, DataContext = _viewModel }.ShowDialog();
+    }
+
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (Keyboard.Modifiers != ModifierKeys.Control)
@@ -151,6 +166,9 @@ public partial class MainWindow : Window
 
         switch (e.Key)
         {
+            case Key.OemComma:
+                OpenSettings();
+                break;
             case Key.D0 or Key.NumPad0:
                 Compare.FitToWindow();
                 break;
