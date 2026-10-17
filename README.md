@@ -158,13 +158,18 @@ krupno-cli C:\photos -o C:\photos_x4          # a whole folder
 krupno-cli photo.png -m realesr-general-x4v3 -d gpu1 -t 256
 krupno-cli photo.jpg --strength 70              # 70% network, 30% plain Lanczos resize
 krupno-cli C:\photos --long-side 3840           # every result 3840 px on its longer side
+krupno-cli C:\photos -r -o D:\x4                # subfolders too, repeated under D:\x4
+krupno-cli C:\photos -r -o D:\x4 --skip-existing   # resume: only the images without a result
+krupno-cli *.jpg scan.png -o C:\x4             # several inputs; krupno-cli expands the pattern itself
 krupno-cli --list-models --list-devices
 ```
 
 See `krupno-cli --help` for details. Ctrl+C cancels processing. While it runs, Windows does not go to sleep on idle.
 
 A result never replaces a source image or another result of the same run: if `-o` points at the source's own folder,
-or a folder has both `photo.jpg` and `photo.png`, the second name gets ` (2)` (`photo (2).png`). An existing file from an earlier run is overwritten.
+or a folder has both `photo.jpg` and `photo.png`, the second name gets ` (2)` (`photo (2).png`). An existing file from an earlier run is overwritten, unless `--skip-existing` is given: then that image is left out, and if nothing is left the model isn't even loaded.
+
+Several files, folders and patterns can be given at once. cmd and PowerShell don't expand `*.jpg` for a program like krupno-cli, so it expands patterns itself, in the file name only (`photos\*.jpg`, not `pho*\a.jpg`); `*.jpg` doesn't match `.jpeg`. A file or pattern without `-o` keeps its result next to the source, a folder fills `<folder>_upscaled`; with `-o` everything goes into that folder. With `-r` the images in subfolders are taken too, and their folders are repeated in the output folder. An image that is the result of another one in the same command is left out, so `*.png` next to the sources or `-o` inside the folder with `-r` doesn't upscale the results of an earlier run again.
 
 In a batch, a file's line (size, time, output path) is printed as soon as it is upscaled, while its result is still being written in the background. If that save fails, `[i/n] Not saved: …` follows once the next file is done, the file counts as failed, and the exit code is 1.
 

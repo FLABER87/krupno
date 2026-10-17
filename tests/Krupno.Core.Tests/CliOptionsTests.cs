@@ -9,7 +9,9 @@ public class CliOptionsTests
     public void Defaults()
     {
         var options = CliOptions.Parse(["photo.jpg"]);
-        Assert.Equal("photo.jpg", options.Input);
+        Assert.Equal(["photo.jpg"], options.Inputs);
+        Assert.False(options.Recursive);
+        Assert.False(options.SkipExisting);
         Assert.Equal(0, options.Scale);
         Assert.Null(options.Target);
         Assert.Equal((384, 32, 100, 95), (options.Tile, options.Padding, options.Strength, options.Quality));
@@ -88,10 +90,19 @@ public class CliOptionsTests
     }
 
     [Fact]
-    public void MissingValueUnknownOptionAndSecondInput()
+    public void SeveralInputsAndBatchSwitches()
+    {
+        var options = CliOptions.Parse(["a.jpg", "-r", "photos", "--skip-existing", "*.png"]);
+        Assert.Equal(["a.jpg", "photos", "*.png"], options.Inputs);
+        Assert.True(options.Recursive);
+        Assert.True(options.SkipExisting);
+        Assert.True(CliOptions.Parse(["photos", "--recursive"]).Recursive);
+    }
+
+    [Fact]
+    public void MissingValueAndUnknownOption()
     {
         Assert.Contains("Missing value", Assert.Throws<CliException>(() => CliOptions.Parse(["photo.jpg", "--width"])).Message);
         Assert.Contains("Unknown option", Assert.Throws<CliException>(() => CliOptions.Parse(["photo.jpg", "--wdith", "5"])).Message);
-        Assert.Contains("Unexpected argument", Assert.Throws<CliException>(() => CliOptions.Parse(["a.jpg", "b.jpg"])).Message);
     }
 }
