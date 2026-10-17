@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Security.AccessControl;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text;
 using System.Text.RegularExpressions;
 using Krupno.App.Infrastructure;
@@ -165,9 +167,62 @@ public class UpdateInstallTests : IDisposable
         string script = File.ReadAllText(Path.Combine(Root(), "installer", "Krupno.iss"));
         var languages = Regex.Matches(script, @"^Name: ""(\w+)""; MessagesFile:", RegexOptions.Multiline).Select(m => m.Groups[1].Value).ToHashSet();
         Assert.All(UiLanguage.All, l => Assert.Contains(UpdateInstall.Arguments(false, l.Culture, "log")[5]["/LANG=".Length..], languages));
-        // Setup knows /UPDATE=1, and waits for every Krupno by the mutex they hold.
+        // Setup knows /UPDATE=1, waits for every Krupno by the mutex they hold, and holds its own while it installs.
         Assert.Contains("{param:UPDATE|0}", script);
         Assert.Matches(new Regex($@"(?m)^AppMutex={Regex.Escape(RunningMarker.DefaultName)}\r?$"), script);
+        Assert.Matches(new Regex($@"(?m)^SetupMutex={Regex.Escape(RunningMarker.DefaultSetupName)}\r?$"), script);
+    }
+
+    [Theory]
+    // Setup took over at once, after a while (a UAC prompt), or just as its process ended.
+    [InlineData(new[] { true }, new bool[0], true)]
+    [InlineData(new[] { false, false, true }, new[] { false, false }, true)]
+    [InlineData(new[] { false, true }, new[] { true }, true)]
+    // It ended before taking over: the UAC prompt declined, "Krupno is running" canceled.
+    [InlineData(new[] { false, false }, new[] { true }, false)]
+    public async Task TheWindowClosesOnceSetupHasTakenOver(bool[] running, bool[] ended, bool tookOver)
+    {
+        int r = 0, e = 0;
+        Assert.Equal(tookOver, await UpdateInstall.WaitForSetupAsync(() => running[Math.Min(r++, running.Length - 1)],
+            () => ended[Math.Min(e++, ended.Length - 1)], TimeSpan.FromMilliseconds(1)));
+    }
+
+    [Fact]
+    public void SetupIsSeenByItsMutex()
+    {
+        RunningMarker.SetupName = $"Krupno-test-setup-{Guid.NewGuid():N}";
+        try
+        {
+            Assert.False(RunningMarker.SetupRunning());
+            using (new Mutex(false, RunningMarker.SetupName))
+                Assert.True(RunningMarker.SetupRunning());
+            Assert.False(RunningMarker.SetupRunning());
+        }
+        finally
+        {
+            RunningMarker.SetupName = RunningMarker.DefaultSetupName;
+        }
+    }
+
+    [Fact]
+    public void AnyoneMayWaitOnTheRunningMarker()
+    {
+        // Setup may run as another user or elevated, and only waits on it (OpenMutex with SYNCHRONIZE).
+        RunningMarker.Name = $"Krupno-test-{Guid.NewGuid():N}";
+        try
+        {
+            RunningMarker.Hold();
+            using var marker = MutexAcl.OpenExisting(RunningMarker.Name, MutexRights.ReadPermissions);
+            var rules = marker.GetAccessControl().GetAccessRules(true, false, typeof(SecurityIdentifier)).Cast<MutexAccessRule>();
+            Assert.Contains(rules, rule => rule.IdentityReference.Equals(new SecurityIdentifier(WellKnownSidType.WorldSid, null))
+                                           && rule.AccessControlType == AccessControlType.Allow
+                                           && rule.MutexRights.HasFlag(MutexRights.Synchronize));
+        }
+        finally
+        {
+            RunningMarker.Release();
+            RunningMarker.Name = RunningMarker.DefaultName;
+        }
     }
 
     [Fact]

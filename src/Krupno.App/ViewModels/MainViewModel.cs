@@ -220,7 +220,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         InstallUpdateCommand = new RelayCommand(() => _ = InstallUpdateAsync(),
             () => !IsBusy && _update is not null && CanInstallUpdates && _updateStage is UpdateStage.Available or UpdateStage.Failed);
         OpenUpdateCommand = new RelayCommand(OpenUpdate, () => _update is not null);
-        HideUpdateCommand = new RelayCommand(HideUpdate);
+        HideUpdateCommand = new RelayCommand(HideUpdate, () => _updateStage != UpdateStage.Installing);
         OpenSetupLogCommand = new RelayCommand(OpenSetupLog, () => UpdateSetupLog is not null);
 
         _toastTimer.Tick += (_, _) =>
@@ -678,6 +678,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         /// <summary>"Krupno 0.3.0 is available", with "Update" (or "Download" without an installation).</summary>
         Available,
         Downloading,
+        /// <summary>Setup has started: the window closes once it has taken over (UpdateInstall.WaitForSetupAsync).</summary>
+        Installing,
         /// <summary>Not downloaded, not started or not installed: why, with "Try again".</summary>
         Failed,
     }
@@ -687,12 +689,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         (UpdateStage.Available, { } update) => string.Format(Strings.Update_Available, update.Version.ToString(3)),
         (UpdateStage.Downloading, { } update) => string.Format(Strings.Update_Downloading, update.Version.ToString(3), (int)(_updateProgress * 100)),
+        (UpdateStage.Installing, { } update) => string.Format(Strings.Update_Installing, update.Version.ToString(3)),
         (UpdateStage.Failed, not null) => _updateError,
         _ => null,
     };
 
     public double UpdateProgress => _updateProgress;
     public bool IsDownloadingUpdate => _updateStage == UpdateStage.Downloading;
+    public bool IsInstallingUpdate => _updateStage == UpdateStage.Installing;
+    /// <summary>The download's progress, then an indeterminate bar while Setup starts (a UAC prompt may be waiting).</summary>
+    public bool ShowUpdateProgress => _updateStage is UpdateStage.Downloading or UpdateStage.Installing;
     public bool IsUpdateFailed => _updateStage == UpdateStage.Failed;
     /// <summary>An installed copy updates itself; the ZIP and a build only link to the release page.</summary>
     private bool CanInstallUpdates => _installedForAllUsers is not null;
@@ -1126,11 +1132,22 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     /// <summary>
     /// While an accelerator is being downloaded and registered with ONNX Runtime, no run creates sessions; while "Update" downloads
-    /// the installer, none starts, as the window closes when it is done.
+    /// the installer and starts Setup, none starts, as the window closes when it is done.
     /// </summary>
-    private bool CanStartRun => !_installingAccelerators && _updateStage != UpdateStage.Downloading;
+    private bool CanStartRun => !_installingAccelerators && _updateStage is not (UpdateStage.Downloading or UpdateStage.Installing);
 
-    private void StartRun() => _run = UpscaleAsync();
+    private void StartRun()
+    {
+        // Setup is replacing this program's files (an update another Krupno started, or one run by hand), and would close the
+        // window in the middle of the run.
+        if (RunningMarker.SetupRunning())
+        {
+            Log.Info("Not started: Setup of Krupno is running");
+            ShowToast(Strings.Toast_SetupRunning, TimeSpan.FromSeconds(5));
+            return;
+        }
+        _run = UpscaleAsync();
+    }
 
     private async Task UpscaleAsync()
     {
@@ -1992,6 +2009,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(UpdateText));
         OnPropertyChanged(nameof(UpdateProgress));
         OnPropertyChanged(nameof(IsDownloadingUpdate));
+        OnPropertyChanged(nameof(IsInstallingUpdate));
+        OnPropertyChanged(nameof(ShowUpdateProgress));
         OnPropertyChanged(nameof(IsUpdateFailed));
         OnPropertyChanged(nameof(ShowInstallUpdate));
         OnPropertyChanged(nameof(ShowDownloadUpdate));
@@ -2038,6 +2057,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             Log.Info($"Downloading the installer of Krupno {version}");
             installer = await UpdateInstall.DownloadAsync(update.Version, progress, cts.Token);
+            // Canceled after the last read, while the result was on its way to the UI thread.
+            cts.Token.ThrowIfCancellationRequested();
             Log.Info($"Downloaded {installer.Path}, its SHA-256 matches SHA256SUMS.txt");
         }
         catch (OperationCanceledException) when (cts.IsCancellationRequested)
@@ -2072,9 +2093,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _settings.Save();
         // Setup waits for every Krupno to let go of it (AppMutex), this one included.
         RunningMarker.Release();
+        Process? setup;
         try
         {
-            UpdateInstall.Start(installer, allUsers, LanguageCulture, update.Version);
+            setup = UpdateInstall.Start(installer, allUsers, LanguageCulture, update.Version);
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException or UnauthorizedAccessException
                                        or InvalidDataException)
@@ -2087,7 +2109,26 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 string.Format(Strings.Update_CantStart, version, ex is InvalidDataException ? Strings.Update_Mismatch : ex.Message));
             return;
         }
-        Log.Info($"Setup of Krupno {version} started ({(allUsers ? "for all users" : "for the current user")}); the window closes");
+        Log.Info($"Setup of Krupno {version} started ({(allUsers ? "for all users" : "for the current user")})");
+        SetUpdate(update, UpdateStage.Installing);
+        bool tookOver;
+        using (setup)
+        {
+            // Without the process (the shell started it) there is nothing to wait on.
+            tookOver = setup is null || await UpdateInstall.WaitForSetupAsync(RunningMarker.SetupRunning, () => setup.HasExited,
+                TimeSpan.FromMilliseconds(200));
+            if (!tookOver)
+            {
+                RunningMarker.Hold();
+                _settings.UpdatingTo = null;
+                _settings.Save();
+                Log.Warning($"Setup of Krupno {version} ended before installing (exit code {setup!.ExitCode}): the UAC prompt was " +
+                            "declined, or it was canceled");
+                SetUpdate(update, UpdateStage.Failed, string.Format(Strings.Update_NotInstalled, version));
+                return;
+            }
+        }
+        Log.Info("Setup has taken over; the window closes");
         ExitRequested?.Invoke(this, EventArgs.Empty);
     }
 

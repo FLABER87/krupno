@@ -449,6 +449,9 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>결과를 클립보드에 복사했습니다</value>
   </data>
+  <data name="Toast_SetupRunning" xml:space="preserve">
+    <value>Krupno를 설치하는 중입니다. 설치 프로그램이 끝난 후 처리를 시작하세요.</value>
+  </data>
   <data name="TryAgain" xml:space="preserve">
     <value>다시 시도</value>
   </data>
@@ -503,6 +506,9 @@
   </data>
   <data name="Update_Installed" xml:space="preserve">
     <value>Krupno가 {0}(으)로 업데이트되었습니다</value>
+  </data>
+  <data name="Update_Installing" xml:space="preserve">
+    <value>Krupno {0} 설치 중…</value>
   </data>
   <data name="Update_Mismatch" xml:space="preserve">
     <value>다운로드한 파일이 릴리스와 함께 게시된 체크섬과 일치하지 않습니다</value>

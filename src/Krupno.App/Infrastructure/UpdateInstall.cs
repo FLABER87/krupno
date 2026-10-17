@@ -13,9 +13,10 @@ namespace Krupno.App.Infrastructure;
 /// before that. The release's installer and its SHA256SUMS.txt come from github.com by their direct links (GitHub sends them
 /// on to its file storage), not through the API. The files aren't signed, so Setup runs only if the installer's SHA-256 is the
 /// one SHA256SUMS.txt gives for it. It runs without questions (/SILENT shows its progress) in the mode of the installation this
-/// copy belongs to, while the window closes; it keeps the components and tasks chosen before, skips the models it already has
-/// and, told /UPDATE=1, starts Krupno again when it is done, or after it failed and rolled back (installer/Krupno.iss). Only
-/// for an installed copy: the portable ZIP and a build link to the release page instead.
+/// copy belongs to; it keeps the components and tasks chosen before, skips the models it already has and, told /UPDATE=1,
+/// starts Krupno again when it is done, or after it failed and rolled back (installer/Krupno.iss). The window closes once
+/// Setup has taken over (<see cref="WaitForSetupAsync"/>). Only for an installed copy: the portable ZIP and a build link to the
+/// release page instead.
 /// </summary>
 internal static partial class UpdateInstall
 {
@@ -188,11 +189,11 @@ internal static partial class UpdateInstall
     ];
 
     /// <summary>
-    /// Starts Setup for the downloaded installer; the window closes right after, and Setup starts Krupno again. The file is checked
-    /// once more and held against writing until Setup has started from it, so nothing can swap it in between: Setup may go on
-    /// to ask for administrator rights. Throws <see cref="InvalidDataException"/> if it changed since the download.
+    /// Starts Setup for the downloaded installer and returns its process (null if the shell started it without saying). The file
+    /// is checked once more and held against writing until Setup has started from it, so nothing can swap it in between: Setup
+    /// may go on to ask for administrator rights. Throws <see cref="InvalidDataException"/> if it changed since the download.
     /// </summary>
-    public static void Start(Verified installer, bool allUsers, string culture, Version version)
+    public static Process? Start(Verified installer, bool allUsers, string culture, Version version)
     {
         using var hold = new FileStream(installer.Path, FileMode.Open, FileAccess.Read, FileShare.Read);
         if (Convert.ToHexStringLower(SHA256.HashData(hold)) != installer.Sha256)
@@ -205,7 +206,7 @@ internal static partial class UpdateInstall
         start.Environment.Remove(UpdateCheck.PretendVariable);
         try
         {
-            Process.Start(start)?.Dispose();
+            return Process.Start(start);
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 740)
         {
@@ -213,8 +214,26 @@ internal static partial class UpdateInstall
             var elevated = new ProcessStartInfo(installer.Path) { UseShellExecute = true, WorkingDirectory = start.WorkingDirectory };
             foreach (string argument in arguments)
                 elevated.ArgumentList.Add(argument);
-            Process.Start(elevated)?.Dispose();
+            return Process.Start(elevated);
         }
+    }
+
+    /// <summary>
+    /// Waits until Setup has taken over: it holds its mutex (<see cref="RunningMarker.SetupRunning"/>) once it has the rights it
+    /// needs and has found no Krupno running, and from then on it starts Krupno again when it ends, whatever happens
+    /// (DeinitializeSetup). False if it ended before that: the UAC prompt of an installation for all users was declined, or
+    /// "Krupno is running" was canceled. Setup runs none of its script then, so nothing would start Krupno again: the window
+    /// has to stay.
+    /// </summary>
+    internal static async Task<bool> WaitForSetupAsync(Func<bool> setupRunning, Func<bool> setupEnded, TimeSpan poll)
+    {
+        while (!setupRunning())
+        {
+            if (setupEnded())
+                return setupRunning();
+            await Task.Delay(poll);
+        }
+        return true;
     }
 
     /// <summary>Deletes what earlier updates left in <see cref="Folder"/>; false if a file is still in use (Setup is finishing).</summary>

@@ -449,6 +449,9 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>Résultat copié dans le presse-papiers</value>
   </data>
+  <data name="Toast_SetupRunning" xml:space="preserve">
+    <value>Krupno est en cours d'installation. Lancez le traitement une fois l'installation terminée.</value>
+  </data>
   <data name="TryAgain" xml:space="preserve">
     <value>Réessayer</value>
   </data>
@@ -503,6 +506,9 @@
   </data>
   <data name="Update_Installed" xml:space="preserve">
     <value>Krupno a été mis à jour vers la version {0}</value>
+  </data>
+  <data name="Update_Installing" xml:space="preserve">
+    <value>Installation de Krupno {0}…</value>
   </data>
   <data name="Update_Mismatch" xml:space="preserve">
     <value>le fichier téléchargé ne correspond pas à la somme de contrôle publiée avec la version</value>

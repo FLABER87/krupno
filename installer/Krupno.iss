@@ -68,6 +68,9 @@ SetupLogging=yes
 ; uninstaller ask for Krupno to be closed first, rather than have the Restart Manager close it in the middle of processing.
 ; The window's "Update" lets go of it before it starts Setup.
 AppMutex=Krupno-Running
+; Created once Setup has its rights and has found no Krupno running: no processing starts while it exists, and the window's
+; "Update" closes only then, since a Setup that ends earlier (the UAC prompt declined) runs no [Code] to start Krupno again.
+SetupMutex=Krupno-Setup
 OutputDir={#OutputDir}
 OutputBaseFilename=Krupno-{#AppVersion}-setup-x64
 Compression=lzma2/ultra64

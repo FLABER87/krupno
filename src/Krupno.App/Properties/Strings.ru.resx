@@ -449,6 +449,9 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>Результат скопирован в буфер обмена</value>
   </data>
+  <data name="Toast_SetupRunning" xml:space="preserve">
+    <value>Krupno сейчас устанавливается. Запустите обработку, когда установщик закончит.</value>
+  </data>
   <data name="TryAgain" xml:space="preserve">
     <value>Повторить</value>
   </data>
@@ -503,6 +506,9 @@
   </data>
   <data name="Update_Installed" xml:space="preserve">
     <value>Krupno обновлена до версии {0}</value>
+  </data>
+  <data name="Update_Installing" xml:space="preserve">
+    <value>Установка Krupno {0}…</value>
   </data>
   <data name="Update_Mismatch" xml:space="preserve">
     <value>скачанный файл не совпадает с контрольной суммой, опубликованной вместе с выпуском</value>

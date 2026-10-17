@@ -449,6 +449,9 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>Risultato copiato negli appunti</value>
   </data>
+  <data name="Toast_SetupRunning" xml:space="preserve">
+    <value>Krupno è in fase di installazione. Avvia l'elaborazione quando l'installazione è terminata.</value>
+  </data>
   <data name="TryAgain" xml:space="preserve">
     <value>Riprova</value>
   </data>
@@ -503,6 +506,9 @@
   </data>
   <data name="Update_Installed" xml:space="preserve">
     <value>Krupno è stato aggiornato alla versione {0}</value>
+  </data>
+  <data name="Update_Installing" xml:space="preserve">
+    <value>Installazione di Krupno {0}…</value>
   </data>
   <data name="Update_Mismatch" xml:space="preserve">
     <value>il file scaricato non corrisponde al checksum pubblicato con la versione</value>

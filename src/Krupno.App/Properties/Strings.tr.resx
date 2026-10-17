@@ -449,6 +449,9 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>Sonuç panoya kopyalandı</value>
   </data>
+  <data name="Toast_SetupRunning" xml:space="preserve">
+    <value>Krupno yükleniyor. Yükleyici bittiğinde işlemeyi başlatın.</value>
+  </data>
   <data name="TryAgain" xml:space="preserve">
     <value>Yeniden dene</value>
   </data>
@@ -503,6 +506,9 @@
   </data>
   <data name="Update_Installed" xml:space="preserve">
     <value>Krupno {0} sürümüne güncellendi</value>
+  </data>
+  <data name="Update_Installing" xml:space="preserve">
+    <value>Krupno {0} yükleniyor…</value>
   </data>
   <data name="Update_Mismatch" xml:space="preserve">
     <value>indirilen dosya, sürümle birlikte yayımlanan sağlama toplamıyla eşleşmiyor</value>

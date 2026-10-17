@@ -60,6 +60,13 @@ if (options.ListModels)
 if (options.Inputs.Count == 0)
     return 0;
 
+// Setup is replacing these files, and would stop the run halfway through.
+if (RunningMarker.SetupRunning())
+{
+    Console.Error.WriteLine("Krupno is being installed or updated. Run this again once Setup has finished.");
+    return 1;
+}
+
 using var cts = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) =>
 {

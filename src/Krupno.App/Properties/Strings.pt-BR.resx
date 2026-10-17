@@ -449,6 +449,9 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>Resultado copiado para a área de transferência</value>
   </data>
+  <data name="Toast_SetupRunning" xml:space="preserve">
+    <value>O Krupno está sendo instalado. Inicie o processamento quando o instalador terminar.</value>
+  </data>
   <data name="TryAgain" xml:space="preserve">
     <value>Tentar novamente</value>
   </data>
@@ -503,6 +506,9 @@
   </data>
   <data name="Update_Installed" xml:space="preserve">
     <value>O Krupno foi atualizado para a versão {0}</value>
+  </data>
+  <data name="Update_Installing" xml:space="preserve">
+    <value>Instalando o Krupno {0}…</value>
   </data>
   <data name="Update_Mismatch" xml:space="preserve">
     <value>o arquivo baixado não confere com a soma de verificação publicada com a versão</value>

@@ -312,7 +312,8 @@
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="{Binding UpdateText}" TextWrapping="Wrap" />
                             <ProgressBar Height="4" Margin="0,8,0,2" Minimum="0" Maximum="1" Value="{Binding UpdateProgress, Mode=OneWay}"
-                                         Visibility="{Binding IsDownloadingUpdate, Converter={StaticResource BoolToVisibility}}" />
+                                         IsIndeterminate="{Binding IsInstallingUpdate}"
+                                         Visibility="{Binding ShowUpdateProgress, Converter={StaticResource BoolToVisibility}}" />
                             <!-- Each link shows only in its stage; none during the download. -->
                             <WrapPanel>
                                 <Button Style="{DynamicResource AccentButtonStyle}" Command="{Binding InstallUpdateCommand}"

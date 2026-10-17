@@ -1,21 +1,31 @@
+using System.Security.AccessControl;
+using System.Security.Principal;
+
 namespace Krupno.Core.Processing;
 
 /// <summary>
-/// "Krupno is running": a named mutex that every Krupno.exe and krupno-cli.exe of this session holds open while it runs. Setup
-/// and the uninstaller check it (AppMutex in installer/Krupno.iss) and ask for Krupno to be closed, rather than have the Restart
-/// Manager close a window or a command-line run in the middle of processing. The window's "Update" lets go of its own just
-/// before it starts Setup, and checks first that no other Krupno holds it.
+/// "Krupno is running" and "Krupno is being installed", as named mutexes of this session. Every Krupno.exe and krupno-cli.exe
+/// holds the first one open while it runs; Setup and the uninstaller check it (AppMutex in installer/Krupno.iss) and ask for
+/// Krupno to be closed, rather than have the Restart Manager close a window or a command-line run in the middle of processing.
+/// Setup holds the second one (SetupMutex) from the moment it has its rights and has found no Krupno running until it ends:
+/// no processing starts meanwhile, and the window's "Update" waits for it before closing, as from then on Setup starts Krupno
+/// again whatever happens.
 /// </summary>
 public static class RunningMarker
 {
     /// <summary>The AppMutex of installer/Krupno.iss.</summary>
     public const string DefaultName = "Krupno-Running";
 
+    /// <summary>The SetupMutex of installer/Krupno.iss.</summary>
+    public const string DefaultSetupName = "Krupno-Setup";
+
     private static readonly Lock Gate = new();
     private static Mutex? _held;
 
-    /// <summary>The unit tests set a name of their own, so a Krupno that is open doesn't count.</summary>
+    /// <summary>The unit tests set names of their own, so a Krupno or a Setup that is running doesn't count.</summary>
     internal static string Name { get; set; } = DefaultName;
+
+    internal static string SetupName { get; set; } = DefaultSetupName;
 
     /// <summary>Holds the mutex until <see cref="Release"/> or the end of the process.</summary>
     public static void Hold()
@@ -43,15 +53,7 @@ public static class RunningMarker
             _held = null;
             try
             {
-                if (!Mutex.TryOpenExisting(Name, out var other))
-                    return false;
-                other.Dispose();
-                return true;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // Created by an elevated Krupno, which this one may not open: it is there all the same.
-                return true;
+                return Exists(Name);
             }
             finally
             {
@@ -61,14 +63,54 @@ public static class RunningMarker
         }
     }
 
-    /// <summary>The mutex, created or opened; null if an elevated Krupno created it and this one may not open it (it exists anyway).</summary>
+    /// <summary>Whether Setup of Krupno is installing in this session (it creates its mutex with a null DACL, open to anyone).</summary>
+    public static bool SetupRunning() => Exists(SetupName);
+
+    private static bool Exists(string name)
+    {
+        try
+        {
+            if (!MutexAcl.TryOpenExisting(name, MutexRights.Synchronize, out var other))
+                return false;
+            other.Dispose();
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // There, but not ours to open: it exists all the same.
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// The mutex, created or opened. Anyone may wait on it, which is all Setup does: Setup may run as another user (an
+    /// administrator's credentials) or elevated, and a Krupno started elevated must not shut the others out of it, which the
+    /// default DACL of an elevated creator would. Null if it can't be had at all.
+    /// </summary>
     private static Mutex? Open()
     {
         try
         {
-            return new Mutex(initiallyOwned: false, Name);
+            var security = new MutexSecurity();
+            security.AddAccessRule(new MutexAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+                MutexRights.Synchronize, AccessControlType.Allow));
+            if (WindowsIdentity.GetCurrent().User is { } user)
+                security.AddAccessRule(new MutexAccessRule(user, MutexRights.FullControl, AccessControlType.Allow));
+            return MutexAcl.Create(initiallyOwned: false, Name, out _, security);
         }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or WaitHandleCannotBeOpenedException or IOException)
+        catch (UnauthorizedAccessException)
+        {
+            // Created by another user in this session: holding it open needs no more than waiting on it.
+            try
+            {
+                return MutexAcl.TryOpenExisting(Name, MutexRights.Synchronize, out var existing) ? existing : null;
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+            {
+                return null;
+            }
+        }
+        catch (Exception ex) when (ex is WaitHandleCannotBeOpenedException or IOException)
         {
             return null;
         }

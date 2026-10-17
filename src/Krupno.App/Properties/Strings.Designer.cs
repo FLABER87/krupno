@@ -1374,6 +1374,15 @@ namespace Krupno.App.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Krupno is being installed. Start once the installer has finished..
+        /// </summary>
+        public static string Toast_SetupRunning {
+            get {
+                return ResourceManager.GetString("Toast_SetupRunning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Try again.
         /// </summary>
         public static string TryAgain {
@@ -1533,6 +1542,15 @@ namespace Krupno.App.Properties {
         public static string Update_Installed {
             get {
                 return ResourceManager.GetString("Update_Installed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Installing Krupno {0}….
+        /// </summary>
+        public static string Update_Installing {
+            get {
+                return ResourceManager.GetString("Update_Installing", resourceCulture);
             }
         }
         

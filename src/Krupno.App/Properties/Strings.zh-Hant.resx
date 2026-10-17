@@ -449,6 +449,9 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>已將結果複製到剪貼簿</value>
   </data>
+  <data name="Toast_SetupRunning" xml:space="preserve">
+    <value>正在安裝 Krupno。請在安裝程式完成後再開始處理。</value>
+  </data>
   <data name="TryAgain" xml:space="preserve">
     <value>再試一次</value>
   </data>
@@ -503,6 +506,9 @@
   </data>
   <data name="Update_Installed" xml:space="preserve">
     <value>Krupno 已更新至 {0}</value>
+  </data>
+  <data name="Update_Installing" xml:space="preserve">
+    <value>正在安裝 Krupno {0}…</value>
   </data>
   <data name="Update_Mismatch" xml:space="preserve">
     <value>下載的檔案與隨版本發布的總和檢查碼不符</value>
