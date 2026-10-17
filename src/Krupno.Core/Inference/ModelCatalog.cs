@@ -10,7 +10,7 @@ public static class ModelCatalog
 {
     /// <summary>
     /// The default model: nearly DAT2 quality at Real-ESRGAN speed, CC-BY-4.0 license
-    /// (README, "Which model to use").
+    /// (docs/models.md, "Which model to use").
     /// </summary>
     public const string DefaultModelName = "4xBHI_realplksr_dysample_real";
 
