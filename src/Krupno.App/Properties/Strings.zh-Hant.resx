@@ -488,6 +488,9 @@
   <data name="Update_CloseOthers" xml:space="preserve">
     <value>請先關閉其他 Krupno 視窗和命令列工具，然後再試一次。</value>
   </data>
+  <data name="Update_CloseOthersAllUsers" xml:space="preserve">
+    <value>請先關閉其他 Krupno 視窗和命令列工具（包括這台電腦上其他使用者的），然後再試一次。</value>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>下載</value>
   </data>

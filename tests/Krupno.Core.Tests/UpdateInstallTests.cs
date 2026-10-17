@@ -153,7 +153,7 @@ public class UpdateInstallTests : IDisposable
     [InlineData(@"E:\Projects\Krupno\bin\Release\", @"C:\Users\u\AppData\Local\Programs\Krupno\", @"C:\Program Files\Krupno\", null)]
     [InlineData(@"D:\Krupno-portable\", null, "", null)]
     public void OnlyTheInstalledFolderUpdatesItself(string appFolder, string? currentUser, string? allUsers, bool? forAllUsers) =>
-        Assert.Equal(forAllUsers, UpdateInstall.InstallMode(appFolder, currentUser, allUsers));
+        Assert.Equal(forAllUsers, Installation.ModeOf(appFolder, currentUser, allUsers));
 
     [Fact]
     public void SetupCommandLine()
@@ -169,8 +169,33 @@ public class UpdateInstallTests : IDisposable
         Assert.All(UiLanguage.All, l => Assert.Contains(UpdateInstall.Arguments(false, l.Culture, "log")[5]["/LANG=".Length..], languages));
         // Setup knows /UPDATE=1, waits for every Krupno by the mutex they hold, and holds its own while it installs.
         Assert.Contains("{param:UPDATE|0}", script);
-        Assert.Matches(new Regex($@"(?m)^AppMutex={Regex.Escape(RunningMarker.DefaultName)}\r?$"), script);
-        Assert.Matches(new Regex($@"(?m)^SetupMutex={Regex.Escape(RunningMarker.DefaultSetupName)}\r?$"), script);
+        Assert.Matches(@"(?m)^AppMutex=\{code:RunningMutexes\}\r?$", script);
+        Assert.Matches(@"(?m)^SetupMutex=\{code:SetupMutexes\}\r?$", script);
+    }
+
+    [Fact]
+    public void SetupUsesTheNamesOfItsInstallMode()
+    {
+        // Krupno.iss gives the names by IsAdminInstallMode: for all users, the global ones and this session's.
+        string script = File.ReadAllText(Path.Combine(Root(), "installer", "Krupno.iss"));
+        (string AllUsers, string CurrentUser) Names(string function)
+        {
+            var match = Regex.Match(script, $@"function {function}\(Param: String\): String;\s*begin\s*if IsAdminInstallMode then\s*" +
+                                            @"Result := '([^']*)'\s*else\s*Result := '([^']*)';\s*end;");
+            Assert.True(match.Success, function);
+            return (match.Groups[1].Value, match.Groups[2].Value);
+        }
+
+        var (allUsers, currentUser) = (RunningMarker.NamesFor(true), RunningMarker.NamesFor(false));
+        Assert.Equal(($"{allUsers.Running},{allUsers.AlsoChecked}", currentUser.Running), Names("RunningMutexes"));
+        Assert.Equal(($"{allUsers.Setup},{currentUser.Setup}", currentUser.Setup), Names("SetupMutexes"));
+        Assert.Equal((RunningMarker.GlobalName, RunningMarker.GlobalSetupName, RunningMarker.SessionName), allUsers);
+        Assert.Equal((RunningMarker.SessionName, RunningMarker.SessionSetupName, (string?)null), currentUser);
+        Assert.StartsWith(@"Global\", RunningMarker.GlobalName);
+        Assert.StartsWith(@"Global\", RunningMarker.GlobalSetupName);
+        // The tests run from a build, which wasn't installed.
+        Assert.Null(Installation.ForAllUsers);
+        Assert.Equal(currentUser, RunningMarker.Names);
     }
 
     [Theory]
@@ -187,32 +212,46 @@ public class UpdateInstallTests : IDisposable
             () => ended[Math.Min(e++, ended.Length - 1)], TimeSpan.FromMilliseconds(1)));
     }
 
-    [Fact]
-    public void SetupIsSeenByItsMutex()
+    /// <summary>Names of the test's own, with a prefix: "Global\" as for an installation for all users.</summary>
+    private static (string Running, string Setup, string? AlsoChecked) TestNames(string prefix, bool alsoChecked = false)
     {
-        RunningMarker.SetupName = $"Krupno-test-setup-{Guid.NewGuid():N}";
+        string id = Guid.NewGuid().ToString("N");
+        return ($"{prefix}Krupno-test-{id}", $"{prefix}Krupno-test-setup-{id}", alsoChecked ? $"Krupno-test-session-{id}" : null);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(@"Global\")]
+    public void SetupIsSeenByItsMutex(string prefix)
+    {
+        var saved = RunningMarker.Names;
+        RunningMarker.Names = TestNames(prefix);
         try
         {
             Assert.False(RunningMarker.SetupRunning());
-            using (new Mutex(false, RunningMarker.SetupName))
+            using (new Mutex(false, RunningMarker.Names.Setup))
                 Assert.True(RunningMarker.SetupRunning());
             Assert.False(RunningMarker.SetupRunning());
         }
         finally
         {
-            RunningMarker.SetupName = RunningMarker.DefaultSetupName;
+            RunningMarker.Names = saved;
         }
     }
 
-    [Fact]
-    public void AnyoneMayWaitOnTheRunningMarker()
+    [Theory]
+    [InlineData("")]
+    // No privilege is needed for a global name: run without elevation, the test is a standard user's Krupno.
+    [InlineData(@"Global\")]
+    public void AnyoneMayWaitOnTheRunningMarker(string prefix)
     {
         // Setup may run as another user or elevated, and only waits on it (OpenMutex with SYNCHRONIZE).
-        RunningMarker.Name = $"Krupno-test-{Guid.NewGuid():N}";
+        var saved = RunningMarker.Names;
+        RunningMarker.Names = TestNames(prefix);
         try
         {
             RunningMarker.Hold();
-            using var marker = MutexAcl.OpenExisting(RunningMarker.Name, MutexRights.ReadPermissions);
+            using var marker = MutexAcl.OpenExisting(RunningMarker.Names.Running, MutexRights.ReadPermissions);
             var rules = marker.GetAccessControl().GetAccessRules(true, false, typeof(SecurityIdentifier)).Cast<MutexAccessRule>();
             Assert.Contains(rules, rule => rule.IdentityReference.Equals(new SecurityIdentifier(WellKnownSidType.WorldSid, null))
                                            && rule.AccessControlType == AccessControlType.Allow
@@ -221,33 +260,114 @@ public class UpdateInstallTests : IDisposable
         finally
         {
             RunningMarker.Release();
-            RunningMarker.Name = RunningMarker.DefaultName;
+            RunningMarker.Names = saved;
         }
     }
 
-    [Fact]
-    public void OtherKrupnosAreSeenByTheirMutex()
+    [Theory]
+    [InlineData("", false)]
+    [InlineData(@"Global\", true)]
+    public void OtherKrupnosAreSeenByTheirMutex(string prefix, bool alsoChecked)
     {
-        RunningMarker.Name = $"Krupno-test-{Guid.NewGuid():N}";
+        var saved = RunningMarker.Names;
+        RunningMarker.Names = TestNames(prefix, alsoChecked);
+        string name = RunningMarker.Names.Running;
         try
         {
             Assert.False(RunningMarker.OthersRunning());
             RunningMarker.Hold();
             // This process's own doesn't count.
             Assert.False(RunningMarker.OthersRunning());
-            using (new Mutex(false, RunningMarker.Name))
+            using (new Mutex(false, name))
                 Assert.True(RunningMarker.OthersRunning());
             Assert.False(RunningMarker.OthersRunning());
+            // For all users, also a Krupno that holds this session's name: 0.2.2 or earlier, or one installed for the current user.
+            if (RunningMarker.Names.AlsoChecked is { } also)
+            {
+                using (new Mutex(false, also))
+                    Assert.True(RunningMarker.OthersRunning());
+                Assert.False(RunningMarker.OthersRunning());
+                Assert.False(Mutex.TryOpenExisting(also, out _));
+            }
             // Still held after checking: Setup must see this one.
-            Assert.True(Mutex.TryOpenExisting(RunningMarker.Name, out var held));
+            Assert.True(Mutex.TryOpenExisting(name, out var held));
             held.Dispose();
             RunningMarker.Release();
-            Assert.False(Mutex.TryOpenExisting(RunningMarker.Name, out _));
+            Assert.False(Mutex.TryOpenExisting(name, out _));
         }
         finally
         {
             RunningMarker.Release();
-            RunningMarker.Name = RunningMarker.DefaultName;
+            RunningMarker.Names = saved;
+        }
+    }
+
+    [Fact]
+    public void AnotherUsersMarkerIsHeldToo()
+    {
+        // Created by another user's Krupno, whose DACL lets this one only wait on it: holding it open that way is enough.
+        var saved = RunningMarker.Names;
+        RunningMarker.Names = TestNames(@"Global\");
+        string name = RunningMarker.Names.Running;
+        try
+        {
+            var security = new MutexSecurity();
+            security.AddAccessRule(new MutexAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+                MutexRights.Synchronize, AccessControlType.Allow));
+            using (MutexAcl.Create(initiallyOwned: false, name, out bool created, security))
+            {
+                Assert.True(created);
+                Assert.Throws<UnauthorizedAccessException>(() => Mutex.OpenExisting(name));
+                RunningMarker.Hold();
+            }
+            // The other Krupno has ended; this one keeps the marker for Setup to see.
+            Assert.True(MutexAcl.TryOpenExisting(name, MutexRights.Synchronize, out var held));
+            held.Dispose();
+            RunningMarker.Release();
+            Assert.False(MutexAcl.TryOpenExisting(name, MutexRights.Synchronize, out _));
+        }
+        finally
+        {
+            RunningMarker.Release();
+            RunningMarker.Names = saved;
+        }
+    }
+
+    [Fact]
+    public void AnotherUsersMarkerGoneMeanwhileIsMadeAgain()
+    {
+        // The other user's Krupno ends just after this one was refused creating the marker: this one makes it then.
+        var saved = RunningMarker.Names;
+        RunningMarker.Names = TestNames(@"Global\");
+        string name = RunningMarker.Names.Running;
+        var security = new MutexSecurity();
+        security.AddAccessRule(new MutexAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+            MutexRights.Synchronize, AccessControlType.Allow));
+        Mutex? other = MutexAcl.Create(initiallyOwned: false, name, out _, security);
+        int thread = Environment.CurrentManagedThreadId;
+        void EndOther(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
+        {
+            if (e.Exception is UnauthorizedAccessException && Environment.CurrentManagedThreadId == thread)
+                Interlocked.Exchange(ref other, null)?.Dispose();
+        }
+        AppDomain.CurrentDomain.FirstChanceException += EndOther;
+        try
+        {
+            RunningMarker.Hold();
+            AppDomain.CurrentDomain.FirstChanceException -= EndOther;
+            Assert.Null(other);
+            // Held, and made by this one: its own DACL gives this user full control.
+            using var marker = MutexAcl.OpenExisting(name, MutexRights.ReadPermissions);
+            var user = WindowsIdentity.GetCurrent().User!;
+            Assert.Contains(marker.GetAccessControl().GetAccessRules(true, false, typeof(SecurityIdentifier)).Cast<MutexAccessRule>(),
+                rule => rule.IdentityReference.Equals(user) && rule.MutexRights.HasFlag(MutexRights.FullControl));
+        }
+        finally
+        {
+            AppDomain.CurrentDomain.FirstChanceException -= EndOther;
+            other?.Dispose();
+            RunningMarker.Release();
+            RunningMarker.Names = saved;
         }
     }
 

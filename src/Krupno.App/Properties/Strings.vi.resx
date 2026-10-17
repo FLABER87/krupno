@@ -488,6 +488,9 @@
   <data name="Update_CloseOthers" xml:space="preserve">
     <value>Hãy đóng các cửa sổ Krupno khác và công cụ dòng lệnh trước, rồi thử lại.</value>
   </data>
+  <data name="Update_CloseOthersAllUsers" xml:space="preserve">
+    <value>Hãy đóng các cửa sổ Krupno khác và công cụ dòng lệnh trước, kể cả của những người dùng khác trên máy tính này, rồi thử lại.</value>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>Tải xuống</value>
   </data>

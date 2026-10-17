@@ -488,6 +488,9 @@
   <data name="Update_CloseOthers" xml:space="preserve">
     <value>先にほかの Krupno のウィンドウとコマンドライン ツールを閉じてから、もう一度お試しください。</value>
   </data>
+  <data name="Update_CloseOthersAllUsers" xml:space="preserve">
+    <value>先にほかの Krupno のウィンドウとコマンドライン ツールを、このコンピューターのほかのユーザーのものも含めて閉じてから、もう一度お試しください。</value>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>ダウンロード</value>
   </data>

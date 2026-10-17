@@ -108,8 +108,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     /// shows (it can be hidden meanwhile by turning the update check off).
     /// </summary>
     private bool _updating;
-    /// <summary>How this copy was installed (see UpdateInstall): only an installed one updates itself; null for the ZIP and a build.</summary>
-    private readonly bool? _installedForAllUsers = UpdateInstall.InstalledForAllUsers();
+    /// <summary>How this copy was installed (see Installation): only an installed one updates itself; null for the ZIP and a build.</summary>
+    private readonly bool? _installedForAllUsers = Installation.ForAllUsers;
     private IReadOnlyList<Option<ExecutionDevice>> _devices;
     private IReadOnlyList<AcceleratorPackage> _acceleratorPackages = [];
     /// <summary>Whether the accelerators are known yet: until then a saved accelerator must not be overwritten by "Auto".</summary>
@@ -2152,7 +2152,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     /// </summary>
     private bool CantInstallNow((Version Version, string Page) update)
     {
-        string? reason = RunningMarker.OthersRunning() ? Strings.Update_CloseOthers
+        string? reason = RunningMarker.OthersRunning() ? CloseOthers
             : RunningMarker.SetupRunning() ? Strings.SetupRunning
             : null;
         if (reason is null)
@@ -2161,6 +2161,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         SetUpdate(update, UpdateStage.Failed, reason);
         return true;
     }
+
+    /// <summary>For all users, the Krupno that keeps Setup from installing may be another user's, which can't be closed from here.</summary>
+    private string CloseOthers => _installedForAllUsers == true ? Strings.Update_CloseOthersAllUsers : Strings.Update_CloseOthers;
 
     /// <summary>The ✕ on the update line: cancels the download, or hides the line until the next start.</summary>
     private void HideUpdate()

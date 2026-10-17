@@ -488,6 +488,9 @@
   <data name="Update_CloseOthers" xml:space="preserve">
     <value>Schließen Sie zuerst die anderen Krupno-Fenster und das Befehlszeilentool und versuchen Sie es dann erneut.</value>
   </data>
+  <data name="Update_CloseOthersAllUsers" xml:space="preserve">
+    <value>Schließen Sie zuerst die anderen Krupno-Fenster und das Befehlszeilentool, auch die der anderen Benutzer dieses Computers, und versuchen Sie es dann erneut.</value>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>Herunterladen</value>
   </data>

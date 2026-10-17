@@ -1492,6 +1492,15 @@ namespace Krupno.App.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Close the other Krupno windows and the command-line tool first, those of the other users of this computer too, then try again..
+        /// </summary>
+        public static string Update_CloseOthersAllUsers {
+            get {
+                return ResourceManager.GetString("Update_CloseOthersAllUsers", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Download.
         /// </summary>
         public static string Update_Download {

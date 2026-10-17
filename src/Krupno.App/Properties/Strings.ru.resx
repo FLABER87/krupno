@@ -488,6 +488,9 @@
   <data name="Update_CloseOthers" xml:space="preserve">
     <value>Сначала закройте другие окна Krupno и инструмент командной строки, затем повторите.</value>
   </data>
+  <data name="Update_CloseOthersAllUsers" xml:space="preserve">
+    <value>Сначала закройте другие окна Krupno и инструмент командной строки, в том числе у других пользователей этого компьютера, затем повторите.</value>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>Скачать</value>
   </data>

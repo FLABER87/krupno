@@ -488,6 +488,9 @@
   <data name="Update_CloseOthers" xml:space="preserve">
     <value>Najpierw zamknij pozostałe okna Krupno i narzędzie wiersza poleceń, a potem spróbuj ponownie.</value>
   </data>
+  <data name="Update_CloseOthersAllUsers" xml:space="preserve">
+    <value>Najpierw zamknij pozostałe okna Krupno i narzędzie wiersza poleceń, także te innych użytkowników tego komputera, a potem spróbuj ponownie.</value>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>Pobierz</value>
   </data>
