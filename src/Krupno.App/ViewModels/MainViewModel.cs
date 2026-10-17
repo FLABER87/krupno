@@ -103,6 +103,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string? _updateError;
     /// <summary>The download "Update" started; null when there is none.</summary>
     private CancellationTokenSource? _updateCts;
+    /// <summary>
+    /// From "Update" until Setup has taken over or the update has failed: no run starts and no second update, whatever the line
+    /// shows (it can be hidden meanwhile by turning the update check off).
+    /// </summary>
+    private bool _updating;
     /// <summary>How this copy was installed (see UpdateInstall): only an installed one updates itself; null for the ZIP and a build.</summary>
     private readonly bool? _installedForAllUsers = UpdateInstall.InstalledForAllUsers();
     private IReadOnlyList<Option<ExecutionDevice>> _devices;
@@ -218,7 +223,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         InstallAcceleratorsCommand = new RelayCommand(() => _ = InstallAcceleratorsAsync(),
             () => !IsBusy && !_installingAccelerators && MissingAccelerators.Count > 0);
         InstallUpdateCommand = new RelayCommand(() => _ = InstallUpdateAsync(),
-            () => !IsBusy && _update is not null && CanInstallUpdates && _updateStage is UpdateStage.Available or UpdateStage.Failed);
+            () => !IsBusy && !_updating && _update is not null && CanInstallUpdates && _updateStage is UpdateStage.Available or UpdateStage.Failed);
         OpenUpdateCommand = new RelayCommand(OpenUpdate, () => _update is not null);
         HideUpdateCommand = new RelayCommand(HideUpdate, () => _updateStage != UpdateStage.Installing);
         OpenSetupLogCommand = new RelayCommand(OpenSetupLog, () => UpdateSetupLog is not null);
@@ -601,8 +606,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             }
             else
             {
+                // A download stops; Setup that has started goes on, and its line stays until the window closes or it fails.
                 _updateCts?.Cancel();
-                SetUpdate(null, UpdateStage.None);
+                if (_updateStage != UpdateStage.Installing)
+                    SetUpdate(null, UpdateStage.None);
             }
         }
     }
@@ -1134,7 +1141,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     /// While an accelerator is being downloaded and registered with ONNX Runtime, no run creates sessions; while "Update" downloads
     /// the installer and starts Setup, none starts, as the window closes when it is done.
     /// </summary>
-    private bool CanStartRun => !_installingAccelerators && _updateStage is not (UpdateStage.Downloading or UpdateStage.Installing);
+    private bool CanStartRun => !_installingAccelerators && !_updating;
 
     private void StartRun()
     {
@@ -1143,7 +1150,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (RunningMarker.SetupRunning())
         {
             Log.Info("Not started: Setup of Krupno is running");
-            ShowToast(Strings.Toast_SetupRunning, TimeSpan.FromSeconds(5));
+            ShowToast(Strings.SetupRunning, TimeSpan.FromSeconds(5));
             return;
         }
         _run = UpscaleAsync();
@@ -2029,15 +2036,26 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     /// </summary>
     private async Task InstallUpdateAsync()
     {
-        if (_update is not { } update || _installedForAllUsers is not { } allUsers || IsBusy || _updateCts is not null)
+        if (_update is not { } update || _installedForAllUsers is not { } allUsers || IsBusy || _updating)
             return;
-        string version = update.Version.ToString(3);
-        if (RunningMarker.OthersRunning())
+        _updating = true;
+        CommandManager.InvalidateRequerySuggested();
+        try
         {
-            Log.Info($"Update to {version}: another Krupno is running");
-            SetUpdate(update, UpdateStage.Failed, Strings.Update_CloseOthers);
-            return;
+            await InstallUpdateAsync(update, allUsers);
         }
+        finally
+        {
+            _updating = false;
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    private async Task InstallUpdateAsync((Version Version, string Page) update, bool allUsers)
+    {
+        string version = update.Version.ToString(3);
+        if (CantInstallNow(update))
+            return;
 
         using var cts = new CancellationTokenSource();
         _updateCts = cts;
@@ -2083,12 +2101,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         // Started during the download.
-        if (RunningMarker.OthersRunning())
-        {
-            Log.Info($"Update to {version}: another Krupno is running");
-            SetUpdate(update, UpdateStage.Failed, Strings.Update_CloseOthers);
+        if (CantInstallNow(update))
             return;
-        }
         _settings.UpdatingTo = version;
         _settings.Save();
         // Setup waits for every Krupno to let go of it (AppMutex), this one included.
@@ -2132,6 +2146,22 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ExitRequested?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>
+    /// Another Krupno would hold the files Setup replaces; another Setup of Krupno would be taken for this one when the window
+    /// waits for it to take over (it holds the same mutex), and would keep this one from starting anyway.
+    /// </summary>
+    private bool CantInstallNow((Version Version, string Page) update)
+    {
+        string? reason = RunningMarker.OthersRunning() ? Strings.Update_CloseOthers
+            : RunningMarker.SetupRunning() ? Strings.SetupRunning
+            : null;
+        if (reason is null)
+            return false;
+        Log.Info($"Update to {update.Version.ToString(3)} not started: {(reason == Strings.SetupRunning ? "Setup is running" : "another Krupno is running")}");
+        SetUpdate(update, UpdateStage.Failed, reason);
+        return true;
+    }
+
     /// <summary>The ✕ on the update line: cancels the download, or hides the line until the next start.</summary>
     private void HideUpdate()
     {
@@ -2171,7 +2201,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (await Task.Run(UpdateInstall.CleanUp))
             return;
         await Task.Delay(TimeSpan.FromSeconds(30));
-        if (_updateCts is null && _updateStage != UpdateStage.Downloading)
+        if (!_updating)
             await Task.Run(UpdateInstall.CleanUp);
     }
 

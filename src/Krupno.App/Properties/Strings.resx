@@ -460,9 +460,9 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>Result copied to the clipboard</value>
   </data>
-  <data name="Toast_SetupRunning" xml:space="preserve">
-    <value>Krupno is being installed. Start once the installer has finished.</value>
-    <comment>Processing doesn't start while the installer replaces Krupno's files.</comment>
+  <data name="SetupRunning" xml:space="preserve">
+    <value>Krupno is being installed. Try again once the installer has finished.</value>
+    <comment>Setup is replacing Krupno's files: no processing starts, and "Update" waits for it, on the update line or as a toast.</comment>
   </data>
   <data name="TryAgain" xml:space="preserve">
     <value>Try again</value>

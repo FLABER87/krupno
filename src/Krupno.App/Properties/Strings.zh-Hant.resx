@@ -449,9 +449,8 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>已將結果複製到剪貼簿</value>
   </data>
-  <data name="Toast_SetupRunning" xml:space="preserve">
-    <value>正在安裝 Krupno。請在安裝程式完成後再開始處理。</value>
-  </data>
+  <data name="SetupRunning" xml:space="preserve">
+    <value>正在安裝 Krupno。請在安裝程式完成後再試一次。</value></data>
   <data name="TryAgain" xml:space="preserve">
     <value>再試一次</value>
   </data>

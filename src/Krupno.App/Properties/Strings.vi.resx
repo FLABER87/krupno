@@ -449,9 +449,8 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>Đã sao chép kết quả vào bảng tạm</value>
   </data>
-  <data name="Toast_SetupRunning" xml:space="preserve">
-    <value>Krupno đang được cài đặt. Hãy bắt đầu xử lý sau khi trình cài đặt hoàn tất.</value>
-  </data>
+  <data name="SetupRunning" xml:space="preserve">
+    <value>Krupno đang được cài đặt. Hãy thử lại sau khi trình cài đặt hoàn tất.</value></data>
   <data name="TryAgain" xml:space="preserve">
     <value>Thử lại</value>
   </data>

@@ -449,9 +449,8 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>Ergebnis in die Zwischenablage kopiert</value>
   </data>
-  <data name="Toast_SetupRunning" xml:space="preserve">
-    <value>Krupno wird gerade installiert. Starten Sie die Verarbeitung, wenn das Setup abgeschlossen ist.</value>
-  </data>
+  <data name="SetupRunning" xml:space="preserve">
+    <value>Krupno wird gerade installiert. Versuchen Sie es erneut, wenn das Setup abgeschlossen ist.</value></data>
   <data name="TryAgain" xml:space="preserve">
     <value>Erneut versuchen</value>
   </data>

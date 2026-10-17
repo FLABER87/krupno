@@ -1374,11 +1374,11 @@ namespace Krupno.App.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Krupno is being installed. Start once the installer has finished..
+        ///   Looks up a localized string similar to Krupno is being installed. Try again once the installer has finished..
         /// </summary>
-        public static string Toast_SetupRunning {
+        public static string SetupRunning {
             get {
-                return ResourceManager.GetString("Toast_SetupRunning", resourceCulture);
+                return ResourceManager.GetString("SetupRunning", resourceCulture);
             }
         }
         

@@ -449,9 +449,8 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>Resultado copiado al portapapeles</value>
   </data>
-  <data name="Toast_SetupRunning" xml:space="preserve">
-    <value>Krupno se está instalando. Inicie el procesamiento cuando termine el instalador.</value>
-  </data>
+  <data name="SetupRunning" xml:space="preserve">
+    <value>Krupno se está instalando. Vuelva a intentarlo cuando termine el instalador.</value></data>
   <data name="TryAgain" xml:space="preserve">
     <value>Reintentar</value>
   </data>

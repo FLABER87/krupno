@@ -449,9 +449,8 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>Skopiowano wynik do schowka</value>
   </data>
-  <data name="Toast_SetupRunning" xml:space="preserve">
-    <value>Trwa instalacja Krupno. Uruchom przetwarzanie, gdy instalator skończy.</value>
-  </data>
+  <data name="SetupRunning" xml:space="preserve">
+    <value>Trwa instalacja Krupno. Spróbuj ponownie, gdy instalator skończy.</value></data>
   <data name="TryAgain" xml:space="preserve">
     <value>Spróbuj ponownie</value>
   </data>

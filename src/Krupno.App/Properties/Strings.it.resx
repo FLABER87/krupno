@@ -449,9 +449,8 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>Risultato copiato negli appunti</value>
   </data>
-  <data name="Toast_SetupRunning" xml:space="preserve">
-    <value>Krupno è in fase di installazione. Avvia l'elaborazione quando l'installazione è terminata.</value>
-  </data>
+  <data name="SetupRunning" xml:space="preserve">
+    <value>Krupno è in fase di installazione. Riprova quando l'installazione è terminata.</value></data>
   <data name="TryAgain" xml:space="preserve">
     <value>Riprova</value>
   </data>

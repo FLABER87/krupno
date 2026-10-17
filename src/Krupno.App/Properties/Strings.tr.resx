@@ -449,9 +449,8 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>Sonuç panoya kopyalandı</value>
   </data>
-  <data name="Toast_SetupRunning" xml:space="preserve">
-    <value>Krupno yükleniyor. Yükleyici bittiğinde işlemeyi başlatın.</value>
-  </data>
+  <data name="SetupRunning" xml:space="preserve">
+    <value>Krupno yükleniyor. Yükleyici bittiğinde yeniden deneyin.</value></data>
   <data name="TryAgain" xml:space="preserve">
     <value>Yeniden dene</value>
   </data>

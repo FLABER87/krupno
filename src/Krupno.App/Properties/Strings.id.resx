@@ -449,9 +449,8 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>Hasil disalin ke clipboard</value>
   </data>
-  <data name="Toast_SetupRunning" xml:space="preserve">
-    <value>Krupno sedang dipasang. Mulai pemrosesan setelah penginstal selesai.</value>
-  </data>
+  <data name="SetupRunning" xml:space="preserve">
+    <value>Krupno sedang dipasang. Coba lagi setelah penginstal selesai.</value></data>
   <data name="TryAgain" xml:space="preserve">
     <value>Coba lagi</value>
   </data>

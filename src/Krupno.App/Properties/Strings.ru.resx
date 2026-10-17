@@ -449,9 +449,8 @@
   <data name="Toast_ResultCopied" xml:space="preserve">
     <value>Результат скопирован в буфер обмена</value>
   </data>
-  <data name="Toast_SetupRunning" xml:space="preserve">
-    <value>Krupno сейчас устанавливается. Запустите обработку, когда установщик закончит.</value>
-  </data>
+  <data name="SetupRunning" xml:space="preserve">
+    <value>Krupno сейчас устанавливается. Повторите, когда установщик закончит.</value></data>
   <data name="TryAgain" xml:space="preserve">
     <value>Повторить</value>
   </data>
