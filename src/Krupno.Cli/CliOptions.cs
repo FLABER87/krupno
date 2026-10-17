@@ -13,12 +13,14 @@ internal sealed class CliOptions
         Krupno — AI image upscaling (ONNX Runtime + DirectML).
 
         Usage:
-          krupno-cli <file|folder> [-o <file|folder>] [options]
+          krupno-cli <file|folder|pattern>... [-o <file|folder>] [options]
           krupno-cli --list-models | --list-devices
 
         Options:
-          -o, --output <path>     output file or folder
+          -o, --output <path>     output file or folder; a folder when there is more than one image
                                   (default: next to the source / <folder>_upscaled)
+          -r, --recursive         also the images in subfolders; their folders are repeated in the output folder
+              --skip-existing     leave out images whose result is already there, to resume a batch
           -m, --model <name|path> model from the catalog or path to an .onnx file
                                   (default: {ModelCatalog.DefaultModelName}; if it is missing, the first one alphabetically)
           -s, --scale <number>    final scale, e.g. 2, 3, 4, 8 or 2.5 (default: the model's own scale)
@@ -36,15 +38,20 @@ internal sealed class CliOptions
               --list-devices      list the devices
           -h, --help              show this help
 
+        Several files, folders and patterns can be given at once. Patterns such as photos\*.jpg are expanded by
+        krupno-cli itself (cmd and PowerShell pass them on as they are); wildcards work in the file name only.
+
         Models are looked up in %LOCALAPPDATA%\Krupno\models and in the models folder next to the program.
         """;
 
-    public string? Input { get; private set; }
+    public List<string> Inputs { get; } = [];
     public string? Output { get; private set; }
     public string? Model { get; private set; }
     public double Scale { get; private set; }
     public ScaleTarget? Target { get; private set; }
     public ImageFileFormat? Format { get; private set; }
+    public bool Recursive { get; private set; }
+    public bool SkipExisting { get; private set; }
     public int Quality { get; private set; } = 95;
     public int Tile { get; private set; } = 384;
     public int Padding { get; private set; } = 32;
@@ -71,6 +78,12 @@ internal sealed class CliOptions
                     break;
                 case "-o" or "--output":
                     options.Output = Value();
+                    break;
+                case "-r" or "--recursive":
+                    options.Recursive = true;
+                    break;
+                case "--skip-existing":
+                    options.SkipExisting = true;
                     break;
                 case "-m" or "--model":
                     options.Model = Value();
@@ -111,9 +124,7 @@ internal sealed class CliOptions
                 default:
                     if (arg.StartsWith('-') && arg.Length > 1)
                         throw new CliException($"Unknown option: {arg}");
-                    if (options.Input is not null)
-                        throw new CliException($"Unexpected argument: {arg}");
-                    options.Input = arg;
+                    options.Inputs.Add(arg);
                     break;
             }
         }

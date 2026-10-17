@@ -95,6 +95,21 @@ New-Item -ItemType Directory -Force "$out\bgsave", "$out\bgsave_out\a.png" | Out
 Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\bgsave\a.png"
 Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\bgsave\b.png"
 Run "bg_save_fail"    @("$out\bgsave", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\bgsave_out") -Expect 1
+# -r repeats the subfolders in the output folder. --skip-existing then resumes: with every result there it ends before
+# loading the model, and with one result deleted it does only that one.
+New-Item -ItemType Directory -Force "$out\tree\sub" | Out-Null
+Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\tree\a.png"
+Copy-Item -LiteralPath "$img\orient6.jpg" "$out\tree\sub\b.jpg"
+Run "recursive"       @("$out\tree", "-r", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\tree_out")
+Run "skip_all"        @("$out\tree", "-r", "--skip-existing", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\tree_out")
+Remove-Item -LiteralPath "$out\tree_out\sub\b.png"
+Run "skip_some"       @("$out\tree", "-r", "--skip-existing", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\tree_out")
+# Several inputs, one of them a pattern that krupno-cli expands itself (PowerShell passes it on as it is).
+New-Item -ItemType Directory -Force "$out\multi" | Out-Null
+Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\multi\a.png"
+Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\multi\b.png"
+Copy-Item -LiteralPath "$img\orient6.jpg" "$out\multi\c.jpg"
+Run "multi_pattern"   @("$out\multi\*.png", "$img\orient6.jpg", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\multi_out")
 
 & $Python "$PSScriptRoot\check_outputs.py" $fx $out
 $checkCode = $LASTEXITCODE
