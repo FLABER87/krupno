@@ -222,5 +222,14 @@ check("dup_names", (dup / "x.png").exists() and (dup / "x (2).png").exists()
       and Image.open(dup / "x.png").size == (90 * 4, 160 * 4) and Image.open(dup / "x (2).png").size == (1200, 800),
       ", ".join(sorted(p.name for p in dup.iterdir())) if dup.exists() else "folder missing")
 
+# A save that fails in the background (the first file of a batch is written while the second one is processed): reported with
+# the file's number, counted as failed, no temporary file left behind, and the second file saved as usual.
+text = log("bg_save_fail")
+bgsave = out / "bgsave_out"
+check("bg_save_fail", "[1/2] Not saved:" in text and "Done: 1 of 2" in text
+      and not (list(bgsave.glob("krupno-*.tmp")) if bgsave.exists() else []),
+      " | ".join(line for line in text.splitlines() if "Not saved" in line or "Done" in line) or "empty output")
+expect_nearest("noise_300x200.png", "bgsave_out/b.png", 4, [1, 0, 0])
+
 print("ALL OK" if failures == 0 else f"{failures} FAILED")
 sys.exit(1 if failures else 0)

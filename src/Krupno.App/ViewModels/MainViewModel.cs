@@ -755,6 +755,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         int succeeded = 0, failed = 0;
         string? firstError = null;
         long lastBytes = 0;
+        // The previous file's result while it is written in the background, see BatchSaving.
+        Task? pendingSave = null;
         // The run may take many minutes without any input. The request is released on this (UI) thread, which made it:
         // the awaits below come back to it.
         using var keepAwake = new KeepAwake();
@@ -819,55 +821,32 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                         OnProgress(p, file, index, files.Count, model, tiles, work));
                     var result = await upscaler.UpscaleAsync(loaded.Image, options, progress, cancellationToken);
 
+                    // One save at a time (see BatchSaving): the previous file is finished first.
+                    if (pendingSave is not null)
+                        await pendingSave;
+                    pendingSave = null;
+
+                    // Not canceled with the run: the result is computed, so it is written whatever happens next.
                     string output = outputs[index];
-                    await Task.Run(() => ImageCodec.Save(result, output, settings.Format,
-                        new SaveOptions { Source = loaded, JpegQuality = settings.Quality }), cancellationToken);
-
-                    // The file is written: record it before anything that can still be canceled.
-                    file.OutputPath = output;
-                    file.State = FileState.Done;
-                    _lastDone = file;
-                    lastBytes = new FileInfo(output).Length;
-                    succeeded++;
-
-                    if (CurrentFile == file)
+                    var save = Task.Run(() => ImageCodec.Save(result, output, settings.Format,
+                        new SaveOptions { Source = loaded, JpegQuality = settings.Quality }));
+                    if (index < files.Count - 1 && BatchSaving.CanSaveInBackground(result))
                     {
-                        Tiles = null;
-                        BitmapSource? after = null;
-                        try
-                        {
-                            // The result is saved, so its pixels can be converted for display in place.
-                            after = await Task.Run(() => ImageCodec.ToBitmapSource(result, loaded, convertInPlace: true));
-                        }
-                        catch (OutOfMemoryException)
-                        {
-                            // The result is saved; without a preview the canvas just shows the original.
-                        }
-                        if (CurrentFile == file)
-                            After = after;
+                        pendingSave = SaveInBackgroundAsync(file, save, output, result, loaded);
+                        continue;
                     }
+                    await save;
+                    await OnSavedAsync(file, output, result, loaded);
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    file.State = FileState.Error;
-                    file.Error = Friendly(ex);
-                    firstError ??= file.Error;
-                    if (CurrentFile == file)
-                    {
-                        Tiles = null;
-                        if (ex is NotSupportedException)
-                        {
-                            // The file couldn't be read, so don't leave the previous image on the canvas.
-                            Before = null;
-                            After = null;
-                            PreviewError = file.Error;
-                        }
-                    }
-                    failed++;
+                    OnFailed(file, ex);
                     if (files.Count == 1)
                         throw;
                 }
             }
+            if (pendingSave is not null)
+                await pendingSave;
 
             string elapsed = Text.Seconds(total.Elapsed);
             if (succeeded == 0)
@@ -900,6 +879,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         catch (OperationCanceledException)
         {
+            // A result already being written is finished: it is computed, and its file counts as done.
+            if (pendingSave is not null)
+                await pendingSave;
             foreach (var file in files.Where(f => f.IsProcessing))
                 file.State = FileState.Pending;
             Tiles = null;
@@ -921,6 +903,66 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _cts = null;
             IsBusy = false;
             ProgressNote = null;
+        }
+
+        // The file is written: record it, and show the result if its file is the one on the canvas.
+        async Task OnSavedAsync(FileItem file, string output, ImageBuffer result, LoadedImage loaded)
+        {
+            file.OutputPath = output;
+            file.State = FileState.Done;
+            _lastDone = file;
+            lastBytes = new FileInfo(output).Length;
+            succeeded++;
+
+            if (CurrentFile == file)
+            {
+                Tiles = null;
+                BitmapSource? after = null;
+                try
+                {
+                    // The result is saved, so its pixels can be converted for display in place.
+                    after = await Task.Run(() => ImageCodec.ToBitmapSource(result, loaded, convertInPlace: true));
+                }
+                catch (OutOfMemoryException)
+                {
+                    // The result is saved; without a preview the canvas just shows the original.
+                }
+                if (CurrentFile == file)
+                    After = after;
+            }
+        }
+
+        void OnFailed(FileItem file, Exception ex)
+        {
+            file.State = FileState.Error;
+            file.Error = Friendly(ex);
+            firstError ??= file.Error;
+            if (CurrentFile == file)
+            {
+                Tiles = null;
+                if (ex is NotSupportedException)
+                {
+                    // The file couldn't be read, so don't leave the previous image on the canvas.
+                    Before = null;
+                    After = null;
+                    PreviewError = file.Error;
+                }
+            }
+            failed++;
+        }
+
+        // Awaited before the next save and at the end, so it never throws: a failure is recorded on its own file.
+        async Task SaveInBackgroundAsync(FileItem file, Task save, string output, ImageBuffer result, LoadedImage loaded)
+        {
+            try
+            {
+                await save;
+                await OnSavedAsync(file, output, result, loaded);
+            }
+            catch (Exception ex)
+            {
+                OnFailed(file, ex);
+            }
         }
     }
 

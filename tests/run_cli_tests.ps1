@@ -80,6 +80,12 @@ New-Item -ItemType Directory -Force "$out\dup" | Out-Null
 Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\dup\x.png"
 Copy-Item -LiteralPath "$img\orient6.jpg" "$out\dup\x.jpg"
 Run "dup_names"       @("$out\dup", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\dup_out")
+# The first file of a batch is written while the second one is processed. A folder in the way of its output file makes that
+# save fail in the background: it must be reported with the file's number, and the rest of the batch still saved.
+New-Item -ItemType Directory -Force "$out\bgsave", "$out\bgsave_out\a.png" | Out-Null
+Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\bgsave\a.png"
+Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\bgsave\b.png"
+Run "bg_save_fail"    @("$out\bgsave", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\bgsave_out") -Expect 1
 
 & $Python "$PSScriptRoot\check_outputs.py" $fx $out
 $checkCode = $LASTEXITCODE
