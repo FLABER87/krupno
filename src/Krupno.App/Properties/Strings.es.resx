@@ -488,6 +488,9 @@
   <data name="Update_CloseOthers" xml:space="preserve">
     <value>Cierre primero las demás ventanas de Krupno y la herramienta de línea de comandos, y vuelva a intentarlo.</value>
   </data>
+  <data name="Update_CloseOthersAllUsers" xml:space="preserve">
+    <value>Cierre primero las demás ventanas de Krupno y la herramienta de línea de comandos, también las de los demás usuarios de este equipo, y vuelva a intentarlo.</value>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>Descargar</value>
   </data>

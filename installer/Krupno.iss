@@ -57,7 +57,10 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 ; Windows ML needs Windows 10 1903 (build 18362) or later.
 MinVersion=10.0.18362
-WizardStyle=modern dynamic
+; Light even in Windows' dark mode: the dark style ("dynamic") draws the checkboxes of the components and tasks lists in a
+; rect sized from the system's OBM_CHECKBOXES bitmap, which at 300% DPI is narrower than the style's checkbox, so they come
+; out cut on both sides (Inno Setup 6.7.1, unchanged in 7.1). The light wizard has Windows draw them at their own size.
+WizardStyle=modern
 SetupIconFile=..\src\Krupno.App\Assets\Krupno.ico
 UninstallDisplayIcon={app}\Krupno.exe
 UninstallDisplayName=Krupno
@@ -66,11 +69,13 @@ ChangesAssociations=yes
 SetupLogging=yes
 ; Held by every Krupno.exe and krupno-cli.exe while it runs (src/Krupno.Core/Processing/RunningMarker.cs): Setup and the
 ; uninstaller ask for Krupno to be closed first, rather than have the Restart Manager close it in the middle of processing.
-; The window's "Update" lets go of it before it starts Setup.
-AppMutex=Krupno-Running
+; The window's "Update" lets go of it before it starts Setup. The names depend on the install mode (RunningMutexes in
+; [Code]); Setup expands them once the mode is known, after InitializeSetup, and the uninstaller checks the ones Setup
+; expanded, which it writes to the uninstall log.
+AppMutex={code:RunningMutexes}
 ; Created once Setup has its rights and has found no Krupno running: no processing starts while it exists, and the window's
 ; "Update" closes only then, since a Setup that ends earlier (the UAC prompt declined) runs no [Code] to start Krupno again.
-SetupMutex=Krupno-Setup
+SetupMutex={code:SetupMutexes}
 OutputDir={#OutputDir}
 OutputBaseFilename=Krupno-{#AppVersion}-setup-x64
 Compression=lzma2/ultra64
@@ -198,6 +203,27 @@ const
 var
   // ModelNeeded cache of the form '|name=1|name=0': Setup may call Check several times, and hashing a model takes a while.
   ModelChecks: String;
+
+// AppMutex and SetupMutex: the names of RunningMarker (src/Krupno.Core/Processing/RunningMarker.cs) for the install mode, which
+// Krupno picks by its uninstall entry (HKCU or HKLM). This session's when installing for the current user. Global ones when
+// installing for all users, as Krupno may also be running in another user's session then (Fast User Switching, Remote
+// Desktop); global names in both modes would have one user's Setup wait for another user's own copy. For all users the
+// session's names count as well: Krupno 0.2.2 and earlier hold them however they were installed.
+function RunningMutexes(Param: String): String;
+begin
+  if IsAdminInstallMode then
+    Result := 'Global\Krupno-Running-AllUsers,Krupno-Running'
+  else
+    Result := 'Krupno-Running';
+end;
+
+function SetupMutexes(Param: String): String;
+begin
+  if IsAdminInstallMode then
+    Result := 'Global\Krupno-Setup-AllUsers,Krupno-Setup'
+  else
+    Result := 'Krupno-Setup';
+end;
 
 // Whether to download a model: no if {app}\models already has a file with the same SHA-256 (app update).
 function ModelNeeded(const FileName, Hash: String): Boolean;

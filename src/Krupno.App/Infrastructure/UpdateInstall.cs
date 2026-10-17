@@ -4,7 +4,7 @@ using System.IO;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
-using Microsoft.Win32;
+using Krupno.Core.Processing;
 
 namespace Krupno.App.Infrastructure;
 
@@ -15,15 +15,12 @@ namespace Krupno.App.Infrastructure;
 /// one SHA256SUMS.txt gives for it. It runs without questions (/SILENT shows its progress) in the mode of the installation this
 /// copy belongs to; it keeps the components and tasks chosen before, skips the models it already has and, told /UPDATE=1,
 /// starts Krupno again when it is done, or after it failed and rolled back (installer/Krupno.iss). The window closes once
-/// Setup has taken over (<see cref="WaitForSetupAsync"/>). Only for an installed copy: the portable ZIP and a build link to the
-/// release page instead.
+/// Setup has taken over (<see cref="WaitForSetupAsync"/>). Only for an installed copy (<see cref="Installation"/>): the portable
+/// ZIP and a build link to the release page instead.
 /// </summary>
 internal static partial class UpdateInstall
 {
     private const string DownloadUrl = "https://github.com/FLABER87/krupno/releases/download";
-
-    /// <summary>Inno Setup's uninstall entry for the AppId of installer/Krupno.iss: in HKCU for the current user, HKLM for all users.</summary>
-    private const string UninstallKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\{2C15E368-F7C9-4CB9-9800-9F2548D61A83}_is1";
 
     /// <summary>A download that sends nothing for this long has failed.</summary>
     private static readonly TimeSpan StallTimeout = TimeSpan.FromSeconds(30);
@@ -42,42 +39,6 @@ internal static partial class UpdateInstall
 
     /// <summary>Setup's log of the update to <paramref name="version"/>, next to the window's logs.</summary>
     public static string SetupLogPath(Version version) => Path.Combine(Log.Folder, $"setup-{version.ToString(3)}.log");
-
-    /// <summary>How this copy was installed: false for the current user, true for all users; null if it wasn't (the ZIP, a build).</summary>
-    public static bool? InstalledForAllUsers() =>
-        InstallMode(AppContext.BaseDirectory, InstallLocation(Registry.CurrentUser), InstallLocation(Registry.LocalMachine));
-
-    /// <summary>Whether <paramref name="appFolder"/> is the installation for the current user (false), for all users (true) or neither.</summary>
-    internal static bool? InstallMode(string appFolder, string? currentUser, string? allUsers) =>
-        SameFolder(appFolder, currentUser) ? false : SameFolder(appFolder, allUsers) ? true : null;
-
-    private static string? InstallLocation(RegistryKey root)
-    {
-        try
-        {
-            using var key = root.OpenSubKey(UninstallKey);
-            return key?.GetValue("InstallLocation") as string ?? key?.GetValue("Inno Setup: App Path") as string;
-        }
-        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException)
-        {
-            return null;
-        }
-    }
-
-    private static bool SameFolder(string folder, string? other)
-    {
-        if (string.IsNullOrWhiteSpace(other))
-            return false;
-        try
-        {
-            return string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder)),
-                Path.TrimEndingDirectorySeparator(Path.GetFullPath(other)), StringComparison.OrdinalIgnoreCase);
-        }
-        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
-        {
-            return false;
-        }
-    }
 
     /// <summary>
     /// The SHA-256 that SHA256SUMS.txt gives for <paramref name="fileName"/>, in lower case: lines of "hash *name", as sha256sum

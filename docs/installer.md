@@ -1,6 +1,7 @@
 # Installer and releases
 
 The installer is built with Inno Setup (`installer/Krupno.iss`). It installs the app together with .NET (self-contained publish), so .NET does not need to be installed separately.
+The wizard is light whatever the Windows theme: Inno Setup's dark style draws the checkboxes of its lists cut on both sides at 300% DPI.
 
 ## Install modes and tasks
 
@@ -19,6 +20,8 @@ When the app is updated, a model with the same SHA-256 is not downloaded again.
 ## A running Krupno
 
 Setup and the uninstaller don't replace or remove the files of a Krupno that is running: every window and `krupno-cli` holds a named mutex (`RunningMarker`, the installer's `AppMutex`; anyone may wait on it, so Setup sees it when run as an administrator or elevated), and while one does, Setup asks for Krupno to be closed instead of having the Restart Manager close it in the middle of processing. Closing the window during a run cancels it and finishes the result being written first. Once past that check, Setup holds a mutex of its own (`SetupMutex`) until it ends, and no processing starts meanwhile, in the window (a message says why) or in `krupno-cli` (it exits with an error).
+
+The names depend on the install mode. A copy installed for the current user (or not installed at all: the ZIP, a build) uses its Windows session's `Krupno-Running` and `Krupno-Setup`. A copy installed for all users (its folder is in the `HKLM` uninstall entry) uses the global `Global\Krupno-Running-AllUsers` and `Global\Krupno-Setup-AllUsers`, as it may also be running in another user's session (Fast User Switching, Remote Desktop), out of reach of a session's names; creating them needs no privilege, so a standard user's Krupno holds them too. Setup takes the names of the mode it installs in (`{code:}` constants, which it expands once the mode is known), and for all users it also checks and holds the session's names, which Krupno 0.2.2 and earlier hold whatever the mode (a copy that old running in another session goes unseen). Global names for every installation would have one user's Setup wait for another user's own copy. The uninstaller checks the names Setup checked when it installed (Inno Setup keeps them in the uninstall log). "Update" in a copy installed for all users doesn't start while another user's Krupno is running either, and says so.
 
 ## Uninstalling
 

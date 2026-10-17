@@ -488,6 +488,9 @@
   <data name="Update_CloseOthers" xml:space="preserve">
     <value>Önce diğer Krupno pencerelerini ve komut satırı aracını kapatıp yeniden deneyin.</value>
   </data>
+  <data name="Update_CloseOthersAllUsers" xml:space="preserve">
+    <value>Önce, bu bilgisayardaki diğer kullanıcılara ait olanlar da dahil olmak üzere diğer Krupno pencerelerini ve komut satırı aracını kapatıp yeniden deneyin.</value>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>İndir</value>
   </data>

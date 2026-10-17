@@ -488,6 +488,9 @@
   <data name="Update_CloseOthers" xml:space="preserve">
     <value>Tutup dulu jendela Krupno lainnya dan alat baris perintah, lalu coba lagi.</value>
   </data>
+  <data name="Update_CloseOthersAllUsers" xml:space="preserve">
+    <value>Tutup dulu jendela Krupno lainnya dan alat baris perintah, termasuk milik pengguna lain di komputer ini, lalu coba lagi.</value>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>Unduh</value>
   </data>

@@ -504,6 +504,10 @@
     <value>Close the other Krupno windows and the command-line tool first, then try again.</value>
     <comment>The installer replaces the files the other windows and the command-line tool are using.</comment>
   </data>
+  <data name="Update_CloseOthersAllUsers" xml:space="preserve">
+    <value>Close the other Krupno windows and the command-line tool first, those of the other users of this computer too, then try again.</value>
+    <comment>For an installation for all users: the installer replaces the files the other windows and the command-line tool are using, other users' included, whose windows can't be closed from here.</comment>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>Download</value>
     <comment>Opens the release page in the browser.</comment>
