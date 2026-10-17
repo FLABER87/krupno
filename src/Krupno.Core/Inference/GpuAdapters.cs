@@ -4,7 +4,8 @@ namespace Krupno.Core.Inference;
 
 /// <param name="Index">Adapter index in DXGI; DirectML accepts the same index as device_id.</param>
 /// <param name="DriverVersion">The user-mode driver version ("32.0.15.6094"), for bug reports; null if DXGI doesn't report it.</param>
-public sealed record GpuAdapter(int Index, string Name, ulong DedicatedMemory, uint VendorId, string? DriverVersion = null);
+public sealed record GpuAdapter(int Index, string Name, ulong DedicatedMemory, uint VendorId, string? DriverVersion = null,
+    uint DeviceId = 0);
 
 /// <summary>Enumerates GPUs directly via DXGI (COM calls through the vtable, no wrappers).</summary>
 public static unsafe partial class GpuAdapters
@@ -63,7 +64,7 @@ public static unsafe partial class GpuAdapters
                     if (getDesc1(adapter, &desc) >= 0 && !IsSoftware(desc))
                     {
                         result.Add(new GpuAdapter((int)i, new string(desc.Description), desc.DedicatedVideoMemory, desc.VendorId,
-                            DriverVersion(adapter)));
+                            DriverVersion(adapter), desc.DeviceId));
                     }
                 }
                 finally

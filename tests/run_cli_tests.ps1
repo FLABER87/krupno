@@ -4,7 +4,7 @@
 # -CheckFallback is for a machine without a GPU (CI): with KRUPNO_BASIC_RENDER_DRIVER=1, "-d auto" picks "Microsoft Basic Render Driver",
 # DirectML does not start on it, and every "gpu" run must fall back to the CPU. With a real GPU the switch makes the runs FAIL.
 param(
-    [string]$Exe = "$PSScriptRoot\..\src\Krupno.Cli\bin\Release\net10.0-windows\win-x64\krupno-cli.exe",
+    [string]$Exe = "$PSScriptRoot\..\src\Krupno.Cli\bin\Release\net10.0-windows10.0.19041.0\win-x64\krupno-cli.exe",
     [string]$Python = "python",
     [switch]$CheckFallback
 )

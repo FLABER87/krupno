@@ -12,6 +12,24 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Accelerators_Available" xml:space="preserve">
+    <value>Windows dapat menambahkan mesin yang lebih cepat untuk PC ini: {0}.</value>
+  </data>
+  <data name="Accelerators_Download" xml:space="preserve">
+    <value>Unduh</value>
+  </data>
+  <data name="Accelerators_Downloading" xml:space="preserve">
+    <value>Mengunduh {0}… {1}%</value>
+  </data>
+  <data name="Accelerators_Failed" xml:space="preserve">
+    <value>Tidak dapat mengunduh {0}: {1}</value>
+  </data>
+  <data name="Accelerators_Installed" xml:space="preserve">
+    <value>{0} siap: pilih di “Perangkat”</value>
+  </data>
+  <data name="Accelerators_ToolTip" xml:space="preserve">
+    <value>Penyedia eksekusi dari pembuat GPU dan NPU, melalui Windows ML. Windows mengunduhnya dari Microsoft; beberapa berukuran ratusan megabyte.</value>
+  </data>
   <data name="AddFiles" xml:space="preserve">
     <value>Tambahkan file</value>
   </data>

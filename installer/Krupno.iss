@@ -55,7 +55,8 @@ DefaultDirName={autopf}\Krupno
 DisableProgramGroupPage=yes
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-MinVersion=10.0
+; Windows ML needs Windows 10 1903 (build 18362) or later.
+MinVersion=10.0.18362
 WizardStyle=modern dynamic
 SetupIconFile=..\src\Krupno.App\Assets\Krupno.ico
 UninstallDisplayIcon={app}\Krupno.exe

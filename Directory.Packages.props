@@ -3,8 +3,10 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <!-- The only third-party runtime dependency. -->
-    <PackageVersion Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4" />
+    <!-- The only third-party runtime dependency: Windows ML, which brings ONNX Runtime (with its .NET API), DirectML, and on
+         Windows 11 24H2+ the catalog of the GPU and NPU vendors' execution providers. Microsoft.ML.OnnxRuntime.DirectML
+         stopped at 1.24.4. -->
+    <PackageVersion Include="Microsoft.Windows.AI.MachineLearning" Version="2.4.89" />
   </ItemGroup>
   <ItemGroup>
     <!-- Unit tests only (tests/Krupno.Core.Tests). -->

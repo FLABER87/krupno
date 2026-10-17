@@ -50,7 +50,7 @@ jobs:
       - name: Installer script
         run: |
           choco install innosetup --version 6.7.1 -y --no-progress
-          $output = & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /O- /DAppVersion=0.0.0 "/DAppDir=$PWD\src\Krupno.App\bin\Release\net10.0-windows\win-x64" installer\Krupno.iss 2>&1
+          $output = & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /O- /DAppVersion=0.0.0 "/DAppDir=$PWD\src\Krupno.App\bin\Release\net10.0-windows10.0.19041.0\win-x64" installer\Krupno.iss 2>&1
           $output
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if ($output -match "^Warning:") { Write-Error "ISCC reported warnings"; exit 1 }
@@ -58,7 +58,7 @@ jobs:
       # The runner has no GPU. DXGI reports "Microsoft Basic Render Driver" without the SOFTWARE flag, but Krupno drops it
       # by VendorId/DeviceId, so the list has only auto and cpu, and "-d auto" goes straight to the CPU.
       - name: Devices
-        run: src\Krupno.Cli\bin\Release\net10.0-windows\win-x64\krupno-cli.exe --list-devices
+        run: src\Krupno.Cli\bin\Release\net10.0-windows10.0.19041.0\win-x64\krupno-cli.exe --list-devices
 
       # -CheckFallback brings that adapter back (KRUPNO_BASIC_RENDER_DRIVER=1): "-d auto" picks it, DirectML fails to initialize on it,
       # and every "gpu" run must fall back to the CPU, which is how the fallback is tested.

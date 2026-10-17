@@ -2,15 +2,16 @@
 
 [![Tests](https://github.com/FLABER87/krupno/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/FLABER87/krupno/actions/workflows/tests.yml)
 
-**Krupno** is an AI image upscaler for Windows built on .NET 10, WPF and ONNX Runtime with DirectML.
-It runs on any DirectX 12 GPU (NVIDIA, AMD or Intel, integrated ones included) and falls back to the CPU.
+**Krupno** is an AI image upscaler for Windows built on .NET 10, WPF and Windows ML (ONNX Runtime with DirectML).
+It runs on any DirectX 12 GPU (NVIDIA, AMD or Intel, integrated ones included) and falls back to the CPU. On Windows 11 24H2 and later it can also use the GPU and NPU vendors' own execution providers (NVIDIA TensorRT-RTX, Intel OpenVINO and others), which Windows downloads on request.
+It needs Windows 10 1903 or later.
 It comes as a desktop app (`Krupno.exe`) and a command-line tool (`krupno-cli.exe`).
 Get it from [Releases](https://github.com/FLABER87/krupno/releases): the installer downloads the models you pick during setup,
 and the portable ZIP comes without models (take them from [models-v2](https://github.com/FLABER87/krupno/releases/tag/models-v2)).
 See [Models](#models) for how to convert other PyTorch weights to ONNX.
 The code is MIT-licensed, and each model has its own license.
 
-The app's only third-party dependency is `Microsoft.ML.OnnxRuntime.DirectML`.
+The app's only third-party dependency is `Microsoft.Windows.AI.MachineLearning` (Windows ML: ONNX Runtime 1.27 with its .NET API, DirectML and the catalog of vendor execution providers). It replaced `Microsoft.ML.OnnxRuntime.DirectML`, which stopped at 1.24.4. Windows ML needs a Windows SDK version in the target framework (`net10.0-windows10.0.19041.0`), which brings the C#/WinRT projection (`Microsoft.Windows.SDK.NET.dll`, about 25 MB).
 Images are read and written with WIC (built into Windows), the UI is WPF, and GPUs are enumerated directly through DXGI.
 
 ## Layout
@@ -34,8 +35,8 @@ dotnet build Krupno.slnx -c Release
 ```
 
 The built programs end up here:
-- `src/Krupno.Cli/bin/Release/net10.0-windows/win-x64/krupno-cli.exe`
-- `src/Krupno.App/bin/Release/net10.0-windows/win-x64/Krupno.exe`
+- `src/Krupno.Cli/bin/Release/net10.0-windows10.0.19041.0/win-x64/krupno-cli.exe`
+- `src/Krupno.App/bin/Release/net10.0-windows10.0.19041.0/win-x64/Krupno.exe`
 
 ## Installer
 
@@ -61,7 +62,7 @@ powershell -ExecutionPolicy Bypass -File installer\build.ps1
 ```
 
 The output goes to `artifacts/`: `Krupno-<version>-setup-x64.exe`, `Krupno-<version>-win-x64.zip` and `SHA256SUMS.txt`. The version comes from `<Version>` in `Directory.Build.props`.
-The script publishes `Krupno.exe` and `krupno-cli.exe` into one folder. Models from `models/` are not copied there, the DirectML debug files and `*.pdb` are removed, and the .NET, ONNX Runtime and DirectML licenses go to `licenses/`.
+The script publishes `Krupno.exe` and `krupno-cli.exe` into one folder. Models from `models/` are not copied there, the DirectML debug files and `*.pdb` are removed, and the .NET and Windows ML licenses go to `licenses/`.
 The installer lists the models in `installer/Krupno.iss` (file name, size, SHA-256). A new set of models is published as a separate release (`models-v3` and so on), and the link in `Krupno.iss` is updated. Old model releases are never overwritten: already built installers point to them.
 
 Releases are built by the `.github/workflows/release.yml` workflow. To release a version:
@@ -167,6 +168,8 @@ krupno-cli C:\photos -r -o D:\x4                # subfolders too, repeated under
 krupno-cli C:\photos -r -o D:\x4 --skip-existing   # resume: only the images without a result
 krupno-cli *.jpg scan.png -o C:\x4             # several inputs; krupno-cli expands the pattern itself
 krupno-cli --list-models --list-devices
+krupno-cli --install-accelerators              # download the vendors' execution providers Windows ML offers
+krupno-cli photo.jpg -d acc0                    # run on the first of them (see --list-devices)
 ```
 
 See `krupno-cli --help` for details. Ctrl+C cancels processing. While it runs, Windows does not go to sleep on idle.
@@ -190,7 +193,7 @@ The preview is on the left, the settings panel on the right.
 - **Models** are shown as cards with descriptive names ("Photo, fast", "Photo, maximum detail"…). The recommended and non-commercial models are marked, and technical details are in the tooltip. Known models are described in `ViewModels/ModelItem.cs`; the others are shown by file name.
 - **Strength** (10–100%, under the models) mixes the network's result with a plain Lanczos resize of the original. Below 100% it tones down the textures a model invents and its oversharpening (see [How it works](#how-it-works)).
 - **Scale and format** are picked with toggle buttons. The output size is shown right away, and JPEG has a quality slider. "Other" takes a scale of your own (2.5, or 2,5) or a length for one side of the result: width, height or long side in pixels. With a size, every image of a batch gets its own scale, shown next to the output size, and the name says what was asked for (`photo_3840px.png`).
-- **Device and tile size** are tucked away under "Advanced"; by default both are chosen automatically. "Seamless tiles" there doubles the tile overlap to 64 px (`--pad 64` in the command-line tool): no visible seams even with deep models, at the cost of more tiles (35 instead of 24 for a 1920×1200 photo with auto tiles, about 1.5 times the time).
+- **Device and tile size** are tucked away under "Advanced"; by default both are chosen automatically. Besides "Auto", every GPU (through DirectML) and the CPU, the device list has the GPU and NPU vendors' accelerators that Windows has installed, such as "RTX 3080 · TensorRT-RTX". When Windows ML offers more for this computer, a line under the list names them, and "Download" has Windows download them (some are hundreds of megabytes); Krupno downloads nothing by itself. "Seamless tiles" there doubles the tile overlap to 64 px (`--pad 64` in the command-line tool): no visible seams even with deep models, at the cost of more tiles (35 instead of 24 for a 1920×1200 photo with auto tiles, about 1.5 times the time).
 - **Comparison:** a slider wipe or two frames side by side. Zoom is measured in output pixels (100% is pixel for pixel), the mouse wheel zooms toward the point under the cursor, the right or middle button pans the image, and a double click toggles "Fit to window" ↔ 1:1.
 - **During processing** finished tiles are highlighted on the preview, with the percentage, the remaining time and the tile number next to it. Progress also shows on the Windows taskbar icon, and when a run ends (done or failed) while you are in another window, the icon flashes until you come back. While processing runs, Windows does not go to sleep on idle (the display may still turn off; closing the lid or choosing Sleep works as usual).
 - **A batch** is shown as a strip of thumbnails with each file's status: processing, done, error. A file keeps the "processing" mark while its result is written, which in a batch overlaps with the next file (see [How it works](#how-it-works)). Clicking a thumbnail shows the comparison for that file.
@@ -272,6 +275,7 @@ Both scripts swap `%LOCALAPPDATA%\Krupno\settings.json` for the duration of the 
 - **Input shape for DirectML.** All tiles of an image are fed to the network in a window of the same size. The size is fixed through `AddFreeDimensionOverrideByName`, and DirectML compiles the graph once per image size.
 - **Checked against a reference.** Without tiling, the result matches the PyTorch implementation of Real-ESRGAN within ±1 level, both on DirectML and on the CPU.
 - **Out of memory.** If the window does not fit on the device, the tile shrinks and the pass starts over. Up to 512 px, the tile steps down a 64 px grid, respecting the model's size multiple (512 → 448 → 384 → 320 → 256 → …, no smaller than 128). A larger window is halved, but not below 512: every failed attempt costs a graph compilation, about 10 s for DAT2. Previously the tile was always halved and skipped the size that would fit: DAT2 fp32 on 10 GB dropped from 384 straight to 192. The chosen tile is remembered for the model on that device: later frames of a batch and the second ×8 pass start with it right away, and the reduction message is printed once. With DAT2 fp32 and `-t 384`, a batch of two 1920×1200 frames takes 62.1 + 51.7 s: only the first frame spends the extra ~10 s. In the window, the limit lasts until the model or device changes, and the next processing run shows "Tile 320 px (chosen after running out of memory)" once. To try a larger tile again, for example after freeing VRAM, switch the model or restart the app. DirectML does not report spilling into shared memory as an exception, so it cannot be caught this way.
+- **Accelerators (Windows ML).** On Windows 11 24H2 and later, Windows ML has a catalog of the GPU and NPU vendors' execution providers: NVIDIA TensorRT-RTX (GeForce RTX 30 and later), Intel OpenVINO, AMD MIGraphX and Vitis AI, Qualcomm QNN. Windows downloads and updates them as packages from Microsoft. At startup Krupno registers the ones Windows has with ONNX Runtime (in the background in the window, without downloading anything), and each of their devices becomes a device of its own (`accN` in the command-line tool). They get the same fixed window size per image as DirectML, so TensorRT-RTX builds one engine per window size; the first image of a size takes longer. "Auto" stays with DirectML, and a chosen accelerator never falls back to the CPU on its own: an error says what is wrong instead of a much slower run. On Windows 10, or where the catalog has nothing for the hardware, the list is the same as before.
 - **CPU fallback.** In "Auto" mode the GPU with the most memory is used; if DirectML fails to start, the work runs on the CPU, and the window says so during processing. Running out of video memory is not a reason to fall back: once DirectML has created a session for the model, or when the error reads as out of memory, the tile shrinks instead. The software "Microsoft Basic Render Driver" does not count as a GPU: on a machine without a GPU it is not in the device list, and "Auto" goes straight to the CPU.
 - **Any scale or size.** `--width`, `--height` and `--long-side` ("Other" in the window) set one side of the result in pixels instead of a scale: the scale is worked out for each image, the other side follows its proportions, and next to the source the name gets `_3840w`, `_2160h` or `_3840px`. The network runs as many times as needed (×8 with a ×4 model is two passes), then the result is resized precisely with a Lanczos-3 filter. If the last pass would not fit in memory at full size (×8 of a 1920×1200 photo makes a 30720×19200 intermediate), its input is first reduced so that the pass lands just above the target size, and a message says so. A size just above the model's own scale takes the second pass too: 3840 px wide from a 900 px photo is ×4.27, so a ×4 model runs twice (×16) and the result is reduced. The window shows the scale next to the output size for this reason.
 - **Strength.** Below 100%, the result is `plain + strength × (network − plain)`, where `plain` is a Lanczos resize of the pixels the network saw (with transparency, the colors filled in under alpha 0) to the output size, clipped to 0..255 like a saved image. The alpha stays as computed for the full-strength result. The mix is done band by band, so the plain resize never exists whole: for a 7680×4800 result it adds under a second on a 4-core CPU.

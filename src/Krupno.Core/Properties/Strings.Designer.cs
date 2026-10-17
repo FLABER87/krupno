@@ -60,6 +60,15 @@ namespace Krupno.Core.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to {0} is no longer available: choose another device..
+        /// </summary>
+        internal static string Error_AcceleratorMissing {
+            get {
+                return ResourceManager.GetString("Error_AcceleratorMissing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cannot open "{0}": the file is corrupt or is not an image..
         /// </summary>
         internal static string Error_CannotOpen {

@@ -1,6 +1,9 @@
 <Project>
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <!-- A Windows SDK version in the framework brings the WinRT projections Windows ML's catalog of execution providers
+         needs; Windows ML itself runs on Windows 10 1903 (18362) and later. -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.18362.0</SupportedOSPlatformVersion>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

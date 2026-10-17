@@ -12,6 +12,24 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Accelerators_Available" xml:space="preserve">
+    <value>Windows はこの PC 用に、より高速なエンジンを追加できます：{0}。</value>
+  </data>
+  <data name="Accelerators_Download" xml:space="preserve">
+    <value>ダウンロード</value>
+  </data>
+  <data name="Accelerators_Downloading" xml:space="preserve">
+    <value>{0} をダウンロードしています… {1}%</value>
+  </data>
+  <data name="Accelerators_Failed" xml:space="preserve">
+    <value>{0} をダウンロードできませんでした：{1}</value>
+  </data>
+  <data name="Accelerators_Installed" xml:space="preserve">
+    <value>{0} の準備ができました。「デバイス」で選択してください</value>
+  </data>
+  <data name="Accelerators_ToolTip" xml:space="preserve">
+    <value>GPU と NPU のメーカーが提供する実行プロバイダー（Windows ML 経由）。Windows が Microsoft からダウンロードします。数百 MB になるものもあります。</value>
+  </data>
   <data name="AddFiles" xml:space="preserve">
     <value>ファイルを追加</value>
   </data>

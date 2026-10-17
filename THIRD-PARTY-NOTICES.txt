@@ -16,16 +16,19 @@ Runtime components (installed with Krupno)
   licenses\dotnet-LICENSE.txt, licenses\dotnet-THIRD-PARTY-NOTICES.txt,
   licenses\windowsdesktop-LICENSE.txt
 
-ONNX Runtime (onnxruntime.dll, onnxruntime_providers_shared.dll, Microsoft.ML.OnnxRuntime.dll)
-  Copyright (c) Microsoft Corporation. MIT License.
-  https://github.com/microsoft/onnxruntime
-  licenses\onnxruntime-LICENSE.txt, licenses\onnxruntime-ThirdPartyNotices.txt
-  Krupno turns off ONNX Runtime telemetry events.
+Windows ML: ONNX Runtime and DirectML (Microsoft.Windows.AI.MachineLearning.dll,
+Microsoft.Windows.AI.MachineLearning.Projection.dll, onnxruntime.dll, Microsoft.ML.OnnxRuntime.dll, DirectML.dll)
+  Copyright (c) Microsoft Corporation. Microsoft Software License Terms for the Windows ML Runtime.
+  https://www.nuget.org/packages/Microsoft.Windows.AI.MachineLearning
+  licenses\WindowsML-LICENSE.txt, licenses\WindowsML-ThirdPartyNotices.txt
+  ONNX Runtime itself is open source under the MIT License: https://github.com/microsoft/onnxruntime
+  Krupno turns off ONNX Runtime telemetry events. The GPU and NPU vendors' execution providers
+  are not shipped with Krupno: Windows downloads them, when asked to, under their vendors' terms
+  (https://learn.microsoft.com/windows/ai/new-windows-ml/supported-execution-providers).
 
-DirectML (DirectML.dll)
-  Copyright (c) Microsoft Corporation. Microsoft Software License Terms for DirectML.
-  https://www.nuget.org/packages/Microsoft.AI.DirectML
-  licenses\DirectML-LICENSE.txt, licenses\DirectML-ThirdPartyNotices.txt
+C#/WinRT and the Windows SDK projection for .NET (WinRT.Runtime.dll, Microsoft.Windows.SDK.NET.dll)
+  Copyright (c) Microsoft Corporation. WinRT.Runtime: MIT License, https://github.com/microsoft/CsWinRT;
+  the projection: Windows SDK license terms, https://aka.ms/WinSDKLicenseURL
 
 
 Models (optional, downloaded during installation)

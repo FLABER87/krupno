@@ -12,6 +12,24 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Accelerators_Available" xml:space="preserve">
+    <value>Windows 可為這台電腦加入更快的引擎：{0}。</value>
+  </data>
+  <data name="Accelerators_Download" xml:space="preserve">
+    <value>下載</value>
+  </data>
+  <data name="Accelerators_Downloading" xml:space="preserve">
+    <value>正在下載 {0}… {1}%</value>
+  </data>
+  <data name="Accelerators_Failed" xml:space="preserve">
+    <value>無法下載 {0}：{1}</value>
+  </data>
+  <data name="Accelerators_Installed" xml:space="preserve">
+    <value>{0} 已就緒：請在「裝置」中選擇</value>
+  </data>
+  <data name="Accelerators_ToolTip" xml:space="preserve">
+    <value>來自 GPU 與 NPU 廠商的執行提供者，透過 Windows ML 提供。Windows 會從 Microsoft 下載，部分大小達數百 MB。</value>
+  </data>
   <data name="AddFiles" xml:space="preserve">
     <value>新增檔案</value>
   </data>

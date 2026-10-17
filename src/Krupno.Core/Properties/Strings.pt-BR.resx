@@ -12,6 +12,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Error_AcceleratorMissing" xml:space="preserve">
+    <value>{0} não está mais disponível: escolha outro dispositivo.</value>
+  </data>
   <data name="Error_CannotOpen" xml:space="preserve">
     <value>Não é possível abrir “{0}”: o arquivo está corrompido ou não é uma imagem.</value>
   </data>

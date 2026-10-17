@@ -12,6 +12,24 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Accelerators_Available" xml:space="preserve">
+    <value>Windows bu bilgisayar için daha hızlı motorlar ekleyebilir: {0}.</value>
+  </data>
+  <data name="Accelerators_Download" xml:space="preserve">
+    <value>İndir</value>
+  </data>
+  <data name="Accelerators_Downloading" xml:space="preserve">
+    <value>{0} indiriliyor… %{1}</value>
+  </data>
+  <data name="Accelerators_Failed" xml:space="preserve">
+    <value>{0} indirilemedi: {1}</value>
+  </data>
+  <data name="Accelerators_Installed" xml:space="preserve">
+    <value>{0} hazır: “Cihaz” listesinden seçin</value>
+  </data>
+  <data name="Accelerators_ToolTip" xml:space="preserve">
+    <value>GPU ve NPU üreticilerinin yürütme sağlayıcıları, Windows ML üzerinden. Windows bunları Microsoft'tan indirir; bazıları yüzlerce megabayttır.</value>
+  </data>
   <data name="AddFiles" xml:space="preserve">
     <value>Dosya ekle</value>
   </data>

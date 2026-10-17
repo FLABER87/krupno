@@ -5,7 +5,7 @@
 #   powershell -File tests\gui_states.ps1 [-Scenario single,batch,error,light,color] [-Image <file>] [-Batch <folder>]
 param(
     [string[]]$Scenario = @("single", "batch", "error", "light", "color"),
-    [string]$Exe = "$PSScriptRoot\..\src\Krupno.App\bin\Release\net10.0-windows\win-x64\Krupno.exe",
+    [string]$Exe = "$PSScriptRoot\..\src\Krupno.App\bin\Release\net10.0-windows10.0.19041.0\win-x64\Krupno.exe",
     [string]$Image = "$PSScriptRoot\fixtures\images\big_1500x1000.png",
     [string]$Batch = "$PSScriptRoot\fixtures\images",
     # The fast model is for the batch, error and theme scenarios; the slow one is to catch tile-by-tile processing.

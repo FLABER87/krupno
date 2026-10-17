@@ -12,6 +12,24 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Accelerators_Available" xml:space="preserve">
+    <value>Windows có thể thêm công cụ nhanh hơn cho máy này: {0}.</value>
+  </data>
+  <data name="Accelerators_Download" xml:space="preserve">
+    <value>Tải xuống</value>
+  </data>
+  <data name="Accelerators_Downloading" xml:space="preserve">
+    <value>Đang tải {0}… {1}%</value>
+  </data>
+  <data name="Accelerators_Failed" xml:space="preserve">
+    <value>Không thể tải {0}: {1}</value>
+  </data>
+  <data name="Accelerators_Installed" xml:space="preserve">
+    <value>{0} đã sẵn sàng: hãy chọn trong “Thiết bị”</value>
+  </data>
+  <data name="Accelerators_ToolTip" xml:space="preserve">
+    <value>Trình thực thi của các hãng GPU và NPU, qua Windows ML. Windows tải chúng từ Microsoft; một số có dung lượng hàng trăm megabyte.</value>
+  </data>
   <data name="AddFiles" xml:space="preserve">
     <value>Thêm tệp</value>
   </data>

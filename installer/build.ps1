@@ -75,10 +75,8 @@ function Copy-RuntimeLicenses {
         @("Microsoft.NETCore.App.Runtime.win-x64", "LICENSE.TXT", "dotnet-LICENSE.txt"),
         @("Microsoft.NETCore.App.Runtime.win-x64", "THIRD-PARTY-NOTICES.TXT", "dotnet-THIRD-PARTY-NOTICES.txt"),
         @("Microsoft.WindowsDesktop.App.Runtime.win-x64", "LICENSE", "windowsdesktop-LICENSE.txt"),
-        @("Microsoft.ML.OnnxRuntime.DirectML", "LICENSE", "onnxruntime-LICENSE.txt"),
-        @("Microsoft.ML.OnnxRuntime.DirectML", "ThirdPartyNotices.txt", "onnxruntime-ThirdPartyNotices.txt"),
-        @("Microsoft.AI.DirectML", "LICENSE.txt", "DirectML-LICENSE.txt"),
-        @("Microsoft.AI.DirectML", "ThirdPartyNotices.txt", "DirectML-ThirdPartyNotices.txt")
+        @("Microsoft.Windows.AI.MachineLearning", "license.txt", "WindowsML-LICENSE.txt"),
+        @("Microsoft.Windows.AI.MachineLearning", "ThirdPartyNotices.txt", "WindowsML-ThirdPartyNotices.txt")
     )
     $target = New-Item -ItemType Directory -Force (Join-Path $AppDir "licenses")
     foreach ($license in $licenses) {
