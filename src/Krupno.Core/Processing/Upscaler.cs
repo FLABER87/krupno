@@ -357,30 +357,54 @@ public sealed class Upscaler(UpscaleModel model)
         using var runOptions = new RunOptions();
         using var registration = cancellationToken.Register(() => runOptions.Terminate = true);
 
-        int total = columns.Length * rows.Length, done = 0;
-        progress?.Report(new UpscaleProgress(pass, passCount, 0, total));
+        var tiles = rows.SelectMany(row => columns.Select(column => (Column: column, Row: row))).ToArray();
+        progress?.Report(new UpscaleProgress(pass, passCount, 0, tiles.Length));
 
-        foreach (var row in rows)
+        void Report(int index)
         {
-            foreach (var column in columns)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                runner.Fill(source, column.WindowStart, row.WindowStart);
-                try
-                {
-                    runner.Run(runOptions);
-                }
-                catch (OnnxRuntimeException) when (cancellationToken.IsCancellationRequested)
-                {
-                    throw new OperationCanceledException(cancellationToken);
-                }
-                runner.CopyCore(result, column, row);
-                var region = new TileRegion(
-                    (double)column.CoreStart / source.Width, (double)row.CoreStart / source.Height,
-                    (double)column.CoreLength / source.Width, (double)row.CoreLength / source.Height);
-                progress?.Report(new UpscaleProgress(pass, passCount, ++done, total, Region: region));
-            }
+            var (column, row) = tiles[index];
+            var region = new TileRegion(
+                (double)column.CoreStart / source.Width, (double)row.CoreStart / source.Height,
+                (double)column.CoreLength / source.Width, (double)row.CoreLength / source.Height);
+            progress?.Report(new UpscaleProgress(pass, passCount, index + 1, tiles.Length, Region: region));
         }
+
+        runner.Fill(0, source, tiles[0].Column.WindowStart, tiles[0].Row.WindowStart);
+        for (int i = 0; i < tiles.Length; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            int slot = i % TileRunner.SlotCount, other = (i + 1) % TileRunner.SlotCount;
+            int next = i + 1, previous = i - 1;
+
+            // While the session runs tile i, another thread fills the input of tile i + 1 and copies tile i - 1 into the result.
+            // Done in turn, that work leaves the GPU idle between tiles, and with a fast model at ×4 it isn't small next to the run.
+            var background = next < tiles.Length || previous >= 0
+                ? Task.Run(() =>
+                {
+                    if (next < tiles.Length)
+                        runner.Fill(other, source, tiles[next].Column.WindowStart, tiles[next].Row.WindowStart);
+                    if (previous >= 0)
+                        runner.CopyCore(other, result, tiles[previous].Column, tiles[previous].Row);
+                })
+                : Task.CompletedTask;
+            try
+            {
+                runner.Run(slot, runOptions);
+            }
+            catch (Exception ex)
+            {
+                // The caller disposes the runner after an error, so the background work must finish first.
+                try { background.Wait(); } catch (AggregateException) { }
+                if (ex is OnnxRuntimeException && cancellationToken.IsCancellationRequested)
+                    throw new OperationCanceledException(cancellationToken);
+                throw;
+            }
+            background.GetAwaiter().GetResult();
+            if (previous >= 0)
+                Report(previous);
+        }
+        runner.CopyCore((tiles.Length - 1) % TileRunner.SlotCount, result, tiles[^1].Column, tiles[^1].Row);
+        Report(tiles.Length - 1);
         return result;
     }
 }
