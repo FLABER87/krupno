@@ -57,6 +57,12 @@ public sealed class UpscaleModel : IDisposable
     public string? FallbackReason { get; private set; }
 
     /// <summary>
+    /// Why the accelerator couldn't compile the model for the cache (see <see cref="CompiledModels"/>): it then builds its engine
+    /// for every session, that is on every start. Null if it could, or if the model doesn't run on an accelerator.
+    /// </summary>
+    public string? CompileFailure => Device.Kind == DeviceKind.Accelerator ? CompiledModels.Failure(Device.Provider!, Info.Path) : null;
+
+    /// <summary>
     /// On the GPU the input shape is fixed when the session is created: DirectML compiles the graph for a specific size, and so do
     /// the vendors' providers (TensorRT-RTX builds an engine for it). All tiles of one image share the same window size, so there is
     /// one compilation per image size.
@@ -272,6 +278,13 @@ public sealed class UpscaleModel : IDisposable
         {
             // Chosen on purpose, so no fallback: an error says what is wrong with the accelerator instead of a slow CPU run.
             using var acceleratorOptions = CreateOptions(gpu: false, shape);
+            // The engine is built for a fixed window, so only then is there something to keep.
+            var window = shape ?? (Info.FixedWidth is int fixedWidth && Info.FixedHeight is int fixedHeight ? (fixedWidth, fixedHeight) : null);
+            if (window is var (width, height) && Accelerators.Find(Device) is { } epDevice &&
+                CompiledModels.CreateSession(Info, epDevice, acceleratorOptions, width, height) is { } compiled)
+            {
+                return compiled;
+            }
             return new InferenceSession(Info.Path, acceleratorOptions);
         }
 
@@ -291,7 +304,7 @@ public sealed class UpscaleModel : IDisposable
         _ => false,
     };
 
-    private static bool LooksLikeOutOfMemory(string message) =>
+    internal static bool LooksLikeOutOfMemory(string message) =>
         message.Contains("8007000E", StringComparison.OrdinalIgnoreCase)
         || message.Contains("E_OUTOFMEMORY", StringComparison.OrdinalIgnoreCase)
         || message.Contains("out of memory", StringComparison.OrdinalIgnoreCase)

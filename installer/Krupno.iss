@@ -160,6 +160,10 @@ Root: HKA; Subkey: "{#FolderVerb}"; ValueType: string; ValueName: "Icon"; ValueD
 Root: HKA; Subkey: "{#FolderVerb}"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Document"; Tasks: contextmenu
 Root: HKA; Subkey: "{#FolderVerb}\command"; ValueType: string; ValueData: """{app}\Krupno.exe"" ""%1"""; Tasks: contextmenu
 
+[UninstallDelete]
+; The accelerators' compiled models: up to 2 GB, and the app compiles them again when needed.
+Type: filesandordirs; Name: "{localappdata}\Krupno\cache"
+
 [Run]
 Filename: "{app}\Krupno.exe"; Description: "{cm:LaunchProgram,Krupno}"; Flags: nowait postinstall skipifsilent runasoriginaluser
 
