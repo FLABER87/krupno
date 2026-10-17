@@ -12,6 +12,24 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Accelerators_Available" xml:space="preserve">
+    <value>Windows에서 이 PC용 더 빠른 엔진을 추가할 수 있습니다: {0}.</value>
+  </data>
+  <data name="Accelerators_Download" xml:space="preserve">
+    <value>다운로드</value>
+  </data>
+  <data name="Accelerators_Downloading" xml:space="preserve">
+    <value>{0} 다운로드 중… {1}%</value>
+  </data>
+  <data name="Accelerators_Failed" xml:space="preserve">
+    <value>{0}을(를) 다운로드하지 못했습니다: {1}</value>
+  </data>
+  <data name="Accelerators_Installed" xml:space="preserve">
+    <value>{0} 준비 완료: '장치'에서 선택하세요</value>
+  </data>
+  <data name="Accelerators_ToolTip" xml:space="preserve">
+    <value>GPU 및 NPU 제조사의 실행 공급자(Windows ML 제공). Windows가 Microsoft에서 다운로드하며, 일부는 수백 MB입니다.</value>
+  </data>
   <data name="AddFiles" xml:space="preserve">
     <value>파일 추가</value>
   </data>

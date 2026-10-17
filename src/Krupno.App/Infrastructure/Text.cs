@@ -69,6 +69,7 @@ public static class Text
     {
         DeviceKind.Cpu => "CPU",
         DeviceKind.Gpu => ShortAdapterName(device.AdapterName),
+        DeviceKind.Accelerator => $"{ShortAdapterName(device.AdapterName)} · {Accelerators.ProviderName(device.Provider!)}",
         _ => Strings.Auto,
     };
 

@@ -14,7 +14,8 @@ public static class SystemInfo
         var lines = new List<string>
         {
             $"Krupno {AppVersion()} · {RuntimeInformation.OSDescription} {RuntimeInformation.OSArchitecture} · .NET {Environment.Version}",
-            $"ONNX Runtime {FileVersion("onnxruntime.dll")} · DirectML {FileVersion("DirectML.dll")}",
+            $"Windows ML {FileVersion("Microsoft.Windows.AI.MachineLearning.dll")} · ONNX Runtime {FileVersion("onnxruntime.dll")} · " +
+            $"DirectML {FileVersion("DirectML.dll")}",
         };
         var gpus = GpuAdapters.Enumerate();
         foreach (var gpu in gpus)

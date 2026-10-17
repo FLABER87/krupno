@@ -23,16 +23,24 @@ catch (CliException ex)
     return 2;
 }
 
-if (options.Help || (options.Inputs.Count == 0 && !options.ListModels && !options.ListDevices))
+if (options.Help || (options.Inputs.Count == 0 && !options.ListModels && !options.ListDevices && !options.InstallAccelerators))
 {
     Console.WriteLine(CliOptions.Usage);
     return options.Help ? 0 : 2;
 }
 
+if (options.InstallAccelerators && InstallAccelerators() != 0)
+    return 1;
+
 if (options.ListDevices)
 {
-    foreach (var device in ExecutionDevice.List())
-        Console.WriteLine($"  {DeviceArgument(device),-6} {device}");
+    var devices = ExecutionDevice.List();
+    var accelerators = devices.Where(d => d.Kind == DeviceKind.Accelerator).ToList();
+    foreach (var device in devices)
+        Console.WriteLine($"  {DeviceArgument(device, accelerators),-6} {device}");
+    var missing = Accelerators.Packages().Where(p => !p.IsInstalled).Select(p => p.Name).ToList();
+    if (missing.Count > 0)
+        Console.WriteLine($"  Windows ML also offers {string.Join(", ", missing)} for this computer: krupno-cli --install-accelerators");
 }
 
 if (options.ListModels)
@@ -215,6 +223,14 @@ static ExecutionDevice ParseDevice(string value)
             return ExecutionDevice.Cpu;
     }
 
+    if (value.StartsWith("acc", StringComparison.OrdinalIgnoreCase))
+    {
+        var accelerators = Accelerators.Devices();
+        return int.TryParse(value[3..], out int accelerator) && accelerator >= 0 && accelerator < accelerators.Count
+            ? accelerators[accelerator]
+            : throw new CliException($"Accelerator \"{value}\" not found. To list devices: krupno-cli --list-devices");
+    }
+
     string number = value.StartsWith("gpu", StringComparison.OrdinalIgnoreCase) ? value[3..] : value;
     if (number.Length == 0)
         number = "0";
@@ -224,12 +240,48 @@ static ExecutionDevice ParseDevice(string value)
             ?? throw new CliException($"GPU {index} not found. To list devices: krupno-cli --list-devices");
         return ExecutionDevice.Gpu(adapter);
     }
-    throw new CliException($"Unknown device \"{value}\": expected auto, cpu or gpuN.");
+    throw new CliException($"Unknown device \"{value}\": expected auto, cpu, gpuN or accN.");
 }
 
-static string DeviceArgument(ExecutionDevice device) => device.Kind switch
+static string DeviceArgument(ExecutionDevice device, List<ExecutionDevice> accelerators) => device.Kind switch
 {
     DeviceKind.Auto => "auto",
     DeviceKind.Cpu => "cpu",
+    DeviceKind.Accelerator => $"acc{accelerators.IndexOf(device)}",
     _ => $"gpu{device.AdapterIndex}",
 };
+
+// Downloads every provider Windows ML offers for this computer that it doesn't have yet. Asking for it is the user's consent:
+// Windows downloads them from Microsoft, and some are hundreds of megabytes.
+static int InstallAccelerators()
+{
+    var missing = Accelerators.Packages().Where(p => !p.IsInstalled).ToList();
+    if (missing.Count == 0)
+    {
+        Console.WriteLine(Accelerators.Packages().Count == 0
+            ? "Windows ML offers no accelerators for this computer (they need Windows 11 24H2 or later and a supported GPU or NPU)."
+            : "All the accelerators Windows ML offers for this computer are installed.");
+        return 0;
+    }
+    int failed = 0;
+    foreach (var package in missing)
+    {
+        Console.WriteLine($"Downloading {package.Name}…");
+        var progress = new Progress<double>(fraction =>
+        {
+            if (!Console.IsOutputRedirected)
+                Console.Write($"\r  {fraction * 100,3:0}%");
+        });
+        try
+        {
+            Accelerators.InstallAsync(package.Provider, progress).GetAwaiter().GetResult();
+            Console.WriteLine($"\r  {package.Name} installed");
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            failed++;
+            Console.Error.WriteLine($"\r  {package.Name} was not installed: {ex.Message}");
+        }
+    }
+    return failed == 0 ? 0 : 1;
+}

@@ -14,7 +14,7 @@ internal sealed class CliOptions
 
         Usage:
           krupno-cli <file|folder|pattern>... [-o <file|folder>] [options]
-          krupno-cli --list-models | --list-devices
+          krupno-cli --list-models | --list-devices | --install-accelerators
 
         Options:
           -o, --output <path>     output file or folder; a folder when there is more than one image
@@ -34,9 +34,12 @@ internal sealed class CliOptions
               --tta               test-time augmentation: all 8 rotations and mirrorings, averaged (8 times slower)
               --strength <1-100>  how much of the network's result to keep, in percent; the rest is a plain
                                   Lanczos resize, which tones down invented textures (default: 100)
-          -d, --device <dev>      auto | cpu | gpu0, gpu1, … (default: auto)
+          -d, --device <dev>      auto | cpu | gpu0, gpu1, … (DirectML) | acc0, acc1, … (a vendor's accelerator,
+                                  see --list-devices) (default: auto)
               --list-models       list the models found
               --list-devices      list the devices
+              --install-accelerators  download the GPU and NPU vendors' execution providers Windows ML offers for
+                                  this computer (Windows 11 24H2 and later; can take minutes)
           -h, --help              show this help
 
         Several files, folders and patterns can be given at once. Patterns such as photos\*.jpg are expanded by
@@ -61,6 +64,7 @@ internal sealed class CliOptions
     public string Device { get; private set; } = "auto";
     public bool ListModels { get; private set; }
     public bool ListDevices { get; private set; }
+    public bool InstallAccelerators { get; private set; }
     public bool Help { get; private set; }
 
     public static CliOptions Parse(string[] args)
@@ -122,6 +126,9 @@ internal sealed class CliOptions
                     break;
                 case "--list-models":
                     options.ListModels = true;
+                    break;
+                case "--install-accelerators":
+                    options.InstallAccelerators = true;
                     break;
                 case "--list-devices":
                     options.ListDevices = true;

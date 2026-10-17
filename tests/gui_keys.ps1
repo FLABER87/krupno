@@ -4,7 +4,7 @@
 # Requires a Release build, real models in models/ and the fixture images (python tests\make_fixtures.py).
 #   powershell -File tests\gui_keys.ps1 [-Image <file>] [-Model <name>] [-SlowModel <name>]
 param(
-    [string]$Exe = "$PSScriptRoot\..\src\Krupno.App\bin\Release\net10.0-windows\win-x64\Krupno.exe",
+    [string]$Exe = "$PSScriptRoot\..\src\Krupno.App\bin\Release\net10.0-windows10.0.19041.0\win-x64\Krupno.exe",
     [string]$Image = "$PSScriptRoot\fixtures\images\big_1500x1000.png",
     # The fast model is for processing to completion; the slow one leaves time to cancel it.
     [string]$Model = "4xBHI_realplksr_dysample_real",

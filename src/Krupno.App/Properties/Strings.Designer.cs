@@ -60,6 +60,60 @@ namespace Krupno.App.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Windows can add faster engines for this PC: {0}..
+        /// </summary>
+        public static string Accelerators_Available {
+            get {
+                return ResourceManager.GetString("Accelerators_Available", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Download.
+        /// </summary>
+        public static string Accelerators_Download {
+            get {
+                return ResourceManager.GetString("Accelerators_Download", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Downloading {0}… {1}%.
+        /// </summary>
+        public static string Accelerators_Downloading {
+            get {
+                return ResourceManager.GetString("Accelerators_Downloading", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Couldn't download {0}: {1}.
+        /// </summary>
+        public static string Accelerators_Failed {
+            get {
+                return ResourceManager.GetString("Accelerators_Failed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} is ready: choose it under “Device”.
+        /// </summary>
+        public static string Accelerators_Installed {
+            get {
+                return ResourceManager.GetString("Accelerators_Installed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Execution providers from the GPU and NPU makers, through Windows ML. Windows downloads them from Microsoft; some are hundreds of megabytes..
+        /// </summary>
+        public static string Accelerators_ToolTip {
+            get {
+                return ResourceManager.GetString("Accelerators_ToolTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Add files.
         /// </summary>
         public static string AddFiles {

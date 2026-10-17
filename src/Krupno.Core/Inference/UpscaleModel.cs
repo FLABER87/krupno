@@ -57,11 +57,12 @@ public sealed class UpscaleModel : IDisposable
     public string? FallbackReason { get; private set; }
 
     /// <summary>
-    /// On the GPU the input shape is fixed when the session is created: DirectML compiles the graph for a specific size.
-    /// All tiles of one image share the same window size, so there is one compilation per image size.
+    /// On the GPU the input shape is fixed when the session is created: DirectML compiles the graph for a specific size, and so do
+    /// the vendors' providers (TensorRT-RTX builds an engine for it). All tiles of one image share the same window size, so there is
+    /// one compilation per image size.
     /// </summary>
     internal bool UsesStaticWindow =>
-        Device.Kind == DeviceKind.Gpu && Info.FixedWidth is null && Info.HasNamedSpatialDims;
+        Device.Kind is DeviceKind.Gpu or DeviceKind.Accelerator && Info.FixedWidth is null && Info.HasNamedSpatialDims;
 
     /// <summary>
     /// The tile the window had to be shrunk to after running out of memory on the current device; null if it wasn't shrunk.
@@ -267,6 +268,13 @@ public sealed class UpscaleModel : IDisposable
             }
         }
 
+        if (Device.Kind == DeviceKind.Accelerator)
+        {
+            // Chosen on purpose, so no fallback: an error says what is wrong with the accelerator instead of a slow CPU run.
+            using var acceleratorOptions = CreateOptions(gpu: false, shape);
+            return new InferenceSession(Info.Path, acceleratorOptions);
+        }
+
         using var cpuOptions = CreateOptions(gpu: false, shape: null);
         return new InferenceSession(Info.Path, cpuOptions);
     }
@@ -299,21 +307,27 @@ public sealed class UpscaleModel : IDisposable
         };
         try
         {
+            if (shape.HasValue)
+            {
+                var (width, height) = shape.Value;
+                if (Info.BatchDimName is { } batch)
+                    options.AddFreeDimensionOverrideByName(batch, 1);
+                options.AddFreeDimensionOverrideByName(Info.HeightDimName!, height);
+                options.AddFreeDimensionOverrideByName(Info.WidthDimName!, width);
+            }
+
             if (gpu)
             {
                 // DirectML EP requirements.
                 options.EnableMemoryPattern = false;
                 options.ExecutionMode = ExecutionMode.ORT_SEQUENTIAL;
-
-                if (shape.HasValue)
-                {
-                    var (width, height) = shape.Value;
-                    if (Info.BatchDimName is { } batch)
-                        options.AddFreeDimensionOverrideByName(batch, 1);
-                    options.AddFreeDimensionOverrideByName(Info.HeightDimName!, height);
-                    options.AddFreeDimensionOverrideByName(Info.WidthDimName!, width);
-                }
                 options.AppendExecutionProvider_DML(Device.AdapterIndex);
+            }
+            else if (Device.Kind == DeviceKind.Accelerator)
+            {
+                var epDevice = Accelerators.Find(Device)
+                    ?? throw new InvalidOperationException(string.Format(Strings.Error_AcceleratorMissing, Device));
+                options.AppendExecutionProvider(OrtEnv.Instance(), [epDevice], new Dictionary<string, string>());
             }
             return options;
         }

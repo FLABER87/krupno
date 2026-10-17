@@ -88,6 +88,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private Option<int> _selectedTile;
     private bool _seamlessTiles;
     private bool _testTimeAugmentation;
+    private IReadOnlyList<Option<ExecutionDevice>> _devices;
+    private IReadOnlyList<AcceleratorPackage> _acceleratorPackages = [];
+    /// <summary>Whether the accelerators are known yet: until then a saved accelerator must not be overwritten by "Auto".</summary>
+    private bool _acceleratorsLoaded;
+    private bool _installingAccelerators;
+    private string? _acceleratorStatus;
     private Option<string?> _selectedLanguage;
     /// <summary>The language the window was started in: a different choice takes effect after a restart.</summary>
     private readonly string? _startupLanguage;
@@ -117,15 +123,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public MainViewModel(AppSettings settings)
     {
         _settings = settings;
-        var autoDevice = ExecutionDevice.Auto.Resolve();
-        Devices =
-        [
-            new(ExecutionDevice.Auto, string.Format(Strings.Device_AutoWith, Text.Device(autoDevice))),
-            .. GpuAdapters.Enumerate().Select(a => new Option<ExecutionDevice>(ExecutionDevice.Gpu(a), a.Name.Replace("(R)", "").Replace("(TM)", ""))),
-            new(ExecutionDevice.Cpu, Strings.Device_CpuSlow),
-        ];
-        var savedDevice = FindSavedDevice();
-        _selectedDevice = Devices.FirstOrDefault(d => d.Value == savedDevice) ?? Devices[0];
+        // The vendors' accelerators are added once Windows ML has registered them (LoadAcceleratorsAsync, in the background).
+        _devices = BuildDevices([]);
+        var savedDevice = FindSavedDevice([]);
+        _selectedDevice = _devices.FirstOrDefault(d => d.Value == savedDevice) ?? _devices[0];
 
         // The choices from the last session; a value the window doesn't offer (an edited settings file) falls back to the default.
         if (_settings.Strength is int strength)
@@ -182,6 +183,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         RefreshModelsCommand = new RelayCommand(RefreshModels, () => !IsBusy);
         OpenModelsFolderCommand = new RelayCommand(OpenModelsFolder);
         ToggleAllModelsCommand = new RelayCommand(() => ShowAllModels = !ShowAllModels);
+        InstallAcceleratorsCommand = new RelayCommand(() => _ = InstallAcceleratorsAsync(),
+            () => !IsBusy && !_installingAccelerators && MissingAccelerators.Count > 0);
+        _ = LoadAcceleratorsAsync();
 
         _toastTimer.Tick += (_, _) =>
         {
@@ -454,7 +458,28 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     // ── Advanced ────────────────────────────────────────────────────
 
-    public IReadOnlyList<Option<ExecutionDevice>> Devices { get; }
+    public IReadOnlyList<Option<ExecutionDevice>> Devices
+    {
+        get => _devices;
+        private set => SetProperty(ref _devices, value);
+    }
+
+    /// <summary>The vendors' accelerators Windows ML offers for this computer and doesn't have yet.</summary>
+    private List<AcceleratorPackage> MissingAccelerators => [.. _acceleratorPackages.Where(p => !p.IsInstalled)];
+
+    /// <summary>Under the device list: which accelerators Windows can add, while there are any or one is being downloaded.</summary>
+    public bool HasAcceleratorOffer => MissingAccelerators.Count > 0 || _installingAccelerators;
+
+    public string? AcceleratorOffer => MissingAccelerators is { Count: > 0 } missing
+        ? string.Format(Strings.Accelerators_Available, string.Join(", ", missing.Select(p => p.Name)))
+        : null;
+
+    /// <summary>The download in progress: "Downloading TensorRT-RTX… 45%".</summary>
+    public string? AcceleratorStatus
+    {
+        get => _acceleratorStatus;
+        private set => SetProperty(ref _acceleratorStatus, value);
+    }
 
     public Option<ExecutionDevice> SelectedDevice
     {
@@ -708,6 +733,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand RefreshModelsCommand { get; }
     public ICommand OpenModelsFolderCommand { get; }
     public ICommand ToggleAllModelsCommand { get; }
+    public ICommand InstallAcceleratorsCommand { get; }
 
     private FileItem? ResultFile => CurrentFile is { IsDone: true } current ? current : _lastDone;
 
@@ -1483,9 +1509,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (SelectedModel is not null)
             _settings.Model = SelectedModel.Name;
         var device = SelectedDevice.Value;
-        _settings.DeviceKind = device.Kind;
-        _settings.DeviceName = device.AdapterName;
-        _settings.DeviceIndex = device.Kind == DeviceKind.Gpu ? device.AdapterIndex : null;
+        if (_acceleratorsLoaded || _settings.DeviceKind != DeviceKind.Accelerator)
+        {
+            _settings.DeviceKind = device.Kind;
+            _settings.DeviceName = device.AdapterName;
+            _settings.DeviceIndex = device.Kind == DeviceKind.Gpu ? device.AdapterIndex : null;
+            _settings.DeviceProvider = device.Provider;
+        }
         _settings.Strength = Strength;
         _settings.Scale = SelectedScale.Value;
         _settings.CustomScaleMode = SelectedCustomMode.Value;
@@ -1500,12 +1530,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _settings.Save();
     }
 
-    private ExecutionDevice? FindSavedDevice()
+    private ExecutionDevice? FindSavedDevice(IReadOnlyList<ExecutionDevice> accelerators)
     {
         var gpus = GpuAdapters.Enumerate();
         return _settings.DeviceKind switch
         {
             DeviceKind.Cpu => ExecutionDevice.Cpu,
+            DeviceKind.Accelerator => accelerators.FirstOrDefault(a => a.Provider == _settings.DeviceProvider && a.AdapterName == _settings.DeviceName),
             DeviceKind.Gpu => (gpus.FirstOrDefault(a => a.Name == _settings.DeviceName && a.Index == _settings.DeviceIndex)
                                ?? gpus.FirstOrDefault(a => a.Name == _settings.DeviceName)) is { } adapter
                 ? ExecutionDevice.Gpu(adapter)
@@ -1658,6 +1689,83 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (Log.FilePath is { } log)
             report.AppendLine().AppendLine($"Log: {log}");
         return report.ToString();
+    }
+
+    // ── Accelerators (Windows ML) ───────────────────────────────────
+
+    /// <summary>"Auto", the GPUs through DirectML, the vendors' accelerators and the CPU.</summary>
+    private static IReadOnlyList<Option<ExecutionDevice>> BuildDevices(IReadOnlyList<ExecutionDevice> accelerators)
+    {
+        var autoDevice = ExecutionDevice.Auto.Resolve();
+        return
+        [
+            new(ExecutionDevice.Auto, string.Format(Strings.Device_AutoWith, Text.Device(autoDevice))),
+            .. GpuAdapters.Enumerate().Select(a => new Option<ExecutionDevice>(ExecutionDevice.Gpu(a), a.Name.Replace("(R)", "").Replace("(TM)", ""))),
+            .. accelerators.Select(a => new Option<ExecutionDevice>(a, a.ToString())),
+            new(ExecutionDevice.Cpu, Strings.Device_CpuSlow),
+        ];
+    }
+
+    /// <summary>
+    /// Registers the accelerators Windows already has (loading a provider's library can take a while, so not on the UI thread),
+    /// adds their devices to the list and finds out which others Windows ML could download.
+    /// </summary>
+    private async Task LoadAcceleratorsAsync()
+    {
+        var (devices, packages, error) = await Task.Run(() => (Accelerators.Devices(), Accelerators.Packages(), Accelerators.RegistrationError));
+        Log.Info(error is not null && packages.Count == 0
+            ? $"Windows ML accelerators: none ({error})"
+            : $"Windows ML accelerators: {(devices.Count == 0 ? "none registered" : string.Join("; ", devices))}; offered: " +
+              (packages.Count == 0 ? "none" : string.Join(", ", packages.Select(p => p.IsInstalled ? p.Name : p.Name + " (not installed)"))));
+
+        var selected = SelectedDevice.Value;
+        if (!_acceleratorsLoaded && _settings.DeviceKind == DeviceKind.Accelerator && FindSavedDevice(devices) is { } saved)
+            selected = saved;
+        _acceleratorsLoaded = true;
+        Devices = BuildDevices(devices);
+        SelectedDevice = Devices.FirstOrDefault(d => d.Value == selected) ?? Devices[0];
+        // The same choice in a new list: the combo box must find it there again.
+        OnPropertyChanged(nameof(SelectedDevice));
+        _acceleratorPackages = packages;
+        OnAcceleratorsChanged();
+    }
+
+    /// <summary>Downloads every accelerator Windows ML offers and doesn't have yet, one after another, then lists their devices.</summary>
+    private async Task InstallAcceleratorsAsync()
+    {
+        _installingAccelerators = true;
+        OnAcceleratorsChanged();
+        var installed = new List<string>();
+        foreach (var package in MissingAccelerators)
+        {
+            AcceleratorStatus = string.Format(Strings.Accelerators_Downloading, package.Name, 0);
+            var progress = new Progress<double>(fraction =>
+                AcceleratorStatus = string.Format(Strings.Accelerators_Downloading, package.Name, Math.Round(fraction * 100)));
+            try
+            {
+                Log.Info($"Downloading the accelerator {package.Provider}");
+                await Accelerators.InstallAsync(package.Provider, progress);
+                installed.Add(package.Name);
+                Log.Info($"Accelerator {package.Provider} installed");
+            }
+            catch (Exception ex) when (ex is not OutOfMemoryException)
+            {
+                Log.Error($"Accelerator {package.Provider} was not installed", ex);
+                ShowToast(string.Format(Strings.Accelerators_Failed, package.Name, ex.Message));
+            }
+        }
+        _installingAccelerators = false;
+        AcceleratorStatus = null;
+        await LoadAcceleratorsAsync();
+        if (installed.Count > 0)
+            ShowToast(string.Format(Strings.Accelerators_Installed, string.Join(", ", installed)));
+    }
+
+    private void OnAcceleratorsChanged()
+    {
+        OnPropertyChanged(nameof(HasAcceleratorOffer));
+        OnPropertyChanged(nameof(AcceleratorOffer));
+        CommandManager.InvalidateRequerySuggested();
     }
 
     private void ShowToast(string message)

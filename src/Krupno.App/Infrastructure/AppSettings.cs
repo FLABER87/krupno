@@ -37,6 +37,9 @@ public sealed class AppSettings
 
     public int? DeviceIndex { get; set; }
 
+    /// <summary>For an accelerator: its execution provider ("NvTensorRtRtxExecutionProvider"), with the device in <see cref="DeviceName"/>.</summary>
+    public string? DeviceProvider { get; set; }
+
     /// <summary>How much of the network's result goes into the output, in percent.</summary>
     public int? Strength { get; set; }
 

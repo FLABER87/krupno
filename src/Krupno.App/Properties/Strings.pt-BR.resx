@@ -12,6 +12,24 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Accelerators_Available" xml:space="preserve">
+    <value>O Windows pode adicionar mecanismos mais rápidos para este PC: {0}.</value>
+  </data>
+  <data name="Accelerators_Download" xml:space="preserve">
+    <value>Baixar</value>
+  </data>
+  <data name="Accelerators_Downloading" xml:space="preserve">
+    <value>Baixando {0}… {1}%</value>
+  </data>
+  <data name="Accelerators_Failed" xml:space="preserve">
+    <value>Não foi possível baixar {0}: {1}</value>
+  </data>
+  <data name="Accelerators_Installed" xml:space="preserve">
+    <value>{0} está pronto: escolha-o em “Dispositivo”</value>
+  </data>
+  <data name="Accelerators_ToolTip" xml:space="preserve">
+    <value>Provedores de execução dos fabricantes de GPU e NPU, pelo Windows ML. O Windows os baixa da Microsoft; alguns têm centenas de megabytes.</value>
+  </data>
   <data name="AddFiles" xml:space="preserve">
     <value>Adicionar arquivos</value>
   </data>
