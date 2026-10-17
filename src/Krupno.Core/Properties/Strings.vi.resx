@@ -39,6 +39,9 @@
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>Siêu dữ liệu của mô hình mâu thuẫn: cửa sổ phải tối đa {0} px nhưng tối thiểu {1} px.</value>
   </data>
+  <data name="Model_DenoiserScale" xml:space="preserve">
+    <value>Mô hình khử nhiễu phải giữ nguyên kích thước ảnh (×1), nhưng {0} là ×{1}.</value>
+  </data>
   <data name="Model_FileNotFound" xml:space="preserve">
     <value>Không tìm thấy tệp mô hình: {0}</value>
   </data>

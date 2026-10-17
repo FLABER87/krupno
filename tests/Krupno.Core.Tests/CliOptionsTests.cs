@@ -14,6 +14,8 @@ public class CliOptionsTests
         Assert.False(options.SkipExisting);
         Assert.False(options.TestTimeAugmentation);
         Assert.True(CliOptions.Parse(["photo.jpg", "--tta"]).TestTimeAugmentation);
+        Assert.False(options.Denoise);
+        Assert.True(CliOptions.Parse(["photo.jpg", "--denoise"]).Denoise);
         Assert.False(options.InstallAccelerators);
         Assert.True(CliOptions.Parse(["--install-accelerators"]).InstallAccelerators);
         Assert.Equal(0, options.Scale);

@@ -39,6 +39,9 @@
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>Die Metadaten des Modells widersprechen sich: Das Fenster muss höchstens {0} px, aber mindestens {1} px groß sein.</value>
   </data>
+  <data name="Model_DenoiserScale" xml:space="preserve">
+    <value>Das Modell zur Rauschentfernung muss die Bildgröße beibehalten (×1), {0} skaliert aber ×{1}.</value>
+  </data>
   <data name="Model_FileNotFound" xml:space="preserve">
     <value>Modelldatei nicht gefunden: {0}</value>
   </data>

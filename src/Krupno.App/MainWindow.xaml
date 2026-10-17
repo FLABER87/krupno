@@ -438,6 +438,11 @@
                         <TextBlock Style="{StaticResource Caption}" Margin="2,4,0,0"
                                    Text="{x:Static p:Strings.Strength_Description}" />
 
+                        <!-- Noise removal: disabled, with how to get its model, while the model is missing -->
+                        <CheckBox Content="{x:Static p:Strings.Denoise}" IsChecked="{Binding Denoise}" IsEnabled="{Binding CanDenoise}"
+                                  Margin="0,14,0,0" />
+                        <TextBlock Style="{StaticResource Caption}" Margin="2,2,0,0" Text="{Binding DenoiseDescription}" />
+
                         <!-- Scale -->
                         <TextBlock Style="{StaticResource SectionHeader}" Text="{x:Static p:Strings.Section_Scale}" Margin="0,16,0,8" />
                         <ListBox Style="{StaticResource SegmentedList}" ItemsSource="{Binding Scales}"

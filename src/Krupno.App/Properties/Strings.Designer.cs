@@ -348,6 +348,33 @@ namespace Krupno.App.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Remove noise.
+        /// </summary>
+        public static string Denoise {
+            get {
+                return ResourceManager.GetString("Denoise", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Before upscaling, a separate model removes camera noise and grain. Slower, and it smooths fine texture: leave it off for clean images..
+        /// </summary>
+        public static string Denoise_Description {
+            get {
+                return ResourceManager.GetString("Denoise_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The noise removal model isn't installed: tick it when installing Krupno, or put {0} into the models folder..
+        /// </summary>
+        public static string Denoise_Missing {
+            get {
+                return ResourceManager.GetString("Denoise_Missing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Device.
         /// </summary>
         public static string Device {
@@ -857,6 +884,15 @@ namespace Krupno.App.Properties {
         public static string PreviewError_Title {
             get {
                 return ResourceManager.GetString("PreviewError_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to removing noise.
+        /// </summary>
+        public static string Progress_Denoising {
+            get {
+                return ResourceManager.GetString("Progress_Denoising", resourceCulture);
             }
         }
         

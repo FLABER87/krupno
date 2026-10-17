@@ -108,6 +108,15 @@
   <data name="CustomValue_Name" xml:space="preserve">
     <value>Skala atau ukuran</value>
   </data>
+  <data name="Denoise" xml:space="preserve">
+    <value>Hapus noise</value>
+  </data>
+  <data name="Denoise_Description" xml:space="preserve">
+    <value>Sebelum diperbesar, model terpisah menghapus noise kamera dan grain. Lebih lambat, dan tekstur halus ikut terhaluskan: biarkan mati untuk gambar yang bersih.</value>
+  </data>
+  <data name="Denoise_Missing" xml:space="preserve">
+    <value>Model penghapus noise belum terpasang: centang saat memasang Krupno, atau letakkan {0} di folder model.</value>
+  </data>
   <data name="Device" xml:space="preserve">
     <value>Perangkat</value>
   </data>
@@ -278,6 +287,9 @@
   </data>
   <data name="PreviewError_Title" xml:space="preserve">
     <value>Tidak dapat membuka file ini</value>
+  </data>
+  <data name="Progress_Denoising" xml:space="preserve">
+    <value>menghapus noise</value>
   </data>
   <data name="Progress_File" xml:space="preserve">
     <value>File {0} dari {1}</value>

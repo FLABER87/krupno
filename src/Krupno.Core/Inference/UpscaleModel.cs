@@ -293,6 +293,16 @@ public sealed class UpscaleModel : IDisposable
         }
     }
 
+    /// <summary>Whether any session is kept: it holds video memory.</summary>
+    internal bool HasSessions
+    {
+        get
+        {
+            lock (_lock)
+                return _sessions.Count > 0;
+        }
+    }
+
     /// <summary>Whether sessions for windows other than this one are kept: they hold video memory too.</summary>
     internal bool HoldsOtherSessions(int width, int height)
     {

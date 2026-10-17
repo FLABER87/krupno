@@ -39,6 +39,9 @@
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>モデルのメタデータが矛盾しています。ウィンドウは {0} px 以下かつ {1} px 以上である必要があります。</value>
   </data>
+  <data name="Model_DenoiserScale" xml:space="preserve">
+    <value>ノイズ除去モデルは画像サイズを変えないもの (×1) である必要がありますが、{0} は ×{1} です。</value>
+  </data>
   <data name="Model_FileNotFound" xml:space="preserve">
     <value>モデル ファイルが見つかりません：{0}</value>
   </data>

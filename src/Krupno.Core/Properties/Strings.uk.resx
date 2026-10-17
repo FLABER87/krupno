@@ -39,6 +39,9 @@
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>Метадані моделі суперечливі: вікно має бути не більше {0} px, але не менше {1} px.</value>
   </data>
+  <data name="Model_DenoiserScale" xml:space="preserve">
+    <value>Модель для прибирання шуму має зберігати розмір зображення (×1), а {0} — ×{1}.</value>
+  </data>
   <data name="Model_FileNotFound" xml:space="preserve">
     <value>Файл моделі не знайдено: {0}</value>
   </data>

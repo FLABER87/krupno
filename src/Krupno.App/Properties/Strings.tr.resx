@@ -108,6 +108,15 @@
   <data name="CustomValue_Name" xml:space="preserve">
     <value>Ölçek veya boyut</value>
   </data>
+  <data name="Denoise" xml:space="preserve">
+    <value>Gürültüyü gider</value>
+  </data>
+  <data name="Denoise_Description" xml:space="preserve">
+    <value>Büyütmeden önce ayrı bir model kamera gürültüsünü ve greni giderir. Daha yavaştır ve ince dokuları yumuşatır: temiz görüntülerde kapalı bırakın.</value>
+  </data>
+  <data name="Denoise_Missing" xml:space="preserve">
+    <value>Gürültü giderme modeli yüklü değil: Krupno'yu kurarken işaretleyin ya da {0} dosyasını model klasörüne koyun.</value>
+  </data>
   <data name="Device" xml:space="preserve">
     <value>Cihaz</value>
   </data>
@@ -278,6 +287,9 @@
   </data>
   <data name="PreviewError_Title" xml:space="preserve">
     <value>Bu dosya açılamıyor</value>
+  </data>
+  <data name="Progress_Denoising" xml:space="preserve">
+    <value>gürültü giderme</value>
   </data>
   <data name="Progress_File" xml:space="preserve">
     <value>Dosya {0}/{1}</value>

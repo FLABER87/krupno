@@ -108,6 +108,15 @@
   <data name="CustomValue_Name" xml:space="preserve">
     <value>Tỷ lệ hoặc kích thước</value>
   </data>
+  <data name="Denoise" xml:space="preserve">
+    <value>Khử nhiễu</value>
+  </data>
+  <data name="Denoise_Description" xml:space="preserve">
+    <value>Trước khi phóng to, một mô hình riêng sẽ khử nhiễu máy ảnh và hạt. Chậm hơn và làm mịn các chi tiết nhỏ: hãy để tắt với ảnh sạch.</value>
+  </data>
+  <data name="Denoise_Missing" xml:space="preserve">
+    <value>Mô hình khử nhiễu chưa được cài đặt: hãy chọn nó khi cài đặt Krupno, hoặc đặt {0} vào thư mục mô hình.</value>
+  </data>
   <data name="Device" xml:space="preserve">
     <value>Thiết bị</value>
   </data>
@@ -278,6 +287,9 @@
   </data>
   <data name="PreviewError_Title" xml:space="preserve">
     <value>Không thể mở tệp này</value>
+  </data>
+  <data name="Progress_Denoising" xml:space="preserve">
+    <value>khử nhiễu</value>
   </data>
   <data name="Progress_File" xml:space="preserve">
     <value>Tệp {0}/{1}</value>

@@ -39,6 +39,9 @@
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>Metadane modelu są sprzeczne: okno musi mieć co najwyżej {0} px, ale co najmniej {1} px.</value>
   </data>
+  <data name="Model_DenoiserScale" xml:space="preserve">
+    <value>Model usuwania szumu musi zachowywać rozmiar obrazu (×1), a {0} ma skalę ×{1}.</value>
+  </data>
   <data name="Model_FileNotFound" xml:space="preserve">
     <value>Nie znaleziono pliku modelu: {0}</value>
   </data>

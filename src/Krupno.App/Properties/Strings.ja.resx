@@ -108,6 +108,15 @@
   <data name="CustomValue_Name" xml:space="preserve">
     <value>倍率またはサイズ</value>
   </data>
+  <data name="Denoise" xml:space="preserve">
+    <value>ノイズを除去</value>
+  </data>
+  <data name="Denoise_Description" xml:space="preserve">
+    <value>拡大の前に、専用のモデルがカメラのノイズや粒状感を取り除きます。処理が遅くなり、細かな質感もなめらかになるため、きれいな画像ではオフのままにしてください。</value>
+  </data>
+  <data name="Denoise_Missing" xml:space="preserve">
+    <value>ノイズ除去モデルがインストールされていません。Krupno のインストール時に選択するか、{0} をモデル フォルダーに入れてください。</value>
+  </data>
   <data name="Device" xml:space="preserve">
     <value>デバイス</value>
   </data>
@@ -278,6 +287,9 @@
   </data>
   <data name="PreviewError_Title" xml:space="preserve">
     <value>このファイルを開けません</value>
+  </data>
+  <data name="Progress_Denoising" xml:space="preserve">
+    <value>ノイズ除去</value>
   </data>
   <data name="Progress_File" xml:space="preserve">
     <value>ファイル {0}/{1}</value>

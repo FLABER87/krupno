@@ -39,6 +39,9 @@
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>Os metadados do modelo são contraditórios: a janela deve ter no máximo {0} px, mas no mínimo {1} px.</value>
   </data>
+  <data name="Model_DenoiserScale" xml:space="preserve">
+    <value>O modelo de remoção de ruído deve manter o tamanho da imagem (×1), mas {0} é ×{1}.</value>
+  </data>
   <data name="Model_FileNotFound" xml:space="preserve">
     <value>Arquivo do modelo não encontrado: {0}</value>
   </data>

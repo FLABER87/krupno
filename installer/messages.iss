@@ -25,6 +25,7 @@ en.ModelDat2=Photo, maximum detail: BHI DAT2 fp32 (CC BY 4.0) · very slow
 en.ModelEsrganFp16=Classic: Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 en.ModelEsrgan=Classic: Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 en.ModelGeneral=Draft: Real-ESRGAN general x4v3 (BSD-3-Clause) · very fast
+en.ModelDenoise=Remove noise: SCUNet fp16 (Apache-2.0) · for noisy photos
 
 ; Українська
 uk.TypeFull=Повне встановлення (усі моделі)
@@ -47,6 +48,7 @@ uk.ModelDat2=Фото, максимум деталей: BHI DAT2 fp32 (CC BY 4.0
 uk.ModelEsrganFp16=Класика: Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 uk.ModelEsrgan=Класика: Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 uk.ModelGeneral=Чернетка: Real-ESRGAN general x4v3 (BSD-3-Clause) · дуже швидко
+uk.ModelDenoise=Прибрати шум: SCUNet fp16 (Apache-2.0) · для шумних фото
 
 ; Русский
 ru.TypeFull=Полная установка (все модели)
@@ -69,6 +71,7 @@ ru.ModelDat2=Фото, максимум деталей: BHI DAT2 fp32 (CC BY 4.0
 ru.ModelEsrganFp16=Классика: Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 ru.ModelEsrgan=Классика: Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 ru.ModelGeneral=Черновик: Real-ESRGAN general x4v3 (BSD-3-Clause) · очень быстро
+ru.ModelDenoise=Убрать шум: SCUNet fp16 (Apache-2.0) · для шумных фото
 
 ; Polski
 pl.TypeFull=Instalacja pełna (wszystkie modele)
@@ -91,6 +94,7 @@ pl.ModelDat2=Zdjęcia, maksimum szczegółów: BHI DAT2 fp32 (CC BY 4.0) · bard
 pl.ModelEsrganFp16=Klasyczny: Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 pl.ModelEsrgan=Klasyczny: Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 pl.ModelGeneral=Wersja robocza: Real-ESRGAN general x4v3 (BSD-3-Clause) · bardzo szybki
+pl.ModelDenoise=Usuń szum: SCUNet fp16 (Apache-2.0) · do zaszumionych zdjęć
 
 ; Deutsch
 de.TypeFull=Vollständige Installation (alle Modelle)
@@ -113,6 +117,7 @@ de.ModelDat2=Foto, maximale Details: BHI DAT2 fp32 (CC BY 4.0) · sehr langsam
 de.ModelEsrganFp16=Klassisch: Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 de.ModelEsrgan=Klassisch: Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 de.ModelGeneral=Entwurf: Real-ESRGAN general x4v3 (BSD-3-Clause) · sehr schnell
+de.ModelDenoise=Rauschen entfernen: SCUNet fp16 (Apache-2.0) · für verrauschte Fotos
 
 ; Français
 fr.TypeFull=Installation complète (tous les modèles)
@@ -135,6 +140,7 @@ fr.ModelDat2=Photo, détails maximum : BHI DAT2 fp32 (CC BY 4.0) · très lent
 fr.ModelEsrganFp16=Classique : Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 fr.ModelEsrgan=Classique : Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 fr.ModelGeneral=Brouillon : Real-ESRGAN general x4v3 (BSD-3-Clause) · très rapide
+fr.ModelDenoise=Supprimer le bruit : SCUNet fp16 (Apache-2.0) · pour les photos bruitées
 
 ; Italiano
 it.TypeFull=Installazione completa (tutti i modelli)
@@ -157,6 +163,7 @@ it.ModelDat2=Foto, massimo dettaglio: BHI DAT2 fp32 (CC BY 4.0) · molto lento
 it.ModelEsrganFp16=Classico: Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 it.ModelEsrgan=Classico: Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 it.ModelGeneral=Bozza: Real-ESRGAN general x4v3 (BSD-3-Clause) · molto veloce
+it.ModelDenoise=Rimuovi il rumore: SCUNet fp16 (Apache-2.0) · per le foto rumorose
 
 ; Español
 es.TypeFull=Instalación completa (todos los modelos)
@@ -179,6 +186,7 @@ es.ModelDat2=Foto, máximo detalle: BHI DAT2 fp32 (CC BY 4.0) · muy lento
 es.ModelEsrganFp16=Clásico: Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 es.ModelEsrgan=Clásico: Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 es.ModelGeneral=Borrador: Real-ESRGAN general x4v3 (BSD-3-Clause) · muy rápido
+es.ModelDenoise=Eliminar el ruido: SCUNet fp16 (Apache-2.0) · para fotos con ruido
 
 ; Português (Brasil)
 ptbr.TypeFull=Instalação completa (todos os modelos)
@@ -201,6 +209,7 @@ ptbr.ModelDat2=Foto, máximo de detalhes: BHI DAT2 fp32 (CC BY 4.0) · muito len
 ptbr.ModelEsrganFp16=Clássico: Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 ptbr.ModelEsrgan=Clássico: Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 ptbr.ModelGeneral=Rascunho: Real-ESRGAN general x4v3 (BSD-3-Clause) · muito rápido
+ptbr.ModelDenoise=Remover ruído: SCUNet fp16 (Apache-2.0) · para fotos com ruído
 
 ; Türkçe
 tr.TypeFull=Tam kurulum (tüm modeller)
@@ -223,6 +232,7 @@ tr.ModelDat2=Fotoğraf, en fazla ayrıntı: BHI DAT2 fp32 (CC BY 4.0) · çok ya
 tr.ModelEsrganFp16=Klasik: Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 tr.ModelEsrgan=Klasik: Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 tr.ModelGeneral=Taslak: Real-ESRGAN general x4v3 (BSD-3-Clause) · çok hızlı
+tr.ModelDenoise=Gürültüyü gider: SCUNet fp16 (Apache-2.0) · gürültülü fotoğraflar için
 
 ; Bahasa Indonesia
 id.TypeFull=Instalasi penuh (semua model)
@@ -245,6 +255,7 @@ id.ModelDat2=Foto, detail maksimum: BHI DAT2 fp32 (CC BY 4.0) · sangat lambat
 id.ModelEsrganFp16=Klasik: Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 id.ModelEsrgan=Klasik: Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 id.ModelGeneral=Draf: Real-ESRGAN general x4v3 (BSD-3-Clause) · sangat cepat
+id.ModelDenoise=Hapus noise: SCUNet fp16 (Apache-2.0) · untuk foto yang bernoise
 
 ; Tiếng Việt
 vi.TypeFull=Cài đặt đầy đủ (tất cả mô hình)
@@ -267,6 +278,7 @@ vi.ModelDat2=Ảnh chụp, chi tiết tối đa: BHI DAT2 fp32 (CC BY 4.0) · r�
 vi.ModelEsrganFp16=Cổ điển: Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 vi.ModelEsrgan=Cổ điển: Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 vi.ModelGeneral=Bản nháp: Real-ESRGAN general x4v3 (BSD-3-Clause) · rất nhanh
+vi.ModelDenoise=Khử nhiễu: SCUNet fp16 (Apache-2.0) · cho ảnh bị nhiễu
 
 ; 日本語
 ja.TypeFull=フル インストール（すべてのモデル）
@@ -289,6 +301,7 @@ ja.ModelDat2=写真、最大限の精細さ：BHI DAT2 fp32 (CC BY 4.0) · 非�
 ja.ModelEsrganFp16=クラシック：Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 ja.ModelEsrgan=クラシック：Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 ja.ModelGeneral=下書き：Real-ESRGAN general x4v3 (BSD-3-Clause) · 非常に高速
+ja.ModelDenoise=ノイズを除去：SCUNet fp16 (Apache-2.0) · ノイズの多い写真向け
 
 ; 한국어
 ko.TypeFull=전체 설치(모든 모델)
@@ -311,6 +324,7 @@ ko.ModelDat2=사진, 최대 디테일: BHI DAT2 fp32 (CC BY 4.0) · 매우 느�
 ko.ModelEsrganFp16=클래식: Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 ko.ModelEsrgan=클래식: Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 ko.ModelGeneral=초안: Real-ESRGAN general x4v3 (BSD-3-Clause) · 매우 빠름
+ko.ModelDenoise=노이즈 제거: SCUNet fp16 (Apache-2.0) · 노이즈가 많은 사진용
 
 ; 简体中文
 zhhans.TypeFull=完整安装（全部模型）
@@ -333,6 +347,7 @@ zhhans.ModelDat2=照片，最多细节：BHI DAT2 fp32 (CC BY 4.0) · 很慢
 zhhans.ModelEsrganFp16=经典：Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 zhhans.ModelEsrgan=经典：Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 zhhans.ModelGeneral=草稿：Real-ESRGAN general x4v3 (BSD-3-Clause) · 很快
+zhhans.ModelDenoise=去除噪点：SCUNet fp16 (Apache-2.0) · 适用于有噪点的照片
 
 ; 繁體中文
 zhhant.TypeFull=完整安裝（所有模型）
@@ -355,6 +370,7 @@ zhhant.ModelDat2=相片，最多細節：BHI DAT2 fp32 (CC BY 4.0) · 非常慢
 zhhant.ModelEsrganFp16=經典：Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 zhhant.ModelEsrgan=經典：Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 zhhant.ModelGeneral=草稿：Real-ESRGAN general x4v3 (BSD-3-Clause) · 非常快
+zhhant.ModelDenoise=去除雜訊：SCUNet fp16 (Apache-2.0) · 適用於有雜訊的相片
 
 ; 繁體中文（香港）
 zhhk.TypeFull=完整安裝（所有模型）
@@ -377,6 +393,7 @@ zhhk.ModelDat2=相片，最多細節：BHI DAT2 fp32 (CC BY 4.0) · 非常慢
 zhhk.ModelEsrganFp16=經典：Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 zhhk.ModelEsrgan=經典：Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 zhhk.ModelGeneral=草稿：Real-ESRGAN general x4v3 (BSD-3-Clause) · 非常快
+zhhk.ModelDenoise=去除雜訊：SCUNet fp16 (Apache-2.0) · 適用於有雜訊的相片
 
 ; 繁體中文（澳門）
 zhmo.TypeFull=完整安裝（所有模型）
@@ -399,3 +416,4 @@ zhmo.ModelDat2=相片，最多細節：BHI DAT2 fp32 (CC BY 4.0) · 非常慢
 zhmo.ModelEsrganFp16=經典：Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 zhmo.ModelEsrgan=經典：Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 zhmo.ModelGeneral=草稿：Real-ESRGAN general x4v3 (BSD-3-Clause) · 非常快
+zhmo.ModelDenoise=去除雜訊：SCUNet fp16 (Apache-2.0) · 適用於有雜訊的相片

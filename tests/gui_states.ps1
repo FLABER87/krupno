@@ -1,16 +1,19 @@
 ﻿# Screenshots of the Krupno.exe window in its main states: empty, ready to start, processing, result, batch, error,
-# light theme, the settings window. Checks that the states are reached; the screenshots (tests/out/gui) are reviewed by a human.
+# light theme, the settings window, "Remove noise". Checks that the states are reached; the screenshots (tests/out/gui) are
+# reviewed by a human.
 # The color scenario also checks pixels: a Display P3 image must be shown converted to sRGB, as Windows decodes it.
 # Requires a Release build, real models in models/ and the fixture images (python tests\make_fixtures.py).
-#   powershell -File tests\gui_states.ps1 [-Scenario single,batch,error,light,color,settings] [-Image <file>] [-Batch <folder>]
+#   powershell -File tests\gui_states.ps1 [-Scenario single,batch,error,light,color,settings,denoise] [-Image <file>] [-Batch <folder>]
 param(
-    [string[]]$Scenario = @("single", "batch", "error", "light", "color", "settings"),
+    [string[]]$Scenario = @("single", "batch", "error", "light", "color", "settings", "denoise"),
     [string]$Exe = "$PSScriptRoot\..\src\Krupno.App\bin\Release\net10.0-windows10.0.19041.0\win-x64\Krupno.exe",
     [string]$Image = "$PSScriptRoot\fixtures\images\big_1500x1000.png",
     [string]$Batch = "$PSScriptRoot\fixtures\images",
     # The fast model is for the batch, error and theme scenarios; the slow one is to catch tile-by-tile processing.
     [string]$Model = "4xBHI_realplksr_dysample_real",
     [string]$SlowModel = "4xBHI_dat2_real_fp16",
+    # The model of "Remove noise", needed by the denoise scenario only.
+    [string]$DenoiseModel = "scunet_color_real_psnr_fp16",
     [string]$Out = "$PSScriptRoot\out\gui"
 )
 $ErrorActionPreference = "Stop"
@@ -189,7 +192,26 @@ try {
                         if (@($w.FindAll($Tree::Descendants, $windows)).Count -gt 0) { throw "the settings window did not close" }
                     } finally { Close $p }
                 }
-                default { throw "unknown scenario (available: single, batch, error, light, color, settings)" }
+                "denoise" {
+                    # "Remove noise", saved on, is checked; its pass shows in the progress line before the upscaler's.
+                    Assert-Model $DenoiseModel
+                    Settings $Model ', "Denoise": true'
+                    $p = Launch @($single)
+                    try {
+                        $w = $AE::FromHandle($p.MainWindowHandle); $h = $p.MainWindowHandle
+                        $box = FindName $w "^Remove noise$"
+                        $toggle = $null
+                        if (-not $box -or -not $box.TryGetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern, [ref]$toggle)) {
+                            throw "the 'Remove noise' checkbox is missing"
+                        }
+                        if ($toggle.Current.ToggleState -ne [System.Windows.Automation.ToggleState]::On) { throw "'Remove noise' is not on" }
+                        Shot $h "16-denoise-ready"
+                        Invoke-Named $w "^Upscale "
+                        WaitFor $w "removing noise" 60 | Out-Null; Shot $h "17-denoise-busy"
+                        WaitFor $w "^Done" | Out-Null; Shot $h "18-denoise-done"
+                    } finally { Close $p }
+                }
+                default { throw "unknown scenario (available: single, batch, error, light, color, settings, denoise)" }
             }
             "OK   $name"
         } catch {

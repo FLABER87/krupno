@@ -34,6 +34,9 @@ internal sealed class CliOptions
               --tta               test-time augmentation: all 8 rotations and mirrorings, averaged (8 times slower)
               --strength <1-100>  how much of the network's result to keep, in percent; the rest is a plain
                                   Lanczos resize, which tones down invented textures (default: 100)
+              --denoise           remove camera noise and grain before upscaling, with the
+                                  {ModelCatalog.DenoiseModelName} model; slower, and it smooths fine texture.
+                                  With -s 1 (or less) only the noise is removed
           -d, --device <dev>      auto | cpu | gpu0, gpu1, … (DirectML) | acc0, acc1, … (a vendor's accelerator,
                                   see --list-devices) (default: auto)
               --list-models       list the models found
@@ -61,6 +64,7 @@ internal sealed class CliOptions
     public int Padding { get; private set; } = 32;
     public int Strength { get; private set; } = 100;
     public bool TestTimeAugmentation { get; private set; }
+    public bool Denoise { get; private set; }
     public string Device { get; private set; } = "auto";
     public bool ListModels { get; private set; }
     public bool ListDevices { get; private set; }
@@ -90,6 +94,9 @@ internal sealed class CliOptions
                     break;
                 case "--tta":
                     options.TestTimeAugmentation = true;
+                    break;
+                case "--denoise":
+                    options.Denoise = true;
                     break;
                 case "--skip-existing":
                     options.SkipExisting = true;

@@ -50,6 +50,25 @@ def resize_model(path, scale, dims, keep, meta=None, half=False):
     onnx.save(model, str(path))
 
 
+def swap_red_blue_model(path, meta):
+    """out = x with red and blue swapped (a 1×1 convolution), at the same size. Unlike keeping channels, it doesn't commute with
+    a model that keeps only some of them, so a result shows which of the two ran first."""
+    import onnx
+    from onnx import TensorProto, helper, numpy_helper
+
+    x = helper.make_tensor_value_info("input", TensorProto.FLOAT, [1, 3, "height", "width"])
+    y = helper.make_tensor_value_info("output", TensorProto.FLOAT, [1, 3, "height", "width"])
+    weight = np.zeros((3, 3, 1, 1), np.float32)
+    weight[0, 2] = weight[1, 1] = weight[2, 0] = 1
+    graph = helper.make_graph([helper.make_node("Conv", ["input", "weight"], ["output"])], "g", [x], [y],
+                              [numpy_helper.from_array(weight, "weight")])
+    model = helper.make_model(graph, opset_imports=[helper.make_opsetid("", 17)])
+    model.ir_version = 9
+    helper.set_model_props(model, meta)
+    onnx.checker.check_model(model)
+    onnx.save(model, str(path))
+
+
 D50 = (0.9642, 1.0, 0.8249)
 
 
@@ -142,6 +161,10 @@ if args.models:
                  {"upscalr.scale": "2", "upscalr.name": "Legacy x2", "upscalr.architecture": "Test"})
     # fp16 input and output: each byte level survives the trip through fp16 (b/255 has 11 significant bits), so the result is exact.
     resize_model(m / "half_x2.onnx", 2, [1, 3, "height", "width"], [1, 1, 0], {"krupno.scale": "2"}, half=True)
+    # ×1 models in place of the denoiser. Dropping red shows whether it ran, and what Strength blends with;
+    # swapping red and blue shows that it ran before the upscaler (with nearest_red_x4).
+    resize_model(m / "drop_red_x1.onnx", 1, [1, 3, "height", "width"], [0, 1, 1], {"krupno.scale": "1", "krupno.name": "Drop red x1"})
+    swap_red_blue_model(m / "swap_rb_x1.onnx", {"krupno.scale": "1", "krupno.name": "Swap red and blue x1"})
 
 img = root / "images"
 img.mkdir(parents=True, exist_ok=True)

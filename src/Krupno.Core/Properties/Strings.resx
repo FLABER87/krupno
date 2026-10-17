@@ -40,6 +40,9 @@
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>The model metadata is contradictory: the window must be at most {0} px but at least {1} px.</value>
   </data>
+  <data name="Model_DenoiserScale" xml:space="preserve">
+    <value>The noise removal model must keep the image size (×1), but {0} is ×{1}.</value>
+  </data>
   <data name="Model_FileNotFound" xml:space="preserve">
     <value>Model file not found: {0}</value>
   </data>

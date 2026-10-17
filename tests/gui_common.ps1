@@ -46,10 +46,11 @@ function Restore-Settings {
 }
 # The window is set to English whatever the Windows language: the scripts find buttons and texts by their English names.
 # The update check is off: the scripts stay offline, and a newer release's notice doesn't change the screenshots.
-function Settings([string]$Model) {
+# $Extra adds more settings, as JSON members after a comma: ', "Denoise": true'.
+function Settings([string]$Model, [string]$Extra = "") {
     New-Item -ItemType Directory -Force (Split-Path $SettingsPath) | Out-Null
     [IO.File]::WriteAllText($SettingsPath,
-        "{ `"Model`": `"$Model`", `"DeviceKind`": `"Auto`", `"Language`": `"en`", `"CheckForUpdates`": false }",
+        "{ `"Model`": `"$Model`", `"DeviceKind`": `"Auto`", `"Language`": `"en`", `"CheckForUpdates`": false$Extra }",
         (New-Object Text.UTF8Encoding $false))
 }
 

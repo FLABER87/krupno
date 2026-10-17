@@ -45,13 +45,18 @@ public readonly record struct TileRegion(double Left, double Top, double Width, 
 /// each round goes through all the tiles again.</param>
 /// <param name="IsWarning">The message reports something the user should know about (the tile was reduced, memory ran out),
 /// not just the next stage of the work.</param>
+/// <param name="Denoising">The pass removes noise before the image is upscaled; it is the first of the <paramref name="PassCount"/>.</param>
 public readonly record struct UpscaleProgress(int Pass, int PassCount, int Tile, int TileCount, string? Message = null,
-    TileRegion? Region = null, bool IsWarning = false, int Round = 1, int RoundCount = 1)
+    TileRegion? Region = null, bool IsWarning = false, int Round = 1, int RoundCount = 1, bool Denoising = false)
 {
     public double Fraction => TileCount == 0 ? 0 : (Pass - 1 + (Round - 1 + (double)Tile / TileCount) / RoundCount) / PassCount;
 }
 
-public sealed class Upscaler(UpscaleModel model)
+/// <param name="denoiser">
+/// A ×1 model that removes noise from the image before it is upscaled (<see cref="ModelCatalog.DenoiseModelName"/>), with the
+/// same tiling as the upscaler; null to upscale the image as it is. At a scale of 1 or less only the denoiser runs.
+/// </param>
+public sealed class Upscaler(UpscaleModel model, UpscaleModel? denoiser = null)
 {
     private const int MinimumTileSize = 128;
     private const int ShrinkGrid = 64;
@@ -64,8 +69,9 @@ public sealed class Upscaler(UpscaleModel model)
     /// </summary>
     private const int AugmentedSessionCapacity = 4;
 
-    /// <summary>The tile chosen after running out of memory has already been reported: once per batch, not for every frame and pass.</summary>
-    private bool _tileLimitReported;
+    /// <summary>The models whose tile chosen after running out of memory has already been reported: once per batch, not for every
+    /// frame and pass.</summary>
+    private readonly HashSet<UpscaleModel> _tileLimitReported = [];
 
     public Task<ImageBuffer> UpscaleAsync(ImageBuffer input, UpscaleOptions? options = null,
         IProgress<UpscaleProgress>? progress = null, CancellationToken cancellationToken = default) =>
@@ -85,31 +91,49 @@ public sealed class Upscaler(UpscaleModel model)
         options ??= UpscaleOptions.Default;
         if (!(options.Strength > 0 && options.Strength <= 1))
             throw new ArgumentOutOfRangeException(nameof(options), options.Strength, "The strength must be above 0 and at most 1.");
+        if (denoiser is { Info.Scale: not 1 })
+            throw new NotSupportedException(string.Format(Strings.Model_DenoiserScale, denoiser.Info.Name, denoiser.Info.Scale));
         int modelScale = model.Info.Scale;
         double scale = options.ScaleFor(input.Width, input.Height, modelScale);
 
         var (targetWidth, targetHeight) = OutputSize(input.Width, input.Height, options);
         if (!ImageBuffer.CanAllocate(targetWidth, targetHeight))
             throw new InvalidOperationException(string.Format(Strings.Error_ResultTooLarge, targetWidth, targetHeight));
-        model.SetSessionCapacity(options.TestTimeAugmentation ? AugmentedSessionCapacity : UpscaleModel.DefaultSessionCapacity);
+        int capacity = options.TestTimeAugmentation ? AugmentedSessionCapacity : UpscaleModel.DefaultSessionCapacity;
+        model.SetSessionCapacity(capacity);
+        denoiser?.SetSessionCapacity(capacity);
 
         // The network doesn't see alpha: it is resized separately, which is cheap. The colors under fully transparent pixels
         // are filled from the visible ones first, otherwise the (usually black) color stored there bleeds into the edges.
         byte[]? alpha = input.HasTransparency() ? input.ExtractAlpha() : null;
-        int passes = PassCount(scale, modelScale);
+        // With noise removal and no enlargement only the denoiser runs: the upscaler would invent detail that the reduction then loses.
+        int passes = denoiser is not null && scale <= 1 ? 0 : PassCount(scale, modelScale);
+        // The noise removal is a pass of its own, the first one, so the progress covers it.
+        int passCount = passes + (denoiser is null ? 0 : 1);
         var source = alpha is null ? input : input.BleedTransparentColors();
         var current = source;
-        for (int pass = 1; pass <= passes; pass++)
+        int pass = 0;
+        if (denoiser is not null)
         {
-            if (pass == passes)
-                current = FitLastPass(current, alpha, input, targetWidth, targetHeight, pass, passes, progress, cancellationToken);
-            current = RunPass(current, options, pass, passes, progress, cancellationToken);
+            current = RunPass(denoiser, current, options, ++pass, passCount,
+                progress is null ? null : new DenoisingProgress(progress), cancellationToken);
+            // The plain resize of Strength starts from the pixels the upscaler sees, so the noise doesn't come back with it.
+            // Without an upscaling pass it starts from the source: Strength then tones down the noise removal itself.
+            if (passes > 0)
+                source = current;
+        }
+        for (int upscalePass = 1; upscalePass <= passes; upscalePass++)
+        {
+            pass++;
+            if (upscalePass == passes)
+                current = FitLastPass(current, alpha, input, targetWidth, targetHeight, pass, passCount, progress, cancellationToken);
+            current = RunPass(model, current, options, pass, passCount, progress, cancellationToken);
         }
 
         cancellationToken.ThrowIfCancellationRequested();
         if (current.Width != targetWidth || current.Height != targetHeight)
         {
-            progress?.Report(new UpscaleProgress(passes, passes, 1, 1, string.Format(Strings.Progress_Resizing, targetWidth, targetHeight)));
+            progress?.Report(new UpscaleProgress(passCount, passCount, 1, 1, string.Format(Strings.Progress_Resizing, targetWidth, targetHeight)));
             if (alpha is null)
             {
                 current = Resampler.Resize(current, (int)targetWidth, (int)targetHeight, cancellationToken);
@@ -129,9 +153,9 @@ public sealed class Upscaler(UpscaleModel model)
 
         if (options.Strength < 1)
         {
-            // The plain resize starts from the pixels the network saw, with the colors under transparency filled in the same way.
-            // The alpha computed above stays.
-            progress?.Report(new UpscaleProgress(passes, passes, 1, 1,
+            // The plain resize starts from the pixels the upscaler saw (the denoised ones with noise removal), with the colors
+            // under transparency filled in the same way. The alpha computed above stays.
+            progress?.Report(new UpscaleProgress(passCount, passCount, 1, 1,
                 string.Format(Strings.Progress_Blending, (int)Math.Round(options.Strength * 100))));
             Resampler.BlendResized(source, current, (float)options.Strength, cancellationToken);
         }
@@ -180,22 +204,23 @@ public sealed class Upscaler(UpscaleModel model)
             return Resampler.Resize(source, width, height, cancellationToken);
 
         // With transparency the reduction weights colors by alpha as well, and the colors it leaves under fully transparent
-        // pixels are filled again. The first pass gets the source with its own alpha; a later one gets the network's result,
-        // which is opaque, so it is given the source's alpha at its size first.
+        // pixels are filled again. The first pass gets the source with its own alpha; a later one, the noise removal's included,
+        // gets a network's result, which is opaque, so it is given the source's alpha at its size first.
         if (pass > 1)
             source.SetAlpha(Resampler.ResizePlane(alpha, input.Width, input.Height, source.Width, source.Height, cancellationToken));
         return Resampler.ResizePremultiplied(source, width, height, cancellationToken).BleedTransparentColors();
     }
 
-    private ImageBuffer RunPass(ImageBuffer source, UpscaleOptions options, int pass, int passCount,
+    /// <param name="net">The upscaler, or the denoiser for the noise removal pass.</param>
+    private ImageBuffer RunPass(UpscaleModel net, ImageBuffer source, UpscaleOptions options, int pass, int passCount,
         IProgress<UpscaleProgress>? progress, CancellationToken cancellationToken)
     {
         if (!options.TestTimeAugmentation)
-            return RunOrientation(source, options, pass, passCount, progress, cancellationToken);
+            return RunOrientation(net, source, options, pass, passCount, progress, cancellationToken);
 
         // A quarter turn transposes the intermediate, and the size check isn't symmetric (WIC's row limit): check the transposed
         // one as well before the first four rounds, rather than fail on the fifth.
-        int scale = model.Info.Scale;
+        int scale = net.Info.Scale;
         long width = (long)source.Width * scale, height = (long)source.Height * scale;
         if (!ImageBuffer.CanAllocate(width, height) || !ImageBuffer.CanAllocate(height, width))
             throw new InvalidOperationException(Strings.Error_IntermediateTooLarge);
@@ -208,7 +233,7 @@ public sealed class Upscaler(UpscaleModel model)
         for (int orientation = 1; orientation <= RoundCount; orientation++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            AddRound(source, orientation, options, pass, passCount, progress, sum, cancellationToken);
+            AddRound(net, source, orientation, options, pass, passCount, progress, sum, cancellationToken);
         }
 
         var average = new ImageBuffer((int)width, (int)height);
@@ -220,12 +245,12 @@ public sealed class Upscaler(UpscaleModel model)
     /// One round of test-time augmentation: the image in <paramref name="orientation"/>, upscaled, added to <paramref name="sum"/>.
     /// A method of its own, so that neither the turned image nor the result outlives the round, even before the JIT optimizes.
     /// </summary>
-    private void AddRound(ImageBuffer source, int orientation, UpscaleOptions options, int pass, int passCount,
+    private void AddRound(UpscaleModel net, ImageBuffer source, int orientation, UpscaleOptions options, int pass, int passCount,
         IProgress<UpscaleProgress>? progress, ushort[] sum, CancellationToken cancellationToken)
     {
         var turned = source.ApplyExifOrientation(orientation);
         var roundProgress = progress is null ? null : new RoundProgress(progress, orientation);
-        var result = RunOrientation(turned, options, pass, passCount, roundProgress, cancellationToken);
+        var result = RunOrientation(net, turned, options, pass, passCount, roundProgress, cancellationToken);
         AddColors(result, InverseOrientation(orientation), sum);
     }
 
@@ -295,54 +320,66 @@ public sealed class Upscaler(UpscaleModel model)
         });
     }
 
-    private ImageBuffer RunOrientation(ImageBuffer source, UpscaleOptions options, int pass, int passCount,
+    /// <summary>Marks the reports of the noise removal pass.</summary>
+    private sealed class DenoisingProgress(IProgress<UpscaleProgress> inner) : IProgress<UpscaleProgress>
+    {
+        public void Report(UpscaleProgress value) => inner.Report(value with { Denoising = true });
+    }
+
+    private ImageBuffer RunOrientation(UpscaleModel net, ImageBuffer source, UpscaleOptions options, int pass, int passCount,
         IProgress<UpscaleProgress>? progress, CancellationToken cancellationToken)
     {
-        int scale = model.Info.Scale;
+        int scale = net.Info.Scale;
         if (!ImageBuffer.CanAllocate((long)source.Width * scale, (long)source.Height * scale))
             throw new InvalidOperationException(Strings.Error_IntermediateTooLarge);
 
-        int tileSize = StartTile(source, options.TileSize, pass, passCount, progress);
+        // The other model of the run keeps its sessions between images, and they hold video memory too.
+        var other = net == model ? denoiser : model;
+        bool OthersHoldMemory(int width, int height) => net.HoldsOtherSessions(width, height) || other is not null && other != net && other.HasSessions;
+
+        int tileSize = StartTile(net, source, options.TileSize, pass, passCount, progress);
         bool retriedAlone = false;
         while (true)
         {
-            var device = model.Device;
-            var (width, height) = model.ChooseWindow(source.Width, source.Height, tileSize);
+            var device = net.Device;
+            var (width, height) = net.ChooseWindow(source.Width, source.Height, tileSize);
             try
             {
-                using var runner = CreateRunner(width, height, cancellationToken);
-                if (model.Device != device)
+                using var runner = CreateRunner(net, width, height, cancellationToken);
+                if (net.Device != device)
                 {
                     // Creating the session fell back to the CPU after the GPU had already reduced the tile: the CPU has no
                     // such limit, so start over from the requested tile.
-                    int requested = StartTile(source, options.TileSize, pass, passCount, progress);
-                    if (model.ChooseWindow(source.Width, source.Height, requested) != (width, height))
+                    int requested = StartTile(net, source, options.TileSize, pass, passCount, progress);
+                    if (net.ChooseWindow(source.Width, source.Height, requested) != (width, height))
                     {
                         tileSize = requested;
                         continue;
                     }
                 }
-                return RunTiles(runner, source, options.TilePadding, pass, passCount, progress, cancellationToken);
+                return RunTiles(net, runner, source, options.TilePadding, pass, passCount, progress, cancellationToken);
             }
             catch (OnnxRuntimeException ex) when (!cancellationToken.IsCancellationRequested && MayBeOutOfMemory(device, ex) &&
-                                                  (!retriedAlone && model.HoldsOtherSessions(width, height) ||
-                                                   SmallerTile(source, width, height) is not null))
+                                                  (!retriedAlone && OthersHoldMemory(width, height) ||
+                                                   SmallerTile(net, source, width, height) is not null))
             {
-                if (!retriedAlone && model.HoldsOtherSessions(width, height))
+                if (!retriedAlone && OthersHoldMemory(width, height))
                 {
-                    // The sessions of other windows (the second pass's, or with test-time augmentation the transposed one's)
-                    // hold video memory too: without them this window may well fit, so it gets one more try before it shrinks,
-                    // also when it can't shrink any further.
+                    // The sessions of other windows (the second pass's, with test-time augmentation the transposed one's, the
+                    // other model's) hold video memory too: without them this window may well fit, so it gets one more try
+                    // before it shrinks, also when it can't shrink any further.
                     retriedAlone = true;
-                    model.ReleaseSessions();
+                    net.ReleaseSessions();
+                    if (other != net)
+                        other?.ReleaseSessions();
                     continue;
                 }
                 // Usually this means out of VRAM or the D3D12 resource size limit: shrink the window and try again.
-                int smaller = SmallerTile(source, width, height)!.Value;
+                int smaller = SmallerTile(net, source, width, height)!.Value;
                 tileSize = smaller;
-                model.LimitTile(tileSize);
-                model.ReleaseSessions();
-                _tileLimitReported = true;
+                net.LimitTile(tileSize);
+                net.ReleaseSessions();
+                _tileLimitReported.Add(net);
                 progress?.Report(new UpscaleProgress(pass, passCount, 0, 1,
                     string.Format(Strings.Progress_TileReduced, width, height, tileSize), IsWarning: true));
             }
@@ -362,12 +399,12 @@ public sealed class Upscaler(UpscaleModel model)
     /// an accelerator's engine, minutes) and ONNX Runtime can't stop it, so a canceled run doesn't wait for it: the build goes on
     /// in the background, and what it builds is kept (the model's session, an accelerator's compiled model on disk).
     /// </summary>
-    private TileRunner CreateRunner(int width, int height, CancellationToken cancellationToken)
+    private static TileRunner CreateRunner(UpscaleModel net, int width, int height, CancellationToken cancellationToken)
     {
-        if (model.Device.Kind == DeviceKind.Cpu || !cancellationToken.CanBeCanceled)
-            return new TileRunner(model, width, height, cancellationToken);
+        if (net.Device.Kind == DeviceKind.Cpu || !cancellationToken.CanBeCanceled)
+            return new TileRunner(net, width, height, cancellationToken);
 
-        var creating = Task.Run(() => new TileRunner(model, width, height, cancellationToken));
+        var creating = Task.Run(() => new TileRunner(net, width, height, cancellationToken));
         try
         {
             creating.Wait(cancellationToken);
@@ -392,18 +429,18 @@ public sealed class Upscaler(UpscaleModel model)
     }
 
     /// <summary>The requested tile, but no larger than the one chosen on previous frames and passes after running out of memory.</summary>
-    private int StartTile(ImageBuffer source, int requested, int pass, int passCount, IProgress<UpscaleProgress>? progress)
+    private int StartTile(UpscaleModel net, ImageBuffer source, int requested, int pass, int passCount, IProgress<UpscaleProgress>? progress)
     {
         // The limit is a tile side, not a window: the second pass runs on a larger image and the window never extends past the image,
         // so ChooseWindow determines the window for it again.
-        if (model.TileLimit is not int limit || (requested > 0 && requested <= limit))
+        if (net.TileLimit is not int limit || (requested > 0 && requested <= limit))
             return requested;
 
         // On a small image the window is within the limit anyway, so there is nothing to report.
-        if (!_tileLimitReported &&
-            model.ChooseWindow(source.Width, source.Height, limit) != model.ChooseWindow(source.Width, source.Height, requested))
+        if (!_tileLimitReported.Contains(net) &&
+            net.ChooseWindow(source.Width, source.Height, limit) != net.ChooseWindow(source.Width, source.Height, requested))
         {
-            _tileLimitReported = true;
+            _tileLimitReported.Add(net);
             progress?.Report(new UpscaleProgress(pass, passCount, 0, 1, string.Format(Strings.Progress_TileFromLimit, limit),
                 IsWarning: true));
         }
@@ -411,30 +448,30 @@ public sealed class Upscaler(UpscaleModel model)
     }
 
     /// <summary>The tile for the next attempt after running out of memory; null if it can't be shrunk any further.</summary>
-    private int? SmallerTile(ImageBuffer source, int width, int height)
+    private static int? SmallerTile(UpscaleModel net, ImageBuffer source, int width, int height)
     {
         int side = Math.Max(width, height);
-        if (model.Info.FixedWidth is not null || side <= MinimumTileSize)
+        if (net.Info.FixedWidth is not null || side <= MinimumTileSize)
             return null;
 
         // Up to 512 px, step down a 64 px grid (a multiple of the model's): 512 → 448 → 384 → 320 → 256. Halving skips past
         // a size that fits: DAT2 fp32 on 10 GB dropped from 384 straight to 192, and a frame took 71 s versus 61 s when falling back to 320.
         // A finer step isn't needed: DirectML silently spills a window just below the one that didn't fit (352 for the same DAT2) to shared memory.
         // A large window is halved, but not below 512: every failed attempt costs a graph compilation (~10 s for DAT2).
-        int grid = TilePlanner.AlignUp(ShrinkGrid, model.Info.SizeMultiple);
+        int grid = TilePlanner.AlignUp(ShrinkGrid, net.Info.SizeMultiple);
         int tile = side > FineShrinkLimit
             ? Math.Max(FineShrinkLimit, TilePlanner.AlignDown(side / 2, grid))
             : Math.Max(MinimumTileSize, TilePlanner.AlignDown(side - 1, grid));
 
         // The model's minimum may keep the window from shrinking; then retrying is pointless.
-        var (nextWidth, nextHeight) = model.ChooseWindow(source.Width, source.Height, tile);
+        var (nextWidth, nextHeight) = net.ChooseWindow(source.Width, source.Height, tile);
         return Math.Max(nextWidth, nextHeight) < side ? tile : null;
     }
 
-    private ImageBuffer RunTiles(TileRunner runner, ImageBuffer source, int padding,
+    private static ImageBuffer RunTiles(UpscaleModel net, TileRunner runner, ImageBuffer source, int padding,
         int pass, int passCount, IProgress<UpscaleProgress>? progress, CancellationToken cancellationToken)
     {
-        int scale = model.Info.Scale;
+        int scale = net.Info.Scale;
         // Each axis keeps its own context: a thin banner's short window must not cut the context along its long side.
         int paddingX = Math.Clamp(padding, 0, runner.Width / 4);
         int paddingY = Math.Clamp(padding, 0, runner.Height / 4);

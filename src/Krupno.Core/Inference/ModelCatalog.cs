@@ -14,6 +14,15 @@ public static class ModelCatalog
     /// </summary>
     public const string DefaultModelName = "4xBHI_realplksr_dysample_real";
 
+    /// <summary>
+    /// The ×1 model of "Remove noise" (--denoise): SCUNet trained on real camera noise, Apache-2.0 (docs/models.md, "Noise").
+    /// It is not an upscaler, so it is not offered as one and never becomes the default. The fp16 file is the one released;
+    /// a conversion of the same weights in fp32 is taken too, if it is the only one there.
+    /// </summary>
+    public const string DenoiseModelName = "scunet_color_real_psnr_fp16";
+
+    private static readonly string[] DenoiseModelNames = [DenoiseModelName, "scunet_color_real_psnr"];
+
     public static string AppDirectory { get; } = Path.Combine(AppContext.BaseDirectory, "models");
 
     public static string UserDirectory { get; } = Path.Combine(
@@ -55,7 +64,15 @@ public static class ModelCatalog
     public static ModelEntry? Find(IEnumerable<ModelEntry> models, string? name) =>
         name is null ? null : models.FirstOrDefault(m => m.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
 
-    /// <summary><see cref="DefaultModelName"/> if it is installed, otherwise the first one alphabetically.</summary>
+    /// <summary><see cref="DefaultModelName"/> if it is installed, otherwise the first upscaler alphabetically.</summary>
     public static ModelEntry? PickDefault(IReadOnlyList<ModelEntry> models) =>
-        Find(models, DefaultModelName) ?? models.FirstOrDefault();
+        Find(models, DefaultModelName) ?? models.FirstOrDefault(m => !IsDenoiser(m));
+
+    /// <summary>Whether the model is the one of "Remove noise" (<see cref="DenoiseModelName"/>) rather than an upscaler.</summary>
+    public static bool IsDenoiser(ModelEntry model) =>
+        DenoiseModelNames.Contains(model.Name, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The model of "Remove noise" from the list, the released fp16 one first; null if it isn't installed.</summary>
+    public static ModelEntry? FindDenoiser(IReadOnlyList<ModelEntry> models) =>
+        DenoiseModelNames.Select(name => Find(models, name)).FirstOrDefault(m => m is not null);
 }
