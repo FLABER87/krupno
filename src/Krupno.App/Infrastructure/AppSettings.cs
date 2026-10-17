@@ -62,6 +62,9 @@ public sealed class AppSettings
     /// <summary>"Seamless tiles" in "Advanced": a 64 px tile overlap instead of 32.</summary>
     public bool? SeamlessTiles { get; set; }
 
+    /// <summary>"Test-time augmentation" in "Advanced": every pass in all 8 orientations, averaged.</summary>
+    public bool? TestTimeAugmentation { get; set; }
+
     public WindowBounds? Window { get; set; }
 
     public static AppSettings Load()

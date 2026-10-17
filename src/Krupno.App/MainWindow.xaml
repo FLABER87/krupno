@@ -426,6 +426,9 @@
                                 <CheckBox Content="Seamless tiles" IsChecked="{Binding SeamlessTiles}" Margin="0,12,0,0" />
                                 <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0"
                                            Text="Twice the overlap between tiles (64 px): no visible seams even with deep models, but more tiles to run: about 1.5 times as many for a 1920 × 1200 photo with auto tiles." />
+                                <CheckBox Content="Test-time augmentation" IsChecked="{Binding TestTimeAugmentation}" Margin="0,12,0,0" />
+                                <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0"
+                                           Text="The image is processed in all 8 rotations and mirrorings, and the results are averaged: a little less noise and fewer artifacts that lean one way, but 8 times slower." />
                             </StackPanel>
                         </Expander>
                     </StackPanel>

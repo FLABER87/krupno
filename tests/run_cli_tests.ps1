@@ -47,6 +47,8 @@ foreach ($dev in "auto", "cpu") {
 Run "big_red_notile"  @("$img\big_1500x1000.png", "-m", "$mod\nearest_red_x4.onnx", "-t", "0", "-o", "$out\big_red_notile.png")
 Run "alpha_red"       @("$img\alpha_257x129.png", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\alpha_red.png")
 Run "noise_red_x2_5"  @("$img\noise_300x200.png", "-m", "$mod\nearest_red_x4.onnx", "-s", "2.5", "-o", "$out\noise_red_x2_5.png")
+# TTA: a nearest-neighbor model gives the same result in every orientation, so the average must match exactly.
+Run "noise_red_tta"   @("$img\noise_300x200.png", "-m", "$mod\nearest_red_x4.onnx", "--tta", "-t", "128", "-o", "$out\noise_red_tta.png")
 Run "noise_red_x8"    @("$img\noise_300x200.png", "-m", "$mod\nearest_red_x4.onnx", "-s", "8", "-o", "$out\noise_red_x8.png")
 # Strength: the network's result mixed with a plain Lanczos resize; with transparency the alpha must stay as at full strength.
 Run "noise_red_s50"   @("$img\noise_300x200.png", "-m", "$mod\nearest_red_x4.onnx", "--strength", "50", "-o", "$out\noise_red_s50.png")

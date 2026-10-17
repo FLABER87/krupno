@@ -12,6 +12,8 @@ public class CliOptionsTests
         Assert.Equal(["photo.jpg"], options.Inputs);
         Assert.False(options.Recursive);
         Assert.False(options.SkipExisting);
+        Assert.False(options.TestTimeAugmentation);
+        Assert.True(CliOptions.Parse(["photo.jpg", "--tta"]).TestTimeAugmentation);
         Assert.Equal(0, options.Scale);
         Assert.Null(options.Target);
         Assert.Equal((384, 32, 100, 95), (options.Tile, options.Padding, options.Strength, options.Quality));
