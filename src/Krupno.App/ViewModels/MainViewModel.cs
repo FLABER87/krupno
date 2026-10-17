@@ -55,7 +55,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private readonly AppSettings _settings;
     private readonly List<ModelItem> _allModels = [];
-    private readonly DispatcherTimer _toastTimer = new() { Interval = TimeSpan.FromSeconds(2.5) };
+    private readonly DispatcherTimer _toastTimer = new();
     private bool _refreshingModels;
     private bool _rebuildingModels;
     private bool _suppressPreview;
@@ -93,8 +93,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool _testTimeAugmentation;
     private bool _checkForUpdates;
     private readonly (bool Enabled, string SetAt)? _installerUpdateChoice;
-    /// <summary>A newer release that github.com named at startup (see UpdateCheck); null if there is none, or it was hidden.</summary>
+    /// <summary>
+    /// A newer release that github.com named at startup (see UpdateCheck), or the one "Update" didn't install; null if there is
+    /// none, or it was hidden.
+    /// </summary>
     private (Version Version, string Page)? _update;
+    private UpdateStage _updateStage;
+    private double _updateProgress;
+    private string? _updateError;
+    /// <summary>The download "Update" started; null when there is none.</summary>
+    private CancellationTokenSource? _updateCts;
+    /// <summary>How this copy was installed (see UpdateInstall): only an installed one updates itself; null for the ZIP and a build.</summary>
+    private readonly bool? _installedForAllUsers = UpdateInstall.InstalledForAllUsers();
     private IReadOnlyList<Option<ExecutionDevice>> _devices;
     private IReadOnlyList<AcceleratorPackage> _acceleratorPackages = [];
     /// <summary>Whether the accelerators are known yet: until then a saved accelerator must not be overwritten by "Auto".</summary>
@@ -207,17 +217,23 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ToggleAllModelsCommand = new RelayCommand(() => ShowAllModels = !ShowAllModels);
         InstallAcceleratorsCommand = new RelayCommand(() => _ = InstallAcceleratorsAsync(),
             () => !IsBusy && !_installingAccelerators && MissingAccelerators.Count > 0);
+        InstallUpdateCommand = new RelayCommand(() => _ = InstallUpdateAsync(),
+            () => !IsBusy && _update is not null && CanInstallUpdates && _updateStage is UpdateStage.Available or UpdateStage.Failed);
         OpenUpdateCommand = new RelayCommand(OpenUpdate, () => _update is not null);
-        HideUpdateCommand = new RelayCommand(() => SetUpdate(null));
-        _ = LoadAcceleratorsAsync();
-        if (_checkForUpdates)
-            _ = CheckForUpdatesAsync();
+        HideUpdateCommand = new RelayCommand(HideUpdate);
+        OpenSetupLogCommand = new RelayCommand(OpenSetupLog, () => UpdateSetupLog is not null);
 
         _toastTimer.Tick += (_, _) =>
         {
             _toastTimer.Stop();
             Toast = null;
         };
+
+        _ = LoadAcceleratorsAsync();
+        FinishUpdate();
+        _ = CleanUpUpdatesAsync();
+        if (_checkForUpdates)
+            _ = CheckForUpdatesAsync();
 
         RefreshModels();
     }
@@ -563,7 +579,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>"Check for updates" in "Settings" (see UpdateCheck). Turned on, it checks right away; turned off, the notice goes.</summary>
+    /// <summary>
+    /// "Check for updates" in "Settings" (see UpdateCheck). Turned on, it checks right away; turned off, the notice goes, and so
+    /// does a download "Update" started.
+    /// </summary>
     public bool CheckForUpdates
     {
         get => _checkForUpdates;
@@ -577,14 +596,19 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _settings.CheckForUpdatesSetAt = _installerUpdateChoice?.SetAt;
             SaveSettings();
             if (value)
+            {
                 _ = CheckForUpdatesAsync();
+            }
             else
-                SetUpdate(null);
+            {
+                _updateCts?.Cancel();
+                SetUpdate(null, UpdateStage.None);
+            }
         }
     }
 
-    /// <summary>"Krupno 0.3.0 is available" above the settings; null while there is nothing newer.</summary>
-    public string? UpdateText => _update is { } update ? string.Format(Strings.Update_Available, update.Version.ToString(3)) : null;
+    /// <summary>"Krupno 0.2.2" next to "Check for updates" in "Settings".</summary>
+    public string VersionText => $"Krupno {UpdateCheck.Own.ToString(3)}";
 
     public IReadOnlyList<Option<string?>> Languages { get; }
 
@@ -606,8 +630,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public bool LanguageNeedsRestart => SelectedLanguage.Value != _startupLanguage;
 
     /// <summary>
-    /// Under "Settings" while it is collapsed: what is set inside, "RTX 3080 · auto tiles · English", and "no update check" when
-    /// it is off, so that the section reads as more than a device.
+    /// In the tooltip of the settings button, under its name: what is set there, "RTX 3080 · auto tiles · English", and "no
+    /// update check" when that is off.
     /// </summary>
     public string SettingsSummary
     {
@@ -626,21 +650,65 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>The chosen language's own name; with "Windows language", the one the window speaks.</summary>
-    private string LanguageName
+    private string LanguageName => UiLanguage.All.First(l => l.Culture == LanguageCulture).Name;
+
+    /// <summary>The chosen language; with "Windows language", the one the window speaks.</summary>
+    private string LanguageCulture
     {
         get
         {
-            if (SelectedLanguage.Value is not null)
-                return SelectedLanguage.Label;
+            if (SelectedLanguage.Value is { } chosen)
+                return chosen;
             // The translation .NET picks: the UI culture or the nearest parent with one ("ru-RU" → "ru", "zh-CN" → "zh-Hans").
             for (var culture = CultureInfo.CurrentUICulture; !string.IsNullOrEmpty(culture.Name); culture = culture.Parent)
             {
-                if (UiLanguage.All.FirstOrDefault(l => l.Culture == culture.Name) is { Name: { } name })
-                    return name;
+                if (UiLanguage.All.Any(l => l.Culture == culture.Name))
+                    return culture.Name;
             }
-            return UiLanguage.All[0].Name;
+            return UiLanguage.All[0].Culture;
         }
     }
+
+    // ── Update line ─────────────────────────────────────────────────
+
+    /// <summary>What the update line above the settings shows.</summary>
+    private enum UpdateStage
+    {
+        None,
+        /// <summary>"Krupno 0.3.0 is available", with "Update" (or "Download" without an installation).</summary>
+        Available,
+        Downloading,
+        /// <summary>Not downloaded, not started or not installed: why, with "Try again".</summary>
+        Failed,
+    }
+
+    /// <summary>The line above the settings: a newer release, its download, or why it isn't installed; null while there is nothing to say.</summary>
+    public string? UpdateText => (_updateStage, _update) switch
+    {
+        (UpdateStage.Available, { } update) => string.Format(Strings.Update_Available, update.Version.ToString(3)),
+        (UpdateStage.Downloading, { } update) => string.Format(Strings.Update_Downloading, update.Version.ToString(3), (int)(_updateProgress * 100)),
+        (UpdateStage.Failed, not null) => _updateError,
+        _ => null,
+    };
+
+    public double UpdateProgress => _updateProgress;
+    public bool IsDownloadingUpdate => _updateStage == UpdateStage.Downloading;
+    public bool IsUpdateFailed => _updateStage == UpdateStage.Failed;
+    /// <summary>An installed copy updates itself; the ZIP and a build only link to the release page.</summary>
+    private bool CanInstallUpdates => _installedForAllUsers is not null;
+    public bool ShowInstallUpdate => _updateStage == UpdateStage.Available && CanInstallUpdates;
+    public bool ShowDownloadUpdate => _updateStage == UpdateStage.Available && !CanInstallUpdates;
+    public bool ShowRetryUpdate => _updateStage == UpdateStage.Failed && CanInstallUpdates;
+    /// <summary>The release page, with what has changed; "Download" leads there already.</summary>
+    public bool ShowWhatsNew => _updateStage == UpdateStage.Failed || ShowInstallUpdate;
+    /// <summary>The ✕ on the line: hides it, or cancels the download.</summary>
+    public string UpdateCloseText => IsDownloadingUpdate ? Strings.Update_CancelDownload : Strings.Update_Hide;
+
+    /// <summary>Setup's log of an update that didn't install, if it wrote one.</summary>
+    public string? UpdateSetupLog => _updateStage == UpdateStage.Failed && _update is { } update
+                                     && UpdateInstall.SetupLogPath(update.Version) is var path && File.Exists(path)
+        ? path
+        : null;
 
     // ── Panel state ─────────────────────────────────────────────────
 
@@ -806,8 +874,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand OpenModelsFolderCommand { get; }
     public ICommand ToggleAllModelsCommand { get; }
     public ICommand InstallAcceleratorsCommand { get; }
+    public ICommand InstallUpdateCommand { get; }
     public ICommand OpenUpdateCommand { get; }
     public ICommand HideUpdateCommand { get; }
+    public ICommand OpenSetupLogCommand { get; }
+
+    /// <summary>"Update" has started Setup: the window closes, and Setup starts Krupno again when it is done.</summary>
+    public event EventHandler? ExitRequested;
 
     private FileItem? ResultFile => CurrentFile is { IsDone: true } current ? current : _lastDone;
 
@@ -904,6 +977,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         _cts?.Cancel();
+        _updateCts?.Cancel();
         _previewCts?.Cancel();
         // The session must not be touched while processing is running; the process is exiting anyway.
         if (!IsBusy)
@@ -1050,8 +1124,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         return _run;
     }
 
-    /// <summary>While an accelerator is being downloaded and registered with ONNX Runtime, no run creates sessions.</summary>
-    private bool CanStartRun => !_installingAccelerators;
+    /// <summary>
+    /// While an accelerator is being downloaded and registered with ONNX Runtime, no run creates sessions; while "Update" downloads
+    /// the installer, none starts, as the window closes when it is done.
+    /// </summary>
+    private bool CanStartRun => !_installingAccelerators && _updateStage != UpdateStage.Downloading;
 
     private void StartRun() => _run = UpscaleAsync();
 
@@ -1897,9 +1974,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             Log.Info(newer is { } found
                 ? $"Update check: Krupno {found.Version.ToString(3)} is available, {found.Page}"
                 : $"Update check: no release newer than {current.ToString(3)}");
-            // Turned off while the request was on its way: then nothing is shown.
-            if (newer is not null && CheckForUpdates)
-                SetUpdate(newer);
+            // Turned off while the request was on its way: then nothing is shown. An update that didn't install keeps its line.
+            if (newer is not null && CheckForUpdates && _updateStage == UpdateStage.None)
+                SetUpdate(newer, UpdateStage.Available);
         }
         catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or UriFormatException)
         {
@@ -1907,11 +1984,154 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    private void SetUpdate((Version Version, string Page)? update)
+    private void SetUpdate((Version Version, string Page)? update, UpdateStage stage, string? error = null)
     {
         _update = update;
+        _updateStage = update is null ? UpdateStage.None : stage;
+        _updateError = error;
         OnPropertyChanged(nameof(UpdateText));
+        OnPropertyChanged(nameof(UpdateProgress));
+        OnPropertyChanged(nameof(IsDownloadingUpdate));
+        OnPropertyChanged(nameof(IsUpdateFailed));
+        OnPropertyChanged(nameof(ShowInstallUpdate));
+        OnPropertyChanged(nameof(ShowDownloadUpdate));
+        OnPropertyChanged(nameof(ShowRetryUpdate));
+        OnPropertyChanged(nameof(ShowWhatsNew));
+        OnPropertyChanged(nameof(UpdateCloseText));
+        OnPropertyChanged(nameof(UpdateSetupLog));
         CommandManager.InvalidateRequerySuggested();
+    }
+
+    /// <summary>
+    /// "Update" (see UpdateInstall): downloads the release's installer and checks it, then starts Setup and closes the window,
+    /// which Setup opens again when it is done. Not while processing runs, and no run starts during the download, so the window
+    /// never closes in the middle of one. Another Krupno (a second window, the command-line tool) would hold the files Setup
+    /// replaces, so it has to be closed first.
+    /// </summary>
+    private async Task InstallUpdateAsync()
+    {
+        if (_update is not { } update || _installedForAllUsers is not { } allUsers || IsBusy || _updateCts is not null)
+            return;
+        string version = update.Version.ToString(3);
+        if (RunningMarker.OthersRunning())
+        {
+            Log.Info($"Update to {version}: another Krupno is running");
+            SetUpdate(update, UpdateStage.Failed, Strings.Update_CloseOthers);
+            return;
+        }
+
+        using var cts = new CancellationTokenSource();
+        _updateCts = cts;
+        _updateProgress = 0;
+        SetUpdate(update, UpdateStage.Downloading);
+        var progress = new Progress<double>(fraction =>
+        {
+            // A report per 64 KB: the line changes only with the percentage.
+            if (_updateStage != UpdateStage.Downloading || (int)(fraction * 100) == (int)(_updateProgress * 100))
+                return;
+            _updateProgress = fraction;
+            OnPropertyChanged(nameof(UpdateProgress));
+            OnPropertyChanged(nameof(UpdateText));
+        });
+        UpdateInstall.Verified installer;
+        try
+        {
+            Log.Info($"Downloading the installer of Krupno {version}");
+            installer = await UpdateInstall.DownloadAsync(update.Version, progress, cts.Token);
+            Log.Info($"Downloaded {installer.Path}, its SHA-256 matches SHA256SUMS.txt");
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            Log.Info($"The download of Krupno {version} was canceled");
+            // Hidden meanwhile (the update check turned off): then it stays hidden.
+            if (_update == update)
+                SetUpdate(update, UpdateStage.Available);
+            return;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or IOException or UnauthorizedAccessException or TimeoutException
+                                       or InvalidDataException)
+        {
+            Log.Error($"Krupno {version} was not downloaded", ex);
+            SetUpdate(update, UpdateStage.Failed,
+                string.Format(Strings.Update_Failed, version, ex is InvalidDataException ? Strings.Update_Mismatch : ex.Message));
+            return;
+        }
+        finally
+        {
+            _updateCts = null;
+        }
+
+        // Started during the download.
+        if (RunningMarker.OthersRunning())
+        {
+            Log.Info($"Update to {version}: another Krupno is running");
+            SetUpdate(update, UpdateStage.Failed, Strings.Update_CloseOthers);
+            return;
+        }
+        _settings.UpdatingTo = version;
+        _settings.Save();
+        // Setup waits for every Krupno to let go of it (AppMutex), this one included.
+        RunningMarker.Release();
+        try
+        {
+            UpdateInstall.Start(installer, allUsers, LanguageCulture, update.Version);
+        }
+        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException or UnauthorizedAccessException
+                                       or InvalidDataException)
+        {
+            RunningMarker.Hold();
+            _settings.UpdatingTo = null;
+            _settings.Save();
+            Log.Error($"Setup of Krupno {version} did not start", ex);
+            SetUpdate(update, UpdateStage.Failed,
+                string.Format(Strings.Update_CantStart, version, ex is InvalidDataException ? Strings.Update_Mismatch : ex.Message));
+            return;
+        }
+        Log.Info($"Setup of Krupno {version} started ({(allUsers ? "for all users" : "for the current user")}); the window closes");
+        ExitRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>The ✕ on the update line: cancels the download, or hides the line until the next start.</summary>
+    private void HideUpdate()
+    {
+        if (_updateCts is { } download)
+            download.Cancel();
+        else
+            SetUpdate(null, UpdateStage.None);
+    }
+
+    /// <summary>
+    /// The first start after "Update": Setup starts Krupno again, the new version or, if it failed or was canceled, the old one.
+    /// Says which.
+    /// </summary>
+    private void FinishUpdate()
+    {
+        if (_settings.UpdatingTo is not { } target)
+            return;
+        _settings.UpdatingTo = null;
+        _settings.Save();
+        if (!Version.TryParse(target, out var version))
+            return;
+        if (UpdateCheck.Own >= version)
+        {
+            Log.Info($"Updated to Krupno {target}");
+            ShowToast(string.Format(Strings.Update_Installed, target), TimeSpan.FromSeconds(6));
+        }
+        else
+        {
+            Log.Warning($"Krupno {target} was not installed, this is still {UpdateCheck.Own.ToString(3)}; Setup's log: {UpdateInstall.SetupLogPath(version)}");
+            SetUpdate((version, UpdateCheck.ReleasePage(version)), UpdateStage.Failed, string.Format(Strings.Update_NotInstalled, target));
+        }
+    }
+
+    /// <summary>The installer an earlier "Update" downloaded; Setup may still be finishing when it starts Krupno again.</summary>
+    private async Task CleanUpUpdatesAsync()
+    {
+        if (await Task.Run(UpdateInstall.CleanUp))
+            return;
+        await Task.Delay(TimeSpan.FromSeconds(30));
+        if (_updateCts is null && _updateStage != UpdateStage.Downloading)
+            await Task.Run(UpdateInstall.CleanUp);
     }
 
     /// <summary>The release page in the browser: the installer and the ZIP are there, with what has changed.</summary>
@@ -1930,10 +2150,26 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    private void ShowToast(string message)
+    private void OpenSetupLog()
+    {
+        if (UpdateSetupLog is not { } path)
+            return;
+        try
+        {
+            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+        }
+        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
+        {
+            Log.Warning($"Can't open {path}: {ex.Message}");
+            ShowToast(ex.Message);
+        }
+    }
+
+    private void ShowToast(string message, TimeSpan? duration = null)
     {
         Toast = message;
         _toastTimer.Stop();
+        _toastTimer.Interval = duration ?? TimeSpan.FromSeconds(2.5);
         _toastTimer.Start();
     }
 

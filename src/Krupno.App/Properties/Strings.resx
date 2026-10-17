@@ -55,7 +55,10 @@
     <value>Check for updates</value>
   </data>
   <data name="CheckForUpdates_Description" xml:space="preserve">
-    <value>At startup, asks github.com which Krupno release is the latest. Nothing else is sent, and nothing is downloaded.</value>
+    <value>At startup, asks github.com which Krupno release is the latest. Nothing else is sent, and a new version is only downloaded when you ask for it.</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Close</value>
   </data>
   <data name="Chip_Original" xml:space="preserve">
     <value>Original · {0} × {1}</value>
@@ -345,6 +348,18 @@
   <data name="SelectFiles" xml:space="preserve">
     <value>Select files</value>
   </data>
+  <data name="Settings_Processing" xml:space="preserve">
+    <value>Processing</value>
+    <comment>A group in "Settings": device, tiles, TTA.</comment>
+  </data>
+  <data name="Settings_ToolTip" xml:space="preserve">
+    <value>Settings (Ctrl+,)</value>
+    <comment>The tooltip of the gear button that opens the settings window; Ctrl+, opens it too.</comment>
+  </data>
+  <data name="Settings_General" xml:space="preserve">
+    <value>General</value>
+    <comment>A group in "Settings": the language and the update check.</comment>
+  </data>
   <data name="ShowInFolder" xml:space="preserve">
     <value>Show in folder</value>
   </data>
@@ -380,7 +395,7 @@
   </data>
   <data name="Summary_NoUpdateCheck" xml:space="preserve">
     <value>no update check</value>
-    <comment>In the one-line summary under "Settings", when the update check is off.</comment>
+    <comment>In the summary in the tooltip of the settings button, when the update check is off.</comment>
   </data>
   <data name="Summary_Seamless" xml:space="preserve">
     <value>seamless</value>
@@ -474,12 +489,55 @@
     <value>Krupno {0} is available</value>
     <comment>{0} is the new version, such as 0.3.0.</comment>
   </data>
+  <data name="Update_CancelDownload" xml:space="preserve">
+    <value>Cancel the download</value>
+  </data>
+  <data name="Update_CantStart" xml:space="preserve">
+    <value>Couldn't start the installer of Krupno {0}: {1}</value>
+    <comment>{0} is the new version, {1} the reason Windows gave.</comment>
+  </data>
+  <data name="Update_CloseOthers" xml:space="preserve">
+    <value>Close the other Krupno windows and the command-line tool first, then try again.</value>
+    <comment>The installer replaces the files the other windows and the command-line tool are using.</comment>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>Download</value>
     <comment>Opens the release page in the browser.</comment>
   </data>
+  <data name="Update_Downloading" xml:space="preserve">
+    <value>Downloading Krupno {0}… {1}%</value>
+    <comment>{0} is the new version, {1} the percentage downloaded.</comment>
+  </data>
+  <data name="Update_Failed" xml:space="preserve">
+    <value>Couldn't download Krupno {0}: {1}</value>
+    <comment>{0} is the new version, {1} the reason (Update_Mismatch, or the network's error).</comment>
+  </data>
   <data name="Update_Hide" xml:space="preserve">
     <value>Hide</value>
+  </data>
+  <data name="Update_Install" xml:space="preserve">
+    <value>Update</value>
+    <comment>Downloads the new version and installs it; Krupno closes and starts again.</comment>
+  </data>
+  <data name="Update_Installed" xml:space="preserve">
+    <value>Krupno has been updated to {0}</value>
+    <comment>Shown once Krupno has started again after the update; {0} is the new version.</comment>
+  </data>
+  <data name="Update_Mismatch" xml:space="preserve">
+    <value>the downloaded file doesn't match the checksum published with the release</value>
+    <comment>The reason in Update_Failed: the installer's SHA-256 isn't the one in the release's SHA256SUMS.txt.</comment>
+  </data>
+  <data name="Update_NotInstalled" xml:space="preserve">
+    <value>The update to Krupno {0} wasn't installed.</value>
+    <comment>After the update Krupno started again in its old version: Setup failed or was canceled. {0} is the new version.</comment>
+  </data>
+  <data name="Update_SetupLog" xml:space="preserve">
+    <value>Setup log</value>
+    <comment>Opens the installer's log of the update that wasn't installed.</comment>
+  </data>
+  <data name="Update_WhatsNew" xml:space="preserve">
+    <value>What's new</value>
+    <comment>Opens the release page in the browser.</comment>
   </data>
   <data name="Upscale" xml:space="preserve">
     <value>Upscale</value>

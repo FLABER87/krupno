@@ -55,7 +55,10 @@
     <value>Kiểm tra bản cập nhật</value>
   </data>
   <data name="CheckForUpdates_Description" xml:space="preserve">
-    <value>Khi khởi động, hỏi github.com bản phát hành Krupno mới nhất là bản nào. Không gửi gì khác và không tải xuống gì.</value>
+    <value>Khi khởi động, hỏi github.com bản phát hành Krupno mới nhất là bản nào. Không gửi gì khác, và chỉ tải phiên bản mới khi bạn yêu cầu.</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Đóng</value>
   </data>
   <data name="Chip_Original" xml:space="preserve">
     <value>Ảnh gốc · {0} × {1}</value>
@@ -339,6 +342,14 @@
   <data name="SelectFiles" xml:space="preserve">
     <value>Chọn tệp</value>
   </data>
+  <data name="Settings_Processing" xml:space="preserve">
+    <value>Xử lý</value>
+  </data>
+  <data name="Settings_ToolTip" xml:space="preserve">
+    <value>Cài đặt (Ctrl+,)</value>
+  </data>
+  <data name="Settings_General" xml:space="preserve">
+    <value>Chung</value></data>
   <data name="ShowInFolder" xml:space="preserve">
     <value>Hiện trong thư mục</value>
   </data>
@@ -466,11 +477,44 @@
   <data name="Update_Available" xml:space="preserve">
     <value>Đã có Krupno {0}</value>
   </data>
+  <data name="Update_CancelDownload" xml:space="preserve">
+    <value>Hủy tải xuống</value>
+  </data>
+  <data name="Update_CantStart" xml:space="preserve">
+    <value>Không thể chạy trình cài đặt Krupno {0}: {1}</value>
+  </data>
+  <data name="Update_CloseOthers" xml:space="preserve">
+    <value>Hãy đóng các cửa sổ Krupno khác và công cụ dòng lệnh trước, rồi thử lại.</value>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>Tải xuống</value>
   </data>
+  <data name="Update_Downloading" xml:space="preserve">
+    <value>Đang tải Krupno {0}… {1}%</value>
+  </data>
+  <data name="Update_Failed" xml:space="preserve">
+    <value>Không thể tải Krupno {0}: {1}</value>
+  </data>
   <data name="Update_Hide" xml:space="preserve">
     <value>Ẩn</value>
+  </data>
+  <data name="Update_Install" xml:space="preserve">
+    <value>Cập nhật</value>
+  </data>
+  <data name="Update_Installed" xml:space="preserve">
+    <value>Đã cập nhật Krupno lên {0}</value>
+  </data>
+  <data name="Update_Mismatch" xml:space="preserve">
+    <value>tệp đã tải không khớp với mã kiểm tra (checksum) được công bố cùng bản phát hành</value>
+  </data>
+  <data name="Update_NotInstalled" xml:space="preserve">
+    <value>Bản cập nhật Krupno {0} chưa được cài đặt.</value>
+  </data>
+  <data name="Update_SetupLog" xml:space="preserve">
+    <value>Nhật ký cài đặt</value>
+  </data>
+  <data name="Update_WhatsNew" xml:space="preserve">
+    <value>Có gì mới</value>
   </data>
   <data name="Upscale" xml:space="preserve">
     <value>Phóng to</value>

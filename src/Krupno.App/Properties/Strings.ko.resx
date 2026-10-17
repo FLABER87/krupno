@@ -55,7 +55,10 @@
     <value>업데이트 확인</value>
   </data>
   <data name="CheckForUpdates_Description" xml:space="preserve">
-    <value>시작할 때 github.com에 최신 Krupno 릴리스를 확인합니다. 그 밖에는 아무것도 보내지 않고 아무것도 내려받지 않습니다.</value>
+    <value>시작할 때 github.com에 최신 Krupno 릴리스를 확인합니다. 그 밖에는 아무것도 보내지 않으며, 새 버전은 요청할 때만 내려받습니다.</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>닫기</value>
   </data>
   <data name="Chip_Original" xml:space="preserve">
     <value>원본 · {0} × {1}</value>
@@ -339,6 +342,14 @@
   <data name="SelectFiles" xml:space="preserve">
     <value>파일 선택</value>
   </data>
+  <data name="Settings_Processing" xml:space="preserve">
+    <value>처리</value>
+  </data>
+  <data name="Settings_ToolTip" xml:space="preserve">
+    <value>설정 (Ctrl+,)</value>
+  </data>
+  <data name="Settings_General" xml:space="preserve">
+    <value>일반</value></data>
   <data name="ShowInFolder" xml:space="preserve">
     <value>폴더에서 보기</value>
   </data>
@@ -466,11 +477,44 @@
   <data name="Update_Available" xml:space="preserve">
     <value>Krupno {0}을(를) 사용할 수 있습니다</value>
   </data>
+  <data name="Update_CancelDownload" xml:space="preserve">
+    <value>다운로드 취소</value>
+  </data>
+  <data name="Update_CantStart" xml:space="preserve">
+    <value>Krupno {0} 설치 프로그램을 시작하지 못했습니다: {1}</value>
+  </data>
+  <data name="Update_CloseOthers" xml:space="preserve">
+    <value>먼저 다른 Krupno 창과 명령줄 도구를 닫은 다음 다시 시도하세요.</value>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>다운로드</value>
   </data>
+  <data name="Update_Downloading" xml:space="preserve">
+    <value>Krupno {0} 다운로드 중… {1}%</value>
+  </data>
+  <data name="Update_Failed" xml:space="preserve">
+    <value>Krupno {0}을(를) 다운로드하지 못했습니다: {1}</value>
+  </data>
   <data name="Update_Hide" xml:space="preserve">
     <value>숨기기</value>
+  </data>
+  <data name="Update_Install" xml:space="preserve">
+    <value>업데이트</value>
+  </data>
+  <data name="Update_Installed" xml:space="preserve">
+    <value>Krupno가 {0}(으)로 업데이트되었습니다</value>
+  </data>
+  <data name="Update_Mismatch" xml:space="preserve">
+    <value>다운로드한 파일이 릴리스와 함께 게시된 체크섬과 일치하지 않습니다</value>
+  </data>
+  <data name="Update_NotInstalled" xml:space="preserve">
+    <value>Krupno {0} 업데이트가 설치되지 않았습니다.</value>
+  </data>
+  <data name="Update_SetupLog" xml:space="preserve">
+    <value>설치 로그</value>
+  </data>
+  <data name="Update_WhatsNew" xml:space="preserve">
+    <value>새로운 기능</value>
   </data>
   <data name="Upscale" xml:space="preserve">
     <value>업스케일</value>

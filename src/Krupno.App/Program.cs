@@ -1,4 +1,5 @@
 using Krupno.App.Infrastructure;
+using Krupno.Core.Processing;
 
 namespace Krupno.App;
 
@@ -10,6 +11,8 @@ public static class Program
     {
         if (!args.Contains(SingleInstance.NewWindowSwitch) && SingleInstance.TryHandOver(args))
             return;
+        // For the installer: it asks for this window to be closed instead of closing it in the middle of processing.
+        RunningMarker.Hold();
         UiLanguage.Apply(AppSettings.Load().Language);
         App.Main();
     }

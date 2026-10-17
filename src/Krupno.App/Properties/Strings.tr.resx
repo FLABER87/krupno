@@ -55,7 +55,10 @@
     <value>Güncellemeleri denetle</value>
   </data>
   <data name="CheckForUpdates_Description" xml:space="preserve">
-    <value>Başlangıçta github.com'a en son Krupno sürümünü sorar. Başka hiçbir şey gönderilmez ve hiçbir şey indirilmez.</value>
+    <value>Başlangıçta github.com'a en son Krupno sürümünü sorar. Başka hiçbir şey gönderilmez; yeni sürüm yalnızca siz istediğinizde indirilir.</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Kapat</value>
   </data>
   <data name="Chip_Original" xml:space="preserve">
     <value>Orijinal · {0} × {1}</value>
@@ -339,6 +342,14 @@
   <data name="SelectFiles" xml:space="preserve">
     <value>Dosya seç</value>
   </data>
+  <data name="Settings_Processing" xml:space="preserve">
+    <value>İşleme</value>
+  </data>
+  <data name="Settings_ToolTip" xml:space="preserve">
+    <value>Ayarlar (Ctrl+,)</value>
+  </data>
+  <data name="Settings_General" xml:space="preserve">
+    <value>Genel</value></data>
   <data name="ShowInFolder" xml:space="preserve">
     <value>Klasörde göster</value>
   </data>
@@ -466,11 +477,44 @@
   <data name="Update_Available" xml:space="preserve">
     <value>Krupno {0} kullanılabilir</value>
   </data>
+  <data name="Update_CancelDownload" xml:space="preserve">
+    <value>İndirmeyi iptal et</value>
+  </data>
+  <data name="Update_CantStart" xml:space="preserve">
+    <value>Krupno {0} yükleyicisi başlatılamadı: {1}</value>
+  </data>
+  <data name="Update_CloseOthers" xml:space="preserve">
+    <value>Önce diğer Krupno pencerelerini ve komut satırı aracını kapatıp yeniden deneyin.</value>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>İndir</value>
   </data>
+  <data name="Update_Downloading" xml:space="preserve">
+    <value>Krupno {0} indiriliyor… %{1}</value>
+  </data>
+  <data name="Update_Failed" xml:space="preserve">
+    <value>Krupno {0} indirilemedi: {1}</value>
+  </data>
   <data name="Update_Hide" xml:space="preserve">
     <value>Gizle</value>
+  </data>
+  <data name="Update_Install" xml:space="preserve">
+    <value>Güncelle</value>
+  </data>
+  <data name="Update_Installed" xml:space="preserve">
+    <value>Krupno {0} sürümüne güncellendi</value>
+  </data>
+  <data name="Update_Mismatch" xml:space="preserve">
+    <value>indirilen dosya, sürümle birlikte yayımlanan sağlama toplamıyla eşleşmiyor</value>
+  </data>
+  <data name="Update_NotInstalled" xml:space="preserve">
+    <value>Krupno {0} güncellemesi yüklenmedi.</value>
+  </data>
+  <data name="Update_SetupLog" xml:space="preserve">
+    <value>Kurulum günlüğü</value>
+  </data>
+  <data name="Update_WhatsNew" xml:space="preserve">
+    <value>Yenilikler</value>
   </data>
   <data name="Upscale" xml:space="preserve">
     <value>Büyüt</value>

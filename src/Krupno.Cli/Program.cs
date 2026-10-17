@@ -10,6 +10,8 @@ Console.OutputEncoding = Encoding.UTF8;
 // The command-line tool speaks English whatever the Windows language: scripts read its output, and the messages it passes on
 // from Krupno.Core (progress, errors) would otherwise follow the language the window is translated into.
 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
+// For the installer: it asks for Krupno to be closed instead of stopping a run halfway through to replace these files.
+RunningMarker.Hold();
 
 CliOptions options;
 try

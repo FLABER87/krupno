@@ -64,6 +64,10 @@ UninstallDisplayName=Krupno
 ChangesEnvironment=yes
 ChangesAssociations=yes
 SetupLogging=yes
+; Held by every Krupno.exe and krupno-cli.exe while it runs (src/Krupno.Core/Processing/RunningMarker.cs): Setup and the
+; uninstaller ask for Krupno to be closed first, rather than have the Restart Manager close it in the middle of processing.
+; The window's "Update" lets go of it before it starts Setup.
+AppMutex=Krupno-Running
 OutputDir={#OutputDir}
 OutputBaseFilename=Krupno-{#AppVersion}-setup-x64
 Compression=lzma2/ultra64
@@ -162,7 +166,8 @@ Root: HKA; Subkey: "{#FolderVerb}"; ValueType: string; ValueName: "MultiSelectMo
 Root: HKA; Subkey: "{#FolderVerb}\command"; ValueType: string; ValueData: """{app}\Krupno.exe"" ""%1"""; Tasks: contextmenu
 ; The update check (src/Krupno.App/Infrastructure/UpdateCheck.cs) as chosen here: the app's default until the user changes
 ; "Check for updates" in the window. With its time: a check turned off in an installation stays off even if the user had
-; turned it on in the window before, and the user can turn it on there again afterwards.
+; turned it on in the window before, and the user can turn it on there again afterwards. An update from the app keeps the
+; time of the installation before it (InstallStamp).
 Root: HKA; Subkey: "Software\Krupno"; ValueType: dword; ValueName: "CheckForUpdates"; ValueData: 1; Flags: uninsdeletekey; Tasks: updatecheck
 Root: HKA; Subkey: "Software\Krupno"; ValueType: dword; ValueName: "CheckForUpdates"; ValueData: 0; Flags: uninsdeletekey; Tasks: not updatecheck
 Root: HKA; Subkey: "Software\Krupno"; ValueType: string; ValueName: "CheckForUpdatesSetAt"; ValueData: "{code:InstallStamp}"; Flags: uninsdeletekey
@@ -300,10 +305,20 @@ begin
     Log('The app will start in ' + Culture + ', the language chosen for Setup');
 end;
 
+// Started by "Update" in the app (src/Krupno.App/Infrastructure/UpdateInstall.cs), silently, with /UPDATE=1.
+function UpdatingFromApp: Boolean;
+begin
+  Result := ExpandConstant('{param:UPDATE|0}') = '1';
+end;
+
 // When this installation made its update check choice (the [Registry] entries): the app tells a check turned off in this
-// installation from one turned off in an earlier one, after which the user may have turned it on in the window again.
+// installation from one turned off in an earlier one, after which the user may have turned it on in the window again. An
+// update from the app makes no choice of its own (the tasks are the previous installation's), so it keeps that one's time:
+// otherwise a check the user turned on in the window would be turned off by every update.
 function InstallStamp(Param: String): String;
 begin
+  if UpdatingFromApp and RegQueryStringValue(HKA, 'Software\Krupno', 'CheckForUpdatesSetAt', Result) and (Result <> '') then
+    Exit;
   Result := GetDateTimeString('yyyy-mm-dd hh:nn:ss', '-', ':');
 end;
 
@@ -317,6 +332,27 @@ begin
       RemoveFromPath(ExpandConstant('{app}'));
     SaveLanguageForApp;
   end;
+end;
+
+// "Update" in the app closed the window to start Setup: Krupno is started again when Setup ends, the new version or, if
+// the installation failed or was canceled and rolled back, the old one, which then says the update wasn't installed.
+// As the user who started Setup, even if it was elevated to install for all users.
+procedure DeinitializeSetup;
+var
+  App: String;
+  ResultCode: Integer;
+begin
+  if not UpdatingFromApp then
+    Exit;
+  try
+    App := ExpandConstant('{app}\Krupno.exe');
+  except
+    // Setup ended before it knew the folder.
+    Exit;
+  end;
+  if not FileExists(App) or
+     not ExecAsOriginalUser(App, '', ExtractFileDir(App), SW_SHOWNORMAL, ewNoWait, ResultCode) then
+    Log('Could not start ' + App + ' again');
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);

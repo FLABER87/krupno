@@ -34,6 +34,7 @@
     <Compile Include="..\..\src\Krupno.App\Infrastructure\Text.cs" Link="App\Text.cs" />
     <Compile Include="..\..\src\Krupno.App\Infrastructure\UiLanguage.cs" Link="App\UiLanguage.cs" />
     <Compile Include="..\..\src\Krupno.App\Infrastructure\UpdateCheck.cs" Link="App\UpdateCheck.cs" />
+    <Compile Include="..\..\src\Krupno.App\Infrastructure\UpdateInstall.cs" Link="App\UpdateInstall.cs" />
     <!-- Text.cs reads the window's text through the generated class; the tests themselves read the .resx files. -->
     <Compile Include="..\..\src\Krupno.App\Properties\Strings.Designer.cs" Link="App\Strings.Designer.cs" />
   </ItemGroup>

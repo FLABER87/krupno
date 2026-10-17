@@ -55,7 +55,10 @@
     <value>Periksa pembaruan</value>
   </data>
   <data name="CheckForUpdates_Description" xml:space="preserve">
-    <value>Saat dimulai, menanyakan ke github.com rilis Krupno mana yang terbaru. Tidak ada hal lain yang dikirim dan tidak ada yang diunduh.</value>
+    <value>Saat dimulai, menanyakan ke github.com rilis Krupno mana yang terbaru. Tidak ada hal lain yang dikirim, dan versi baru hanya diunduh jika Anda memintanya.</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Tutup</value>
   </data>
   <data name="Chip_Original" xml:space="preserve">
     <value>Asli · {0} × {1}</value>
@@ -339,6 +342,14 @@
   <data name="SelectFiles" xml:space="preserve">
     <value>Pilih file</value>
   </data>
+  <data name="Settings_Processing" xml:space="preserve">
+    <value>Pemrosesan</value>
+  </data>
+  <data name="Settings_ToolTip" xml:space="preserve">
+    <value>Pengaturan (Ctrl+,)</value>
+  </data>
+  <data name="Settings_General" xml:space="preserve">
+    <value>Umum</value></data>
   <data name="ShowInFolder" xml:space="preserve">
     <value>Tampilkan di folder</value>
   </data>
@@ -466,11 +477,44 @@
   <data name="Update_Available" xml:space="preserve">
     <value>Krupno {0} tersedia</value>
   </data>
+  <data name="Update_CancelDownload" xml:space="preserve">
+    <value>Batalkan unduhan</value>
+  </data>
+  <data name="Update_CantStart" xml:space="preserve">
+    <value>Tidak dapat menjalankan penginstal Krupno {0}: {1}</value>
+  </data>
+  <data name="Update_CloseOthers" xml:space="preserve">
+    <value>Tutup dulu jendela Krupno lainnya dan alat baris perintah, lalu coba lagi.</value>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>Unduh</value>
   </data>
+  <data name="Update_Downloading" xml:space="preserve">
+    <value>Mengunduh Krupno {0}… {1}%</value>
+  </data>
+  <data name="Update_Failed" xml:space="preserve">
+    <value>Tidak dapat mengunduh Krupno {0}: {1}</value>
+  </data>
   <data name="Update_Hide" xml:space="preserve">
     <value>Sembunyikan</value>
+  </data>
+  <data name="Update_Install" xml:space="preserve">
+    <value>Perbarui</value>
+  </data>
+  <data name="Update_Installed" xml:space="preserve">
+    <value>Krupno telah diperbarui ke {0}</value>
+  </data>
+  <data name="Update_Mismatch" xml:space="preserve">
+    <value>file yang diunduh tidak cocok dengan checksum yang diterbitkan bersama rilis</value>
+  </data>
+  <data name="Update_NotInstalled" xml:space="preserve">
+    <value>Pembaruan ke Krupno {0} tidak terpasang.</value>
+  </data>
+  <data name="Update_SetupLog" xml:space="preserve">
+    <value>Log penginstalan</value>
+  </data>
+  <data name="Update_WhatsNew" xml:space="preserve">
+    <value>Yang baru</value>
   </data>
   <data name="Upscale" xml:space="preserve">
     <value>Perbesar</value>

@@ -14,6 +14,9 @@ public static class Log
     /// <summary>The newest session logs that are kept; older ones are deleted when a session starts.</summary>
     private const int KeptFiles = 20;
 
+    /// <summary>The newest logs of Setup run by "Update" (setup-0.3.0.log, see UpdateInstall) that are kept.</summary>
+    private const int KeptSetupFiles = 5;
+
     private static readonly Lock Gate = new();
     private static StreamWriter? _writer;
 
@@ -40,7 +43,10 @@ public static class Log
             lock (Gate)
                 _writer = new StreamWriter(stream, new UTF8Encoding(false)) { AutoFlush = true };
             FilePath = path;
-            DeleteOld();
+            var logs = new DirectoryInfo(Folder);
+            // Newest first: a session's log by its name (the time it started), Setup's by when it was written.
+            DeleteOld(logs.GetFiles("krupno-*.log").OrderByDescending(f => f.Name, StringComparer.Ordinal), KeptFiles);
+            DeleteOld(logs.GetFiles("setup-*.log").OrderByDescending(f => f.LastWriteTimeUtc), KeptSetupFiles);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -85,11 +91,9 @@ public static class Log
         }
     }
 
-    private static void DeleteOld()
+    private static void DeleteOld(IEnumerable<FileInfo> newestFirst, int kept)
     {
-        foreach (var file in new DirectoryInfo(Folder).GetFiles("krupno-*.log")
-                     .OrderByDescending(f => f.Name, StringComparer.Ordinal)
-                     .Skip(KeptFiles))
+        foreach (var file in newestFirst.Skip(kept))
         {
             try
             {

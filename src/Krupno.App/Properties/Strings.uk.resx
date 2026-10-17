@@ -55,7 +55,10 @@
     <value>Перевіряти оновлення</value>
   </data>
   <data name="CheckForUpdates_Description" xml:space="preserve">
-    <value>Під час запуску запитує в github.com, який випуск Krupno останній. Більше нічого не надсилається й нічого не завантажується.</value>
+    <value>Під час запуску запитує в github.com, який випуск Krupno останній. Більше нічого не надсилається, а нова версія завантажується, лише коли ви про це попросите.</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Закрити</value>
   </data>
   <data name="Chip_Original" xml:space="preserve">
     <value>Оригінал · {0} × {1}</value>
@@ -339,6 +342,14 @@
   <data name="SelectFiles" xml:space="preserve">
     <value>Вибрати файли</value>
   </data>
+  <data name="Settings_Processing" xml:space="preserve">
+    <value>Обробка</value>
+  </data>
+  <data name="Settings_ToolTip" xml:space="preserve">
+    <value>Налаштування (Ctrl+,)</value>
+  </data>
+  <data name="Settings_General" xml:space="preserve">
+    <value>Загальні</value></data>
   <data name="ShowInFolder" xml:space="preserve">
     <value>Показати в теці</value>
   </data>
@@ -466,11 +477,44 @@
   <data name="Update_Available" xml:space="preserve">
     <value>Доступна версія Krupno {0}</value>
   </data>
+  <data name="Update_CancelDownload" xml:space="preserve">
+    <value>Скасувати завантаження</value>
+  </data>
+  <data name="Update_CantStart" xml:space="preserve">
+    <value>Не вдалося запустити інсталятор Krupno {0}: {1}</value>
+  </data>
+  <data name="Update_CloseOthers" xml:space="preserve">
+    <value>Спершу закрийте інші вікна Krupno та інструмент командного рядка, а потім спробуйте ще раз.</value>
+  </data>
   <data name="Update_Download" xml:space="preserve">
     <value>Завантажити</value>
   </data>
+  <data name="Update_Downloading" xml:space="preserve">
+    <value>Завантаження Krupno {0}… {1}%</value>
+  </data>
+  <data name="Update_Failed" xml:space="preserve">
+    <value>Не вдалося завантажити Krupno {0}: {1}</value>
+  </data>
   <data name="Update_Hide" xml:space="preserve">
     <value>Сховати</value>
+  </data>
+  <data name="Update_Install" xml:space="preserve">
+    <value>Оновити</value>
+  </data>
+  <data name="Update_Installed" xml:space="preserve">
+    <value>Krupno оновлено до версії {0}</value>
+  </data>
+  <data name="Update_Mismatch" xml:space="preserve">
+    <value>завантажений файл не збігається з контрольною сумою, опублікованою разом із випуском</value>
+  </data>
+  <data name="Update_NotInstalled" xml:space="preserve">
+    <value>Оновлення до Krupno {0} не встановилося.</value>
+  </data>
+  <data name="Update_SetupLog" xml:space="preserve">
+    <value>Журнал інсталятора</value>
+  </data>
+  <data name="Update_WhatsNew" xml:space="preserve">
+    <value>Що нового</value>
   </data>
   <data name="Upscale" xml:space="preserve">
     <value>Збільшити</value>
