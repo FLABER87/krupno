@@ -307,3 +307,41 @@ zhhant.ModelDat2=相片，最多細節：BHI DAT2 fp32 (CC BY 4.0) · 非常慢
 zhhant.ModelEsrganFp16=經典：Real-ESRGAN x4plus fp16 (BSD-3-Clause)
 zhhant.ModelEsrgan=經典：Real-ESRGAN x4plus fp32 (BSD-3-Clause)
 zhhant.ModelGeneral=草稿：Real-ESRGAN general x4v3 (BSD-3-Clause) · 非常快
+
+; 繁體中文（香港）
+zhhk.TypeFull=完整安裝（所有模型）
+zhhk.TypeCompact=精簡安裝（僅建議的模型）
+zhhk.TypeCustom=自訂安裝
+zhhk.ComponentApp=Krupno（桌面應用程式與命令列工具 krupno-cli）
+zhhk.ComponentModels=模型（安裝時從 GitHub 下載）
+zhhk.GroupCommandLine=命令列：
+zhhk.TaskPath=將安裝資料夾加入 PATH，以便在任何主控台執行 krupno-cli
+zhhk.GroupExplorer=檔案總管整合：
+zhhk.ContextMenu=用 Krupno 放大
+zhhk.TaskContextMenu=在檔案總管中圖片和資料夾的右鍵選單加入「用 Krupno 放大」
+zhhk.ModelRealPlksr=相片，快速：BHI RealPLKSR (CC BY 4.0) · 推薦
+zhhk.ModelDat2Fp16=相片，最多細節：BHI DAT2 fp16 (CC BY 4.0)
+zhhk.ModelUltraSharp=通用：UltraSharpV2 (CC BY-NC-SA 4.0) · 非商業
+zhhk.ModelDat2=相片，最多細節：BHI DAT2 fp32 (CC BY 4.0) · 非常慢
+zhhk.ModelEsrganFp16=經典：Real-ESRGAN x4plus fp16 (BSD-3-Clause)
+zhhk.ModelEsrgan=經典：Real-ESRGAN x4plus fp32 (BSD-3-Clause)
+zhhk.ModelGeneral=草稿：Real-ESRGAN general x4v3 (BSD-3-Clause) · 非常快
+
+; 繁體中文（澳門）
+zhmo.TypeFull=完整安裝（所有模型）
+zhmo.TypeCompact=精簡安裝（僅建議的模型）
+zhmo.TypeCustom=自訂安裝
+zhmo.ComponentApp=Krupno（桌面應用程式與命令列工具 krupno-cli）
+zhmo.ComponentModels=模型（安裝時從 GitHub 下載）
+zhmo.GroupCommandLine=命令列：
+zhmo.TaskPath=將安裝資料夾加入 PATH，以便在任何主控台執行 krupno-cli
+zhmo.GroupExplorer=檔案總管整合：
+zhmo.ContextMenu=用 Krupno 放大
+zhmo.TaskContextMenu=在檔案總管中圖片和資料夾的右鍵選單加入「用 Krupno 放大」
+zhmo.ModelRealPlksr=相片，快速：BHI RealPLKSR (CC BY 4.0) · 推薦
+zhmo.ModelDat2Fp16=相片，最多細節：BHI DAT2 fp16 (CC BY 4.0)
+zhmo.ModelUltraSharp=通用：UltraSharpV2 (CC BY-NC-SA 4.0) · 非商業
+zhmo.ModelDat2=相片，最多細節：BHI DAT2 fp32 (CC BY 4.0) · 非常慢
+zhmo.ModelEsrganFp16=經典：Real-ESRGAN x4plus fp16 (BSD-3-Clause)
+zhmo.ModelEsrgan=經典：Real-ESRGAN x4plus fp32 (BSD-3-Clause)
+zhmo.ModelGeneral=草稿：Real-ESRGAN general x4v3 (BSD-3-Clause) · 非常快
