@@ -13,48 +13,63 @@ internal static class JobPlanner
     /// <param name="inputs">Files, folders and patterns such as "photos\*.jpg" (in the file name only).</param>
     /// <param name="output">-o: a file for a single image, otherwise a folder; null for the defaults.</param>
     /// <param name="suffix">The end of a result's name next to its source: "_x4", "_3840w".</param>
-    public static List<Job> Plan(IReadOnlyList<string> inputs, string? output, ImageFileFormat? format, bool recursive, string suffix)
+    public static List<Job> Plan(IReadOnlyList<string> inputs, string? output, ImageFileFormat? format, bool recursive, string suffix) =>
+        Plan(inputs, output, format, recursive, suffix, out _);
+
+    /// <param name="leftOut">How many images found in folders and patterns were left out as results of other images.</param>
+    public static List<Job> Plan(IReadOnlyList<string> inputs, string? output, ImageFileFormat? format, bool recursive, string suffix,
+        out int leftOut)
     {
+        leftOut = 0;
         string extension = ImageCodec.GetExtension(format ?? ImageFileFormat.Png);
-        if (inputs.Count == 1 && inputs[0].IndexOfAny(Wildcards) < 0 && File.Exists(inputs[0]))
+        if (inputs.Count == 1 && !HasWildcard(inputs[0]) && File.Exists(inputs[0]))
             return [PlanFile(Path.GetFullPath(inputs[0]), output, format, extension, suffix)];
 
         if (output is not null && File.Exists(output))
             throw new CliException($"-o must be a folder when there is more than one image: \"{output}\" is a file.");
         string? outputDir = output is null ? null : Path.GetFullPath(output);
 
-        // Each image with the result it would get, before names are made unique. The same image given twice is taken once.
-        var planned = new List<Job>();
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // Each image with the result it would get, before names are made unique. The same image given twice is taken once,
+        // and named on the command line it counts as named, wherever else it is found too.
+        var planned = new List<(Job Job, bool Named)>();
+        var index = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         foreach (string input in inputs)
         {
-            foreach (var (file, target) in Expand(input, outputDir, recursive, extension, suffix))
+            foreach (var (file, target, named) in Expand(input, outputDir, recursive, extension, suffix))
             {
-                if (seen.Add(file))
-                    planned.Add(new Job(file, target));
+                if (index.TryGetValue(OutputPaths.Key(file), out int at))
+                    planned[at] = planned[at] with { Named = planned[at].Named || named };
+                else
+                {
+                    index[OutputPaths.Key(file)] = planned.Count;
+                    planned.Add((new Job(file, target), named));
+                }
             }
         }
 
-        // An image that is the result of another one is left out: a pattern like "*.png" next to the sources, or "-r" with -o
-        // inside the folder, would otherwise pick up the results of an earlier run and upscale them again.
-        var results = new HashSet<string>(planned.Select(j => j.Output), StringComparer.OrdinalIgnoreCase);
-        planned.RemoveAll(j => results.Contains(j.Input) && !string.Equals(j.Input, j.Output, StringComparison.OrdinalIgnoreCase));
+        // An image found in a folder or by a pattern that is the result of another one is left out: "*.png" next to the
+        // sources, or "-r" with -o inside the folder, would otherwise pick up the results of an earlier run and upscale them
+        // again. A result is known by the name it gets, plain or with its source's extension after a clash (see OutputPaths).
+        // An image named on the command line is always taken, and then it is a source no result may replace.
+        var results = new HashSet<string>(planned.SelectMany(p => new[] { p.Job.Output, OutputPaths.Tagged(p.Job.Output, p.Job.Input) }).Select(OutputPaths.Key),
+            StringComparer.OrdinalIgnoreCase);
+        leftOut = planned.RemoveAll(p => !p.Named && results.Contains(OutputPaths.Key(p.Job.Input))
+                                         && !string.Equals(OutputPaths.Key(p.Job.Input), OutputPaths.Key(p.Job.Output), StringComparison.OrdinalIgnoreCase));
 
-        var outputs = OutputPaths.MakeUnique(planned.Select(j => j.Input), planned.Select(j => j.Output).ToList());
-        return planned.Select((j, i) => j with { Output = outputs[i] }).ToList();
+        var outputs = OutputPaths.MakeUnique(planned.Select(p => p.Job.Input).ToList(), planned.Select(p => p.Job.Output).ToList());
+        return planned.Select((p, i) => p.Job with { Output = outputs[i] }).ToList();
     }
 
-    private static IEnumerable<(string File, string Output)> Expand(string input, string? outputDir, bool recursive,
+    private static IEnumerable<(string File, string Output, bool Named)> Expand(string input, string? outputDir, bool recursive,
         string extension, string suffix)
     {
         string? root;
         IEnumerable<string> files;
-        int wildcard = input.IndexOfAny(Wildcards);
-        if (wildcard >= 0)
+        if (HasWildcard(input))
         {
             string pattern = Path.GetFileName(input);
             string directory = Path.GetDirectoryName(input) is { Length: > 0 } d ? d : ".";
-            if (pattern.Length == 0 || directory.IndexOfAny(Wildcards) >= 0)
+            if (pattern.Length == 0 || HasWildcard(directory))
                 throw new CliException($"\"{input}\": wildcards are only supported in the file name, not in folder names.");
             root = Path.GetFullPath(directory);
             if (!Directory.Exists(root))
@@ -62,13 +77,13 @@ internal static class JobPlanner
             files = Enumerate(root, pattern, recursive);
             // Patterns keep the results next to their sources, like single files.
             if (outputDir is null)
-                return Ordered(files).Select(f => (f, NextToSource(f, extension, suffix)));
+                return Ordered(files).Select(f => (f, NextToSource(f, extension, suffix), false));
         }
         else
         {
             string path = Path.GetFullPath(input);
             if (File.Exists(path))
-                return [(path, outputDir is null ? NextToSource(path, extension, suffix) : InFolder(outputDir, path, extension))];
+                return [(path, outputDir is null ? NextToSource(path, extension, suffix) : Target(outputDir, path, extension, suffix), true)];
             if (!Directory.Exists(path))
                 throw new CliException($"File or folder not found: {path}");
             root = path;
@@ -78,7 +93,7 @@ internal static class JobPlanner
 
         // Subfolders are repeated under the output folder.
         string target = outputDir;
-        return Ordered(files).Select(f => (f, InFolder(Path.Combine(target, Path.GetRelativePath(root, Path.GetDirectoryName(f)!)), f, extension)));
+        return Ordered(files).Select(f => (f, Target(Path.Combine(target, Path.GetRelativePath(root, Path.GetDirectoryName(f)!)), f, extension, suffix), false));
     }
 
     private static Job PlanFile(string input, string? output, ImageFileFormat? format, string extension, string suffix)
@@ -87,13 +102,10 @@ internal static class JobPlanner
             return new Job(input, NextToSource(input, extension, suffix));
 
         if (Directory.Exists(output) || output.EndsWith('\\') || output.EndsWith('/'))
-        {
-            // The source's folder is a valid choice too: then the name gets " (2)" instead of replacing the source.
-            return new Job(input, OutputPaths.MakeUnique([input], [InFolder(Path.GetFullPath(output), input, extension)])[0]);
-        }
+            return new Job(input, OutputPaths.MakeUnique([input], [Target(Path.GetFullPath(output), input, extension, suffix)])[0]);
 
         string path = Path.GetFullPath(output);
-        if (string.Equals(path, input, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(OutputPaths.Key(path), OutputPaths.Key(input), StringComparison.OrdinalIgnoreCase))
             throw new CliException("The output file is the source image itself; choose another name.");
         // An unknown extension would get PNG data under a misleading name; a name without an extension stays PNG.
         if (format is null && Path.GetExtension(path) is { Length: > 0 } given && ImageCodec.FormatFromExtension(path) is null)
@@ -119,6 +131,21 @@ internal static class JobPlanner
     private static string NextToSource(string file, string extension, string suffix) =>
         Path.Combine(Path.GetDirectoryName(file)!, Path.GetFileNameWithoutExtension(file) + suffix + extension);
 
-    private static string InFolder(string folder, string file, string extension) =>
-        Path.GetFullPath(Path.Combine(folder, Path.GetFileNameWithoutExtension(file) + extension));
+    /// <summary>
+    /// The result in an output folder keeps the source's name ("a.jpg" → "a.png"); in the source's own folder it gets the suffix,
+    /// as next to the source: "a.png" as its result would replace the source or another image there, and a rerun couldn't tell
+    /// the earlier results from the sources.
+    /// </summary>
+    private static string Target(string folder, string file, string extension, string suffix)
+    {
+        string path = Path.GetFullPath(Path.Combine(folder, Path.GetFileNameWithoutExtension(file) + extension));
+        return string.Equals(OutputPaths.Key(Path.GetDirectoryName(path)!), OutputPaths.Key(Path.GetDirectoryName(file)!), StringComparison.OrdinalIgnoreCase)
+            ? NextToSource(file, extension, suffix)
+            : path;
+    }
+
+    /// <summary>A "*" or "?" outside the "\\?\" prefix of a long path.</summary>
+    private static bool HasWildcard(string path) =>
+        (path.StartsWith(@"\\?\", StringComparison.Ordinal) || path.StartsWith(@"\\.\", StringComparison.Ordinal) ? path[4..] : path)
+        .IndexOfAny(Wildcards) >= 0;
 }

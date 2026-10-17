@@ -21,7 +21,11 @@ public class SingleInstanceTests
 
             // Handed over while the window is still starting: kept until it attaches.
             Assert.True(SingleInstance.TryHandOver(["early.png"]));
-            SingleInstance.Attach((paths, arrivedAt) => received.Enqueue((paths, arrivedAt)));
+            SingleInstance.Attach((paths, arrivedAt, _) =>
+            {
+                received.Enqueue((paths, arrivedAt));
+                return Task.FromResult(true);
+            });
             Assert.Equal([Path.GetFullPath("early.png")], Assert.Single(received).Paths);
 
             // Explorer starts a process for every file of a selection, all at once.
@@ -40,6 +44,25 @@ public class SingleInstanceTests
             Assert.Equal(
                 Enumerable.Range(0, Clients).Select(i => $"{Path.GetFullPath($"file{i}.png")}|{Path.GetFullPath($"other{i}.jpg")}").Order(),
                 lists.Select(l => string.Join("|", l)).Order());
+
+            // A window that can't take them (its dispatcher is shutting down) doesn't answer, and the sender opens its own.
+            SingleInstance.Attach((_, _, _) => Task.FromResult(false));
+            Assert.False(SingleInstance.TryHandOver(["refused.png"]));
+
+            // The window says only once it has taken them, which may take a moment on a busy UI thread.
+            SingleInstance.Attach(async (_, _, _) =>
+            {
+                await Task.Delay(300);
+                return true;
+            });
+            Assert.True(SingleInstance.TryHandOver(["slow.png"]));
+
+            // Nor does a window that is closing answer, and the sender doesn't wait for the timeout to find out.
+            SingleInstance.Attach((_, _, _) => Task.FromResult(true));
+            SingleInstance.Stop();
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            Assert.False(SingleInstance.TryHandOver(["late.png"]));
+            Assert.True(watch.Elapsed < TimeSpan.FromSeconds(4), $"took {watch.Elapsed}");
         }
         finally
         {

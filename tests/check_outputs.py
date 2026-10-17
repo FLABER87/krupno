@@ -224,18 +224,18 @@ for label in ("broken", "broken_gif"):
     check(f"{label}.log", "Error:" in log(label) and "Unhandled" not in log(label) and not (out / f"{label}.png").exists(),
           " | ".join(line for line in log(label).splitlines() if line.strip()) or "empty output")
 
-# The source's own folder as the output: the source stays as it was, the result gets " (2)".
+# The source's own folder as the output: the source stays as it was, the result is named as next to the source.
 same_src = out / "same" / "noise.png"
-same_out = out / "same" / "noise (2).png"
+same_out = out / "same" / "noise_x4.png"
 check("same_folder", same_src.exists() and Image.open(same_src).size == (300, 200)
       and same_out.exists() and Image.open(same_out).size == (1200, 800),
       f"source {Image.open(same_src).size if same_src.exists() else 'missing'}, "
       f"result {Image.open(same_out).size if same_out.exists() else 'missing'}")
 
-# "x.jpg" and "x.png" from one folder: both results are kept ("x.jpg" comes first alphabetically and gets "x.png").
+# "x.jpg" and "x.png" from one folder: both results are kept, each named with its source's extension.
 dup = out / "dup_out"
-check("dup_names", (dup / "x.png").exists() and (dup / "x (2).png").exists()
-      and Image.open(dup / "x.png").size == (90 * 4, 160 * 4) and Image.open(dup / "x (2).png").size == (1200, 800),
+check("dup_names", (dup / "x (jpg).png").exists() and (dup / "x (png).png").exists() and not (dup / "x.png").exists()
+      and Image.open(dup / "x (jpg).png").size == (90 * 4, 160 * 4) and Image.open(dup / "x (png).png").size == (1200, 800),
       ", ".join(sorted(p.name for p in dup.iterdir())) if dup.exists() else "folder missing")
 
 # A save that fails in the background (the first file of a batch is written while the second one is processed): reported with

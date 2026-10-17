@@ -69,6 +69,15 @@ namespace Krupno.Core.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to {0} can't run this whole model: it doesn't support all of its operations. Choose the GPU through DirectML or the CPU..
+        /// </summary>
+        internal static string Error_AcceleratorUnsupported {
+            get {
+                return ResourceManager.GetString("Error_AcceleratorUnsupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cannot open "{0}": the file is corrupt or is not an image..
         /// </summary>
         internal static string Error_CannotOpen {

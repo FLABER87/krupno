@@ -15,6 +15,9 @@
   <data name="Error_AcceleratorMissing" xml:space="preserve">
     <value>{0} não está mais disponível: escolha outro dispositivo.</value>
   </data>
+  <data name="Error_AcceleratorUnsupported" xml:space="preserve">
+    <value>{0} não consegue executar este modelo por inteiro: nem todas as operações dele são suportadas. Escolha a GPU via DirectML ou a CPU.</value>
+  </data>
   <data name="Error_CannotOpen" xml:space="preserve">
     <value>Não é possível abrir “{0}”: o arquivo está corrompido ou não é uma imagem.</value>
   </data>

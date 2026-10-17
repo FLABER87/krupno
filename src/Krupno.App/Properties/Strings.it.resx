@@ -148,7 +148,7 @@
     <value>Nessun modello selezionato.</value>
   </data>
   <data name="Error_NoneUpscaled" xml:space="preserve">
-    <value>Nessuno dei {0} file è stato ingrandito. {1}</value>
+    <value>Il file non è stato ingrandito. {1}|Nessuno dei {0} file è stato ingrandito. {1}</value>
   </data>
   <data name="Error_OutputFolder" xml:space="preserve">
     <value>Impossibile salvare nella cartella di destinazione: {0} Scegli un'altra cartella o salva accanto agli originali.</value>

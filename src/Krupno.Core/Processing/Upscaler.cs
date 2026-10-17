@@ -58,6 +58,11 @@ public sealed class Upscaler(UpscaleModel model)
     private const int FineShrinkLimit = 512;
     /// <summary>The rounds of test-time augmentation: the 8 orientations.</summary>
     private const int RoundCount = 8;
+    /// <summary>
+    /// The sessions the model keeps with test-time augmentation: a window and its transpose in each of two passes. With only two,
+    /// a second pass would push out the first one's and every image would compile them again (about 10 s each for DAT2).
+    /// </summary>
+    private const int AugmentedSessionCapacity = 4;
 
     /// <summary>The tile chosen after running out of memory has already been reported: once per batch, not for every frame and pass.</summary>
     private bool _tileLimitReported;
@@ -86,6 +91,7 @@ public sealed class Upscaler(UpscaleModel model)
         var (targetWidth, targetHeight) = OutputSize(input.Width, input.Height, options);
         if (!ImageBuffer.CanAllocate(targetWidth, targetHeight))
             throw new InvalidOperationException(string.Format(Strings.Error_ResultTooLarge, targetWidth, targetHeight));
+        model.SetSessionCapacity(options.TestTimeAugmentation ? AugmentedSessionCapacity : UpscaleModel.DefaultSessionCapacity);
 
         // The network doesn't see alpha: it is resized separately, which is cheap. The colors under fully transparent pixels
         // are filled from the visible ones first, otherwise the (usually black) color stored there bleeds into the edges.
@@ -187,39 +193,66 @@ public sealed class Upscaler(UpscaleModel model)
         if (!options.TestTimeAugmentation)
             return RunOrientation(source, options, pass, passCount, progress, cancellationToken);
 
-        // The EXIF orientations 1–8 are exactly the 8 rotations and mirrorings. Each result is turned back and added up;
-        // the network output is opaque, so only the colors are summed (8 × 255 fits in a ushort).
-        ushort[]? sum = null;
-        ImageBuffer? result = null;
+        // A quarter turn transposes the intermediate, and the size check isn't symmetric (WIC's row limit): check the transposed
+        // one as well before the first four rounds, rather than fail on the fifth.
+        int scale = model.Info.Scale;
+        long width = (long)source.Width * scale, height = (long)source.Height * scale;
+        if (!ImageBuffer.CanAllocate(width, height) || !ImageBuffer.CanAllocate(height, width))
+            throw new InvalidOperationException(Strings.Error_IntermediateTooLarge);
+
+        // The EXIF orientations 1–8 are exactly the 8 rotations and mirrorings. Each round's result is added up turned back; the
+        // network output is opaque, so only the colors are summed (8 × 255 fits in a ushort). A result is read through the
+        // orientation's pixel mapping instead of being turned back as a copy, so a round holds its result (4 bytes an output
+        // pixel) and the sum (6), not another 4 for the copy: for ×16 of a 1600×1000 photo that is 4.1 GB rather than 5.7 GB.
+        var sum = new ushort[width * height * 3];
         for (int orientation = 1; orientation <= RoundCount; orientation++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var turned = source.ApplyExifOrientation(orientation);
-            var roundProgress = progress is null ? null : new RoundProgress(progress, orientation);
-            result = RunOrientation(turned, options, pass, passCount, roundProgress, cancellationToken)
-                .ApplyExifOrientation(InverseOrientation(orientation));
-            sum ??= new ushort[result.Width * result.Height * 3];
-            AddColors(result.Pixels, sum);
+            AddRound(source, orientation, options, pass, passCount, progress, sum, cancellationToken);
         }
 
-        // The last result becomes the average.
-        Average(sum!, RoundCount, result!.Pixels);
-        return result;
+        var average = new ImageBuffer((int)width, (int)height);
+        Average(sum, RoundCount, average.Pixels);
+        return average;
     }
 
-    /// <summary>Adds the colors of BGRA pixels to <paramref name="sum"/>, three per pixel.</summary>
-    internal static void AddColors(ReadOnlySpan<byte> bgra, Span<ushort> sum)
+    /// <summary>
+    /// One round of test-time augmentation: the image in <paramref name="orientation"/>, upscaled, added to <paramref name="sum"/>.
+    /// A method of its own, so that neither the turned image nor the result outlives the round, even before the JIT optimizes.
+    /// </summary>
+    private void AddRound(ImageBuffer source, int orientation, UpscaleOptions options, int pass, int passCount,
+        IProgress<UpscaleProgress>? progress, ushort[] sum, CancellationToken cancellationToken)
     {
-        for (int i = 0, s = 0; i < bgra.Length; i += ImageBuffer.BytesPerPixel, s += 3)
+        var turned = source.ApplyExifOrientation(orientation);
+        var roundProgress = progress is null ? null : new RoundProgress(progress, orientation);
+        var result = RunOrientation(turned, options, pass, passCount, roundProgress, cancellationToken);
+        AddColors(result, InverseOrientation(orientation), sum);
+    }
+
+    /// <summary>
+    /// Adds the colors of <paramref name="turned"/>, turned by EXIF orientation <paramref name="orientation"/>, to <paramref name="sum"/>
+    /// (three per pixel of the turned-back image): what adding up <c>turned.ApplyExifOrientation(orientation)</c> would, without the copy.
+    /// </summary>
+    internal static void AddColors(ImageBuffer turned, int orientation, Span<ushort> sum)
+    {
+        int tw = turned.Width, th = turned.Height;
+        int width = orientation >= 5 ? th : tw, height = orientation >= 5 ? tw : th;
+        var px = turned.Pixels;
+        for (int y = 0, s = 0; y < height; y++)
         {
-            sum[s] += bgra[i];
-            sum[s + 1] += bgra[i + 1];
-            sum[s + 2] += bgra[i + 2];
+            for (int x = 0; x < width; x++, s += 3)
+            {
+                var (sx, sy) = ImageBuffer.SourceOf(orientation, x, y, tw, th);
+                int i = (sy * tw + sx) * ImageBuffer.BytesPerPixel;
+                sum[s] += px[i];
+                sum[s + 1] += px[i + 1];
+                sum[s + 2] += px[i + 2];
+            }
         }
     }
 
     /// <summary>Writes the colors of <paramref name="sum"/> divided by <paramref name="count"/>, rounded to the nearest level
-    /// (halves up), into BGRA pixels; alpha stays.</summary>
+    /// (halves up), into BGRA pixels, opaque like the network's results.</summary>
     internal static void Average(ReadOnlySpan<ushort> sum, int count, Span<byte> bgra)
     {
         for (int i = 0, s = 0; i < bgra.Length; i += ImageBuffer.BytesPerPixel, s += 3)
@@ -227,6 +260,7 @@ public sealed class Upscaler(UpscaleModel model)
             bgra[i] = (byte)((sum[s] + count / 2) / count);
             bgra[i + 1] = (byte)((sum[s + 1] + count / 2) / count);
             bgra[i + 2] = (byte)((sum[s + 2] + count / 2) / count);
+            bgra[i + 3] = 255;
         }
     }
 
@@ -269,13 +303,14 @@ public sealed class Upscaler(UpscaleModel model)
             throw new InvalidOperationException(Strings.Error_IntermediateTooLarge);
 
         int tileSize = StartTile(source, options.TileSize, pass, passCount, progress);
+        bool retriedAlone = false;
         while (true)
         {
             var device = model.Device;
             var (width, height) = model.ChooseWindow(source.Width, source.Height, tileSize);
             try
             {
-                using var runner = new TileRunner(model, width, height);
+                using var runner = CreateRunner(width, height, cancellationToken);
                 if (model.Device != device)
                 {
                     // Creating the session fell back to the CPU after the GPU had already reduced the tile: the CPU has no
@@ -289,10 +324,21 @@ public sealed class Upscaler(UpscaleModel model)
                 }
                 return RunTiles(runner, source, options.TilePadding, pass, passCount, progress, cancellationToken);
             }
-            catch (OnnxRuntimeException) when (!cancellationToken.IsCancellationRequested &&
-                                               SmallerTile(source, width, height) is int smaller)
+            catch (OnnxRuntimeException ex) when (!cancellationToken.IsCancellationRequested && MayBeOutOfMemory(device, ex) &&
+                                                  (!retriedAlone && model.HoldsOtherSessions(width, height) ||
+                                                   SmallerTile(source, width, height) is not null))
             {
+                if (!retriedAlone && model.HoldsOtherSessions(width, height))
+                {
+                    // The sessions of other windows (the second pass's, or with test-time augmentation the transposed one's)
+                    // hold video memory too: without them this window may well fit, so it gets one more try before it shrinks,
+                    // also when it can't shrink any further.
+                    retriedAlone = true;
+                    model.ReleaseSessions();
+                    continue;
+                }
                 // Usually this means out of VRAM or the D3D12 resource size limit: shrink the window and try again.
+                int smaller = SmallerTile(source, width, height)!.Value;
                 tileSize = smaller;
                 model.LimitTile(tileSize);
                 model.ReleaseSessions();
@@ -301,6 +347,48 @@ public sealed class Upscaler(UpscaleModel model)
                     string.Format(Strings.Progress_TileReduced, width, height, tileSize), IsWarning: true));
             }
         }
+    }
+
+    /// <summary>
+    /// Whether a failed run or session may mean the window didn't fit. DirectML's errors can't be told apart by type, so any of
+    /// them shrinks the tile (see <see cref="UpscaleModel"/>). With a vendor's provider every attempt is an engine build of seconds
+    /// to minutes, so only an error that reads as out of memory does; any other one says what is wrong at once.
+    /// </summary>
+    private static bool MayBeOutOfMemory(ExecutionDevice device, OnnxRuntimeException ex) =>
+        device.Kind != DeviceKind.Accelerator || UpscaleModel.LooksLikeOutOfMemory(ex.Message);
+
+    /// <summary>
+    /// The runner and its session for a window. Building a session can take long (DirectML compiles the graph, ~10 s for DAT2;
+    /// an accelerator's engine, minutes) and ONNX Runtime can't stop it, so a canceled run doesn't wait for it: the build goes on
+    /// in the background, and what it builds is kept (the model's session, an accelerator's compiled model on disk).
+    /// </summary>
+    private TileRunner CreateRunner(int width, int height, CancellationToken cancellationToken)
+    {
+        if (model.Device.Kind == DeviceKind.Cpu || !cancellationToken.CanBeCanceled)
+            return new TileRunner(model, width, height, cancellationToken);
+
+        var creating = Task.Run(() => new TileRunner(model, width, height, cancellationToken));
+        try
+        {
+            creating.Wait(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // Nobody waits for it any more: the runner is let go, and a failure (the model disposed meanwhile) is observed.
+            _ = creating.ContinueWith(t =>
+            {
+                if (t.IsCompletedSuccessfully)
+                    t.Result.Dispose();
+                else
+                    _ = t.Exception;
+            }, TaskScheduler.Default);
+            throw;
+        }
+        catch (AggregateException)
+        {
+            // Rethrown below as the exception the session threw, which the out-of-memory handling looks for.
+        }
+        return creating.GetAwaiter().GetResult();
     }
 
     /// <summary>The requested tile, but no larger than the one chosen on previous frames and passes after running out of memory.</summary>

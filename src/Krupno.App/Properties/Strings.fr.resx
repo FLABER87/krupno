@@ -148,7 +148,7 @@
     <value>Aucun modèle n'est sélectionné.</value>
   </data>
   <data name="Error_NoneUpscaled" xml:space="preserve">
-    <value>Aucun des {0} fichiers n'a pu être agrandi. {1}</value>
+    <value>Le fichier n'a pas pu être agrandi. {1}|Aucun des {0} fichiers n'a pu être agrandi. {1}</value>
   </data>
   <data name="Error_OutputFolder" xml:space="preserve">
     <value>Impossible d'enregistrer dans le dossier de sortie : {0} Choisissez un autre dossier ou enregistrez à côté des originaux.</value>

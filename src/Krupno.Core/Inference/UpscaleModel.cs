@@ -22,7 +22,8 @@ public sealed class UpscaleModel : IDisposable
     /// <summary>Side multiple for models without metadata: leaves headroom for pixel-unshuffle and window attention.</summary>
     private const int DefaultSizeMultiple = 8;
     private const int ProbeSize = 32;
-    private const int MaxCachedSessions = 2;
+    /// <summary>The sessions kept by default: a window for the first pass and one for the second.</summary>
+    internal const int DefaultSessionCapacity = 2;
 
     /// <summary>
     /// <see cref="Inspect"/> creates a full CPU session: about 3 s for DAT2 or UltraSharpV2. The app inspects a model when it is
@@ -30,16 +31,21 @@ public sealed class UpscaleModel : IDisposable
     /// </summary>
     private static readonly ConcurrentDictionary<(string Path, long Length, DateTime WriteTime), Lazy<ModelInfo>> InfoCache = new();
 
-    private readonly Dictionary<(int Width, int Height), InferenceSession> _sessions = [];
+    /// <summary>The sessions by window, with when each was last used: above the capacity the least recently used one goes.</summary>
+    private readonly Dictionary<(int Width, int Height), (InferenceSession Session, long LastUse)> _sessions = [];
+    /// <summary>Guards the sessions and the tile limit; held only briefly, never while a session is built.</summary>
     private readonly Lock _lock = new();
+    /// <summary>Held while a session is built, see <see cref="GetSession"/>.</summary>
+    private readonly SemaphoreSlim _build = new(1, 1);
     private readonly bool _allowCpuFallback;
     private (ExecutionDevice Device, int Tile)? _tileLimit;
     private bool _gpuSessionCreated;
+    private int _sessionCapacity = DefaultSessionCapacity;
+    private long _uses;
     private bool _disposed;
 
-    // Official ONNX Runtime builds for Windows write telemetry via TraceLogging by default, and Windows may
-    // send it to Microsoft. Krupno sends nothing over the network (see the code signing policy in the README), so turn it off.
-    static UpscaleModel() => OrtEnv.Instance().DisableTelemetryEvents();
+    // Every InferenceSession uses the process's environment: it is set up (telemetry off) before the first one.
+    static UpscaleModel() => _ = OnnxEnvironment.Instance;
 
     private UpscaleModel(ModelInfo info, ExecutionDevice device, bool allowCpuFallback)
     {
@@ -209,24 +215,89 @@ public sealed class UpscaleModel : IDisposable
         return (width, height);
     }
 
-    internal InferenceSession GetSession(int width, int height)
+    /// <param name="cancellationToken">Stops waiting for another build, and a build that hasn't started yet: a canceled run's build
+    /// must not start later, when the next run may already be using the session it would push out.</param>
+    internal InferenceSession GetSession(int width, int height, CancellationToken cancellationToken = default)
+    {
+        if (Cached(width, height, cancellationToken) is { } cached)
+            return cached;
+
+        // A build takes long (DirectML compiles the graph, ~10 s for DAT2; an accelerator builds its engine, minutes) and ONNX
+        // Runtime can't stop it, so a canceled run may leave one going (see Upscaler). It runs outside the state lock: the
+        // next run's quick calls (its tile limit, its session capacity) and Dispose don't wait for it. One build at a time.
+        _build.Wait(cancellationToken);
+        try
+        {
+            // Built meanwhile by the build this one waited for.
+            if (Cached(width, height, cancellationToken) is { } built)
+                return built;
+
+            lock (_lock)
+            {
+                // Checked under the lock the next run takes its sessions under: once canceled, nothing is pushed out, and the
+                // next run starts only after the cancellation.
+                cancellationToken.ThrowIfCancellationRequested();
+                // One at a time, the least recently used first: test-time augmentation alternates between a window and its
+                // transpose, and a second pass adds a third, so dropping them all would compile each again for every image.
+                while (_sessions.Count >= _sessionCapacity)
+                    ReleaseLeastRecentlyUsed();
+            }
+
+            var session = CreateSession(UsesStaticWindow ? (width, height) : null);
+            lock (_lock)
+            {
+                if (_disposed)
+                {
+                    // Disposed while the session was being built: Dispose released the others, this one goes here.
+                    session.Dispose();
+                    throw new ObjectDisposedException(nameof(UpscaleModel));
+                }
+                // After a fallback to CPU the shape becomes dynamic, so recompute the key.
+                _sessions[UsesStaticWindow ? (width, height) : (0, 0)] = (session, ++_uses);
+                return session;
+            }
+        }
+        finally
+        {
+            _build.Release();
+        }
+    }
+
+    /// <summary>The session kept for this window, marked as just used; null if there is none. A canceled run's request doesn't
+    /// mark it: that would push out another session, which the next run may be using, in its place.</summary>
+    private InferenceSession? Cached(int width, int height, CancellationToken cancellationToken)
     {
         lock (_lock)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-
+            cancellationToken.ThrowIfCancellationRequested();
             var key = UsesStaticWindow ? (width, height) : (0, 0);
-            if (_sessions.TryGetValue(key, out var session))
-                return session;
-
-            if (_sessions.Count >= MaxCachedSessions)
-                ReleaseSessionsCore();
-
-            session = CreateSession(UsesStaticWindow ? (width, height) : null);
-            // After a fallback to CPU the shape becomes dynamic, so recompute the key.
-            _sessions[UsesStaticWindow ? (width, height) : (0, 0)] = session;
-            return session;
+            if (!_sessions.TryGetValue(key, out var cached))
+                return null;
+            _sessions[key] = (cached.Session, ++_uses);
+            return cached.Session;
         }
+    }
+
+    /// <summary>
+    /// How many sessions (windows) to keep, at least one. Each holds video memory on the GPU, so the default is two; with
+    /// test-time augmentation the upscaler asks for more.
+    /// </summary>
+    internal void SetSessionCapacity(int count)
+    {
+        lock (_lock)
+        {
+            _sessionCapacity = Math.Max(1, count);
+            while (_sessions.Count > _sessionCapacity)
+                ReleaseLeastRecentlyUsed();
+        }
+    }
+
+    /// <summary>Whether sessions for windows other than this one are kept: they hold video memory too.</summary>
+    internal bool HoldsOtherSessions(int width, int height)
+    {
+        lock (_lock)
+            return _sessions.Keys.Any(k => k != (width, height) && k != (0, 0));
     }
 
     /// <summary>Releases the sessions (and GPU memory). The next run creates them again.</summary>
@@ -240,16 +311,22 @@ public sealed class UpscaleModel : IDisposable
     {
         lock (_lock)
         {
-            if (_disposed)
-                return;
+            // A build still going (a canceled run doesn't wait for one) disposes its session itself when it ends.
             _disposed = true;
             ReleaseSessionsCore();
         }
     }
 
+    private void ReleaseLeastRecentlyUsed()
+    {
+        var oldest = _sessions.MinBy(s => s.Value.LastUse);
+        oldest.Value.Session.Dispose();
+        _sessions.Remove(oldest.Key);
+    }
+
     private void ReleaseSessionsCore()
     {
-        foreach (var session in _sessions.Values)
+        foreach (var (session, _) in _sessions.Values)
             session.Dispose();
         _sessions.Clear();
     }
@@ -270,22 +347,41 @@ public sealed class UpscaleModel : IDisposable
                 FallbackReason = ex.Message;
                 Device = ExecutionDevice.Cpu;
                 // GPU sessions created earlier would never be used again, but would keep holding video memory.
-                ReleaseSessionsCore();
+                lock (_lock)
+                    ReleaseSessionsCore();
             }
         }
 
         if (Device.Kind == DeviceKind.Accelerator)
         {
-            // Chosen on purpose, so no fallback: an error says what is wrong with the accelerator instead of a slow CPU run.
+            // Chosen on purpose, so no fallback: an error says what is wrong with the accelerator instead of a slow CPU run. Its
+            // sessions (and compiles) may not put any operation on the CPU (see CreateOptions), so a model it doesn't take whole
+            // fails here instead of running on the CPU, in whole or in part, behind the accelerator's name.
             using var acceleratorOptions = CreateOptions(gpu: false, shape);
-            // The engine is built for a fixed window, so only then is there something to keep.
-            var window = shape ?? (Info.FixedWidth is int fixedWidth && Info.FixedHeight is int fixedHeight ? (fixedWidth, fixedHeight) : null);
-            if (window is var (width, height) && Accelerators.Find(Device) is { } epDevice &&
-                CompiledModels.CreateSession(Info, epDevice, acceleratorOptions, width, height) is { } compiled)
+            // The engine is built for the window; a model whose input stays dynamic (no named sides to fix) is compiled as it is,
+            // 0×0 in the cache.
+            var (width, height) = shape ?? (Info.FixedWidth is int fixedWidth && Info.FixedHeight is int fixedHeight ? (fixedWidth, fixedHeight) : (0, 0));
+            try
             {
-                return compiled;
+                if (Accelerators.Find(Device) is { } epDevice)
+                {
+                    try
+                    {
+                        if (CompiledModels.CreateSession(Info, epDevice, acceleratorOptions, width, height) is { } compiled)
+                            return compiled;
+                    }
+                    catch (OnnxRuntimeException ex) when (CompiledModels.NoNodesCompiled(ex))
+                    {
+                        // Nothing to keep: the provider took none of the model, or it runs it but can't export what it compiled
+                        // (that part of the compile API is optional). The session below tells the two apart.
+                    }
+                }
+                return new InferenceSession(Info.Path, acceleratorOptions);
             }
-            return new InferenceSession(Info.Path, acceleratorOptions);
+            catch (OnnxRuntimeException ex) when (CompiledModels.CpuFallbackRefused(ex))
+            {
+                throw new InvalidOperationException(string.Format(Strings.Error_AcceleratorUnsupported, Device), ex);
+            }
         }
 
         using var cpuOptions = CreateOptions(gpu: false, shape: null);
@@ -304,10 +400,17 @@ public sealed class UpscaleModel : IDisposable
         _ => false,
     };
 
+    /// <summary>
+    /// DirectML's out-of-memory errors (E_OUTOFMEMORY, 0x8007000E), and the vendors' providers' wordings: CUDA under TensorRT-RTX
+    /// ("CUDA_ERROR_OUT_OF_MEMORY", "cudaErrorMemoryAllocation"), TensorRT's "could not be allocated".
+    /// </summary>
     internal static bool LooksLikeOutOfMemory(string message) =>
         message.Contains("8007000E", StringComparison.OrdinalIgnoreCase)
         || message.Contains("E_OUTOFMEMORY", StringComparison.OrdinalIgnoreCase)
         || message.Contains("out of memory", StringComparison.OrdinalIgnoreCase)
+        || message.Contains("OUT_OF_MEMORY", StringComparison.OrdinalIgnoreCase)
+        || message.Contains("MemoryAllocation", StringComparison.OrdinalIgnoreCase)
+        || message.Contains("could not be allocated", StringComparison.OrdinalIgnoreCase)
         || message.Contains("not enough memory", StringComparison.OrdinalIgnoreCase);
 
     private SessionOptions CreateOptions(bool gpu, (int Width, int Height)? shape)
@@ -340,7 +443,10 @@ public sealed class UpscaleModel : IDisposable
             {
                 var epDevice = Accelerators.Find(Device)
                     ?? throw new InvalidOperationException(string.Format(Strings.Error_AcceleratorMissing, Device));
-                options.AppendExecutionProvider(OrtEnv.Instance(), [epDevice], new Dictionary<string, string>());
+                options.AppendExecutionProvider(OnnxEnvironment.Instance, [epDevice], new Dictionary<string, string>());
+                // ONNX Runtime would give any operation the provider doesn't take to its CPU provider, the whole model if it takes
+                // none; a chosen accelerator never runs on the CPU, so that is an error instead (see CompiledModels.CpuFallbackRefused).
+                options.AddSessionConfigEntry("session.disable_cpu_ep_fallback", "1");
             }
             return options;
         }

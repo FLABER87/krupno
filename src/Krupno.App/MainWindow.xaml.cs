@@ -12,6 +12,10 @@ public partial class MainWindow : Window
 {
     private readonly AppSettings _settings = AppSettings.Load();
     private readonly MainViewModel _viewModel;
+    /// <summary>Closing was put off until the run stops; closing once more doesn't wait.</summary>
+    private bool _closingAfterRun;
+    /// <summary>The window is closing for good (OnClosing got past the run), or has closed.</summary>
+    private bool _closing;
 
     public MainWindow()
     {
@@ -45,6 +49,21 @@ public partial class MainWindow : Window
 
     protected override void OnClosing(CancelEventArgs e)
     {
+        if (_viewModel.IsBusy && !_closingAfterRun)
+        {
+            // In a batch the previous file's result is written while the next one is upscaled: closing now would end the
+            // process in the middle of that save and lose a result that is already computed. Cancel the run (the cancel path
+            // finishes the save) and close once it has stopped.
+            e.Cancel = true;
+            _closingAfterRun = true;
+            _ = CloseAfterRunAsync();
+            base.OnClosing(e);
+            return;
+        }
+
+        // From here on the window is going: another Krupno.exe must not hand it files it would drop.
+        _closing = true;
+        SingleInstance.Stop();
         SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
         if (WindowPlacement.Read(this) is { } bounds)
         {
@@ -53,6 +72,20 @@ public partial class MainWindow : Window
         }
         _viewModel.Dispose();
         base.OnClosing(e);
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        _closing = true;
+        base.OnClosed(e);
+    }
+
+    private async Task CloseAfterRunAsync()
+    {
+        await _viewModel.CancelRunAsync();
+        // Closed meanwhile by a second click, which doesn't wait.
+        if (!_closing)
+            Close();
     }
 
     /// <summary>The user switched the Windows light/dark theme: repaint the title bar as well.</summary>
@@ -68,18 +101,31 @@ public partial class MainWindow : Window
         var paths = Environment.GetCommandLineArgs().Skip(1).Where(a => a != SingleInstance.NewWindowSwitch).ToArray();
         if (paths.Length > 0)
             _ = _viewModel.OpenExternalAsync(paths, SingleInstance.StartedAt);
-        // The files of the Krupno.exe started after this one: one per file of an Explorer selection.
-        SingleInstance.Attach((handedOver, arrivedAt) => Dispatcher.BeginInvoke(() => OnHandedOver(handedOver, arrivedAt)));
+        // The files of the Krupno.exe started after this one: one per file of an Explorer selection. The other Krupno.exe is told
+        // they arrived only once the UI thread has taken them. If it doesn't get to them in time, the call is withdrawn, and a
+        // dispatcher that is shutting down drops it: then the other Krupno.exe opens a window of its own.
+        SingleInstance.Attach((handedOver, arrivedAt, giveUp) =>
+        {
+            var operation = Dispatcher.InvokeAsync(() => OnHandedOver(handedOver, arrivedAt));
+            giveUp.Register(() => operation.Abort());
+            return operation.Task.ContinueWith(t => t.Status == TaskStatus.RanToCompletion && t.Result, TaskScheduler.Default);
+        });
     }
 
-    /// <summary>Another Krupno.exe handed its files over (or none: it was started again): come forward and take them.</summary>
-    private void OnHandedOver(string[] paths, DateTime arrivedAt)
+    /// <summary>
+    /// Another Krupno.exe handed its files over (or none: it was started again): come forward and take them. False if the window
+    /// is closing, or waits for the run to stop to close: the files would be lost with it.
+    /// </summary>
+    private bool OnHandedOver(string[] paths, DateTime arrivedAt)
     {
+        if (_closing || _closingAfterRun)
+            return false;
         if (WindowState == WindowState.Minimized)
             WindowState = WindowState.Normal;
         Activate();
         if (paths.Length > 0)
             _ = _viewModel.OpenExternalAsync(paths, arrivedAt);
+        return true;
     }
 
     /// <summary>Progress on the taskbar button: TaskbarItemInfo is outside the visual tree, so it's easier to update from here.</summary>

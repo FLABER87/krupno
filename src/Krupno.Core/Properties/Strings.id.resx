@@ -15,6 +15,9 @@
   <data name="Error_AcceleratorMissing" xml:space="preserve">
     <value>{0} tidak lagi tersedia: pilih perangkat lain.</value>
   </data>
+  <data name="Error_AcceleratorUnsupported" xml:space="preserve">
+    <value>{0} tidak dapat menjalankan seluruh model ini: tidak semua operasinya didukung. Pilih GPU melalui DirectML atau CPU.</value>
+  </data>
   <data name="Error_CannotOpen" xml:space="preserve">
     <value>Tidak dapat membuka “{0}”: file rusak atau bukan gambar.</value>
   </data>

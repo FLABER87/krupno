@@ -31,12 +31,12 @@ internal sealed class TileRunner : IDisposable
     public int Width => _width;
     public int Height => _height;
 
-    public TileRunner(UpscaleModel model, int width, int height)
+    public TileRunner(UpscaleModel model, int width, int height, CancellationToken cancellationToken = default)
     {
         _info = model.Info;
         _width = width;
         _height = height;
-        _session = model.GetSession(width, height);
+        _session = model.GetSession(width, height, cancellationToken);
         _inputNames = [_info.InputName];
         _outputNames = [_info.OutputName];
     }

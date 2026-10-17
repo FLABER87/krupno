@@ -148,7 +148,7 @@
     <value>Kein Modell ausgewählt.</value>
   </data>
   <data name="Error_NoneUpscaled" xml:space="preserve">
-    <value>Keine der {0} Dateien konnte hochskaliert werden. {1}</value>
+    <value>Die Datei konnte nicht hochskaliert werden. {1}|Keine der {0} Dateien konnte hochskaliert werden. {1}</value>
   </data>
   <data name="Error_OutputFolder" xml:space="preserve">
     <value>Speichern im Ausgabeordner nicht möglich: {0} Wählen Sie einen anderen Ordner oder speichern Sie neben den Originalen.</value>

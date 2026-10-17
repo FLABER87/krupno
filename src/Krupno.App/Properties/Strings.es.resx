@@ -148,7 +148,7 @@
     <value>No hay ningún modelo seleccionado.</value>
   </data>
   <data name="Error_NoneUpscaled" xml:space="preserve">
-    <value>No se pudo ampliar ninguno de los {0} archivos. {1}</value>
+    <value>No se pudo ampliar el archivo. {1}|No se pudo ampliar ninguno de los {0} archivos. {1}</value>
   </data>
   <data name="Error_OutputFolder" xml:space="preserve">
     <value>No se puede guardar en la carpeta de salida: {0} Elija otra carpeta o guarde junto a los originales.</value>

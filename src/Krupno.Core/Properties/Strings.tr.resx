@@ -15,6 +15,9 @@
   <data name="Error_AcceleratorMissing" xml:space="preserve">
     <value>{0} artık kullanılamıyor: başka bir aygıt seçin.</value>
   </data>
+  <data name="Error_AcceleratorUnsupported" xml:space="preserve">
+    <value>{0} bu modelin tamamını çalıştıramıyor: işlemlerinin hepsini desteklemiyor. DirectML üzerinden GPU'yu veya CPU'yu seçin.</value>
+  </data>
   <data name="Error_CannotOpen" xml:space="preserve">
     <value>Dosya açılamıyor: "{0}". Dosya bozuk veya bir görüntü değil.</value>
   </data>

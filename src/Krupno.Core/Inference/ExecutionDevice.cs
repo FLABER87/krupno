@@ -10,7 +10,8 @@ public enum DeviceKind
     Accelerator,
 }
 
-/// <param name="AdapterIndex">The DXGI adapter index for DirectML (<see cref="DeviceKind.Gpu"/>).</param>
+/// <param name="AdapterIndex">The DXGI adapter index for DirectML (<see cref="DeviceKind.Gpu"/>); for an accelerator on a GPU, the
+/// one ONNX Runtime reports for it, which tells two identical cards apart (-1 for an NPU).</param>
 /// <param name="Provider">The execution provider's name for an <see cref="DeviceKind.Accelerator"/> ("NvTensorRtRtxExecutionProvider").</param>
 /// <param name="VendorId">With <paramref name="DeviceId"/>, which device of the provider's: the PCI IDs ONNX Runtime reports.</param>
 public sealed record ExecutionDevice(DeviceKind Kind, int AdapterIndex = -1, string? AdapterName = null, string? Provider = null,
