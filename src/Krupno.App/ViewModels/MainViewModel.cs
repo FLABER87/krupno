@@ -482,7 +482,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string OutputFolderDisplay => OutputFolder ?? Strings.OutputFolder_NextToOriginal;
     public bool HasCustomOutputFolder => OutputFolder is not null;
 
-    // ── Advanced ────────────────────────────────────────────────────
+    // ── Settings ────────────────────────────────────────────────────
 
     public IReadOnlyList<Option<ExecutionDevice>> Devices
     {
@@ -514,7 +514,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (value is not null && SetProperty(ref _selectedDevice, value))
             {
-                OnPropertyChanged(nameof(AdvancedSummary));
+                OnPropertyChanged(nameof(SettingsSummary));
                 OnModelSettingsChanged();
             }
         }
@@ -529,7 +529,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (value is not null && SetProperty(ref _selectedTile, value))
             {
-                OnPropertyChanged(nameof(AdvancedSummary));
+                OnPropertyChanged(nameof(SettingsSummary));
                 OnOutputSettingsChanged();
             }
         }
@@ -543,7 +543,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _seamlessTiles, value))
             {
-                OnPropertyChanged(nameof(AdvancedSummary));
+                OnPropertyChanged(nameof(SettingsSummary));
                 OnOutputSettingsChanged();
             }
         }
@@ -557,13 +557,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _testTimeAugmentation, value))
             {
-                OnPropertyChanged(nameof(AdvancedSummary));
+                OnPropertyChanged(nameof(SettingsSummary));
                 OnOutputSettingsChanged();
             }
         }
     }
 
-    /// <summary>"Check for updates" in "Advanced" (see UpdateCheck). Turned on, it checks right away; turned off, the notice goes.</summary>
+    /// <summary>"Check for updates" in "Settings" (see UpdateCheck). Turned on, it checks right away; turned off, the notice goes.</summary>
     public bool CheckForUpdates
     {
         get => _checkForUpdates;
@@ -571,6 +571,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (!SetProperty(ref _checkForUpdates, value))
                 return;
+            OnPropertyChanged(nameof(SettingsSummary));
             // Kept as the user's own choice from now on: it overrides the installer's, until an installation turns it off.
             _settings.CheckForUpdates = value;
             _settings.CheckForUpdatesSetAt = _installerUpdateChoice?.SetAt;
@@ -595,6 +596,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (value is not null && SetProperty(ref _selectedLanguage, value))
             {
                 OnPropertyChanged(nameof(LanguageNeedsRestart));
+                OnPropertyChanged(nameof(SettingsSummary));
                 SaveSettings();
             }
         }
@@ -603,7 +605,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     /// <summary>The window's text is set when it is created, so another language shows only after a restart.</summary>
     public bool LanguageNeedsRestart => SelectedLanguage.Value != _startupLanguage;
 
-    public string AdvancedSummary
+    /// <summary>
+    /// Under "Settings" while it is collapsed: what is set inside, "RTX 3080 · auto tiles · English", and "no update check" when
+    /// it is off, so that the section reads as more than a device.
+    /// </summary>
+    public string SettingsSummary
     {
         get
         {
@@ -614,7 +620,25 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 384 when SelectedTile == TileSizes[0] => Strings.Summary_AutoTiles,
                 var size => string.Format(Strings.Summary_Tiles, size),
             };
-            return $"{Text.Device(device)} · {tile}{(SeamlessTiles ? ", " + Strings.Summary_Seamless : "")}{(TestTimeAugmentation ? ", TTA" : "")}";
+            return $"{Text.Device(device)} · {tile}{(SeamlessTiles ? ", " + Strings.Summary_Seamless : "")}{(TestTimeAugmentation ? ", TTA" : "")}" +
+                   $" · {LanguageName}{(CheckForUpdates ? "" : " · " + Strings.Summary_NoUpdateCheck)}";
+        }
+    }
+
+    /// <summary>The chosen language's own name; with "Windows language", the one the window speaks.</summary>
+    private string LanguageName
+    {
+        get
+        {
+            if (SelectedLanguage.Value is not null)
+                return SelectedLanguage.Label;
+            // The translation .NET picks: the UI culture or the nearest parent with one ("ru-RU" → "ru", "zh-CN" → "zh-Hans").
+            for (var culture = CultureInfo.CurrentUICulture; !string.IsNullOrEmpty(culture.Name); culture = culture.Parent)
+            {
+                if (UiLanguage.All.FirstOrDefault(l => l.Culture == culture.Name) is { Name: { } name })
+                    return name;
+            }
+            return UiLanguage.All[0].Name;
         }
     }
 

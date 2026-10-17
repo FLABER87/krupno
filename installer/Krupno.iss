@@ -269,7 +269,7 @@ end;
 // The app shows the Windows language when it has a translation for it. When the wizard runs in a language the app wouldn't
 // pick by itself (one chosen in the language dialog, as Windows' own isn't translated, or Brazilian Portuguese on a
 // Portuguese Windows), the app is told to use it too: on the first install only, as settings.json doesn't exist yet then,
-// so a later choice under "Advanced" in the app stays the user's.
+// so a later choice under "Settings" in the app stays the user's.
 procedure SaveLanguageForApp;
 var
   Entry, Culture, Ids, Path: String;

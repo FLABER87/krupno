@@ -183,7 +183,7 @@
     <value>File not found. It may have been moved or deleted.</value>
   </data>
   <data name="Friendly_Gpu" xml:space="preserve">
-    <value>The GPU couldn't handle this model. Choose a different device or tile size under "Advanced", or a lighter model.</value>
+    <value>The GPU couldn't handle this model. Choose a different device or tile size under "Settings", or a lighter model.</value>
   </data>
   <data name="Friendly_IO" xml:space="preserve">
     <value>Couldn't read or write the file. {0}</value>
@@ -324,8 +324,8 @@
   <data name="SeamlessTiles_Description" xml:space="preserve">
     <value>Twice the overlap between tiles (64 px): no visible seams even with deep models, but more tiles to run: about 1.5 times as many for a 1920 × 1200 photo with auto tiles.</value>
   </data>
-  <data name="Section_Advanced" xml:space="preserve">
-    <value>Advanced</value>
+  <data name="Section_Settings" xml:space="preserve">
+    <value>Settings</value>
   </data>
   <data name="Section_Model" xml:space="preserve">
     <value>Model</value>
@@ -377,6 +377,10 @@
   </data>
   <data name="Summary_NoTiling" xml:space="preserve">
     <value>no tiling</value>
+  </data>
+  <data name="Summary_NoUpdateCheck" xml:space="preserve">
+    <value>no update check</value>
+    <comment>In the one-line summary under "Settings", when the update check is off.</comment>
   </data>
   <data name="Summary_Seamless" xml:space="preserve">
     <value>seamless</value>

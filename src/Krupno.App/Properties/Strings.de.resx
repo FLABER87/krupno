@@ -178,7 +178,7 @@
     <value>Datei nicht gefunden. Sie wurde möglicherweise verschoben oder gelöscht.</value>
   </data>
   <data name="Friendly_Gpu" xml:space="preserve">
-    <value>Die GPU konnte dieses Modell nicht ausführen. Wählen Sie unter „Erweitert“ ein anderes Gerät oder eine andere Kachelgröße oder ein leichteres Modell.</value>
+    <value>Die GPU konnte dieses Modell nicht ausführen. Wählen Sie unter „Einstellungen“ ein anderes Gerät oder eine andere Kachelgröße oder ein leichteres Modell.</value>
   </data>
   <data name="Friendly_IO" xml:space="preserve">
     <value>Die Datei konnte nicht gelesen oder geschrieben werden. {0}</value>
@@ -318,8 +318,8 @@
   <data name="SeamlessTiles_Description" xml:space="preserve">
     <value>Doppelte Überlappung zwischen den Kacheln (64 px): keine sichtbaren Nähte, auch bei tiefen Modellen, aber mehr Kacheln – etwa 1,5-mal so viele bei einem Foto mit 1920 × 1200 und Auto-Kacheln.</value>
   </data>
-  <data name="Section_Advanced" xml:space="preserve">
-    <value>Erweitert</value>
+  <data name="Section_Settings" xml:space="preserve">
+    <value>Einstellungen</value>
   </data>
   <data name="Section_Model" xml:space="preserve">
     <value>Modell</value>
@@ -371,6 +371,9 @@
   </data>
   <data name="Summary_NoTiling" xml:space="preserve">
     <value>ohne Kacheln</value>
+  </data>
+  <data name="Summary_NoUpdateCheck" xml:space="preserve">
+    <value>ohne Update-Suche</value>
   </data>
   <data name="Summary_Seamless" xml:space="preserve">
     <value>nahtlos</value>

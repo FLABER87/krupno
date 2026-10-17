@@ -11,7 +11,7 @@ namespace Krupno.App.Infrastructure;
 /// answers with a redirect to that release's tag (".../releases/tag/v0.3.0"): not the GitHub API, which allows an address
 /// 60 requests an hour without a token. Nothing else is sent, the redirect isn't followed, and nothing is downloaded. Only a
 /// tag of the form vX.Y.Z is a release of Krupno: the models are released too (models-v2), and are published without being
-/// marked as the latest. Off with "Check for updates" under "Advanced", or with the installer's task (see <see cref="Decide"/>).
+/// marked as the latest. Off with "Check for updates" under "Settings", or with the installer's task (see <see cref="Decide"/>).
 /// </summary>
 internal static partial class UpdateCheck
 {

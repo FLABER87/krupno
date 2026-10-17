@@ -14,7 +14,7 @@ The full list is at [signpath.org/terms](https://signpath.org/terms). The key po
 - **Two-factor authentication** on GitHub and SignPath for everyone with access.
 - **Every release is approved manually** in SignPath (the Approver role).
 - **A "Code signing policy" section** on the project's home page and on the download page. The text is below.
-- **Privacy.** Apart from the update check, the app sends nothing over the network unless the user asks it to. ONNX Runtime telemetry is turned off before anything uses it (`OnnxEnvironment`). The installer downloads only the models selected during installation. The update check (`UpdateCheck`) can be turned off during installation (the "Check for new versions" task) and in the window ("Check for updates" under "Advanced"), and it is described in the privacy policy below.
+- **Privacy.** Apart from the update check, the app sends nothing over the network unless the user asks it to. ONNX Runtime telemetry is turned off before anything uses it (`OnnxEnvironment`). The installer downloads only the models selected during installation. The update check (`UpdateCheck`) can be turned off during installation (the "Check for new versions" task) and in the window ("Check for updates" under "Settings"), and it is described in the privacy policy below.
 
 ## Setup
 
@@ -52,5 +52,5 @@ during installation, from this repository's [models-v2](https://github.com/FLABE
 At startup the app asks github.com which of this repository's releases is the latest (one request to
 `github.com/FLABER87/krupno/releases/latest`, carrying only the app's version), to say when a newer version is
 available. Nothing else is sent, and nothing is downloaded. The check can be turned off during installation and under
-"Advanced" in the app.
+"Settings" in the app.
 ```

@@ -555,7 +555,7 @@ namespace Krupno.App.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The GPU couldn't handle this model. Choose a different device or tile size under "Advanced", or a lighter model..
+        ///   Looks up a localized string similar to The GPU couldn't handle this model. Choose a different device or tile size under "Settings", or a lighter model..
         /// </summary>
         public static string Friendly_Gpu {
             get {
@@ -978,11 +978,11 @@ namespace Krupno.App.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Advanced.
+        ///   Looks up a localized string similar to Settings.
         /// </summary>
-        public static string Section_Advanced {
+        public static string Section_Settings {
             get {
-                return ResourceManager.GetString("Section_Advanced", resourceCulture);
+                return ResourceManager.GetString("Section_Settings", resourceCulture);
             }
         }
         
@@ -1136,6 +1136,15 @@ namespace Krupno.App.Properties {
         public static string Summary_NoTiling {
             get {
                 return ResourceManager.GetString("Summary_NoTiling", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to no update check.
+        /// </summary>
+        public static string Summary_NoUpdateCheck {
+            get {
+                return ResourceManager.GetString("Summary_NoUpdateCheck", resourceCulture);
             }
         }
         

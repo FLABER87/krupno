@@ -178,7 +178,7 @@
     <value>未找到文件。它可能已被移动或删除。</value>
   </data>
   <data name="Friendly_Gpu" xml:space="preserve">
-    <value>GPU 无法运行此模型。请在“高级”中选择其他设备或分块大小，或使用更轻量的模型。</value>
+    <value>GPU 无法运行此模型。请在“设置”中选择其他设备或分块大小，或使用更轻量的模型。</value>
   </data>
   <data name="Friendly_IO" xml:space="preserve">
     <value>无法读取或写入文件。{0}</value>
@@ -318,8 +318,8 @@
   <data name="SeamlessTiles_Description" xml:space="preserve">
     <value>分块之间的重叠加倍（64 px）：即使是深层模型也看不到接缝，但分块更多——自动分块时 1920 × 1200 的照片约多 1.5 倍。</value>
   </data>
-  <data name="Section_Advanced" xml:space="preserve">
-    <value>高级</value>
+  <data name="Section_Settings" xml:space="preserve">
+    <value>设置</value>
   </data>
   <data name="Section_Model" xml:space="preserve">
     <value>模型</value>
@@ -371,6 +371,9 @@
   </data>
   <data name="Summary_NoTiling" xml:space="preserve">
     <value>不分块</value>
+  </data>
+  <data name="Summary_NoUpdateCheck" xml:space="preserve">
+    <value>不检查更新</value>
   </data>
   <data name="Summary_Seamless" xml:space="preserve">
     <value>无缝</value>

@@ -178,7 +178,7 @@
     <value>Arquivo não encontrado. Ele pode ter sido movido ou excluído.</value>
   </data>
   <data name="Friendly_Gpu" xml:space="preserve">
-    <value>A GPU não conseguiu executar este modelo. Escolha outro dispositivo ou tamanho de bloco em “Avançado”, ou um modelo mais leve.</value>
+    <value>A GPU não conseguiu executar este modelo. Escolha outro dispositivo ou tamanho de bloco em “Configurações”, ou um modelo mais leve.</value>
   </data>
   <data name="Friendly_IO" xml:space="preserve">
     <value>Não foi possível ler ou gravar o arquivo. {0}</value>
@@ -318,8 +318,8 @@
   <data name="SeamlessTiles_Description" xml:space="preserve">
     <value>O dobro de sobreposição entre blocos (64 px): sem emendas visíveis mesmo com modelos profundos, mas com mais blocos a processar: cerca de 1,5 vez mais para uma foto de 1920 × 1200 com blocos automáticos.</value>
   </data>
-  <data name="Section_Advanced" xml:space="preserve">
-    <value>Avançado</value>
+  <data name="Section_Settings" xml:space="preserve">
+    <value>Configurações</value>
   </data>
   <data name="Section_Model" xml:space="preserve">
     <value>Modelo</value>
@@ -371,6 +371,9 @@
   </data>
   <data name="Summary_NoTiling" xml:space="preserve">
     <value>sem blocos</value>
+  </data>
+  <data name="Summary_NoUpdateCheck" xml:space="preserve">
+    <value>sem verificar atualizações</value>
   </data>
   <data name="Summary_Seamless" xml:space="preserve">
     <value>sem emendas</value>
