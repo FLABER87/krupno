@@ -45,12 +45,15 @@ jobs:
         run: dotnet test tests/Krupno.Core.Tests -c Release --no-build --logger "console;verbosity=normal"
 
       # The installer is only built for a release; compiling its script here without output (/O-) catches a broken
-      # language or message before then. The same Inno Setup version as in release.yml.
+      # language or message before then, and so does any warning: a message missing from a translation would show in
+      # English. The same Inno Setup version as in release.yml.
       - name: Installer script
         run: |
           choco install innosetup --version 6.7.1 -y --no-progress
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /O- /DAppVersion=0.0.0 "/DAppDir=$PWD\src\Krupno.App\bin\Release\net10.0-windows\win-x64" installer\Krupno.iss
+          $output = & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /O- /DAppVersion=0.0.0 "/DAppDir=$PWD\src\Krupno.App\bin\Release\net10.0-windows\win-x64" installer\Krupno.iss 2>&1
+          $output
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($output -match "^Warning:") { Write-Error "ISCC reported warnings"; exit 1 }
 
       # The runner has no GPU. DXGI reports "Microsoft Basic Render Driver" without the SOFTWARE flag, but Krupno drops it
       # by VendorId/DeviceId, so the list has only auto and cpu, and "-d auto" goes straight to the CPU.

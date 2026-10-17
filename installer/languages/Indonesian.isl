@@ -179,19 +179,15 @@ ReadyMemoGroup=Map Menu Start:
 ReadyMemoTasks=Tugas Tambahan:
 
 ;Inno6
-DownloadingLabel=Mengunduh berkas tambahan...
 ButtonStopDownload=&Setop Unduhan
 StopDownload=Anda yakin ingin berhenti mengunduh?
 ErrorDownloadAborted=Unduhan dibatalkan
 ErrorDownloadFailed=Gagal mengunduh: %1 %2
 ErrorDownloadSizeFailed=Gagal mendapatkan ukuran: %1 %2
-ErrorFileHash1=Ceksum berkas gagal: %1
-ErrorFileHash2=Ceksum berkas tidak sah: seharusnya %1, yang kami dapatkan %2
 ErrorProgress=Langkah tidak sah: %1 dari %2
 ErrorFileSize=Ukuran berkas tidak sah: seharusnya %1, yang kami dapatkan %2
 
 ; *** TExtractionWizardPage wizard page and Extract7ZipArchive
-ExtractionLabel=Mengektrasi berkas tambahan...
 ButtonStopExtraction=&Hentikan ekstrasi
 StopExtraction=Anda yakin ingin menghentikan ekstrasi?
 ErrorExtractionAborted=Ekstrasi dibatalkan
@@ -334,6 +330,27 @@ StatusUninstalling=Melepas %1...
 
 ShutdownBlockReasonInstallingApp=Memasang %1.
 ShutdownBlockReasonUninstallingApp=Melepas %1.
+
+; Added for Krupno: the messages of Inno Setup 6.5+ that this unofficial translation doesn't have yet.
+ArchiveIncorrectPassword=Kata sandi salah
+ArchiveIsCorrupted=Arsip rusak
+ArchiveUnsupportedFormat=Format arsip tidak didukung
+DownloadingLabel2=Mengunduh berkas...
+ErrorDownloading=Terjadi kesalahan saat mencoba mengunduh berkas:
+ErrorExtracting=Terjadi kesalahan saat mencoba mengekstrak arsip:
+ExtractingLabel=Mengekstrak berkas...
+RetryCancelCancel=Batal
+RetryCancelRetry=&Coba lagi
+RetryCancelSelectAction=Pilih tindakan
+SourceVerificationFailed=Verifikasi berkas sumber gagal: %1
+StatusDownloadFiles=Mengunduh berkas...
+VerificationFileHashIncorrect=Hash berkas salah
+VerificationFileNameIncorrect=Nama berkas salah
+VerificationFileSizeIncorrect=Ukuran berkas salah
+VerificationFileTagIncorrect=Tag berkas salah
+VerificationKeyNotFound=Berkas tanda tangan "%1" menggunakan kunci yang tidak dikenal
+VerificationSignatureDoesntExist=Berkas tanda tangan "%1" tidak ada
+VerificationSignatureInvalid=Berkas tanda tangan "%1" tidak sah
 
 [CustomMessages]
 NameAndVersion=%1 versi %2

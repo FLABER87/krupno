@@ -211,14 +211,11 @@ ReadyMemoGroup=「開始」功能表資料夾:
 ReadyMemoTasks=附加工作:
 
 ; *** TDownloadWizardPage wizard page and DownloadTemporaryFile
-DownloadingLabel=正在下載額外檔案...
 ButtonStopDownload=停止下載 (&S)
 StopDownload=您確定要停止下載嗎？
 ErrorDownloadAborted=已停止下載
 ErrorDownloadFailed=下載失敗: %1 %2
 ErrorDownloadSizeFailed=取得檔案大小失敗: %1 %2
-ErrorFileHash1=檔案雜湊失敗: %1
-ErrorFileHash2=檔案雜湊無效: 必須為 %1，收到 %2
 ErrorProgress=進度無效: %1 之 %2
 ErrorFileSize=檔案大小無效: 必須為 %1，收到 %2
 
@@ -367,6 +364,31 @@ ShutdownBlockReasonUninstallingApp=正在解除安裝 %1。
 
 ; The custom messages below aren't used by Setup itself, but if you make
 ; use of them in your scripts, you'll want to translate them.
+
+; Added for Krupno: the messages of Inno Setup 6.5+ that this unofficial translation doesn't have yet.
+ArchiveIncorrectPassword=壓縮檔密碼不正確
+ArchiveIsCorrupted=壓縮檔已損毀
+ArchiveUnsupportedFormat=不支援的壓縮檔格式
+ButtonStopExtraction=停止解壓縮(&S)
+DownloadingLabel2=正在下載檔案...
+ErrorDownloading=下載檔案時發生錯誤：
+ErrorExtracting=解壓縮壓縮檔時發生錯誤：
+ErrorExtractionAborted=解壓縮已中止
+ErrorExtractionFailed=解壓縮失敗：%1
+ExtractingLabel=正在解壓縮檔案...
+RetryCancelCancel=取消(&C)
+RetryCancelRetry=重試(&T)
+RetryCancelSelectAction=選擇動作
+SourceVerificationFailed=來源檔案驗證失敗：%1
+StatusDownloadFiles=正在下載檔案...
+StopExtraction=確定要停止解壓縮嗎？
+VerificationFileHashIncorrect=檔案雜湊值不正確
+VerificationFileNameIncorrect=檔案名稱不正確
+VerificationFileSizeIncorrect=檔案大小不正確
+VerificationFileTagIncorrect=檔案標籤不正確
+VerificationKeyNotFound=簽章檔「%1」使用了未知的金鑰
+VerificationSignatureDoesntExist=簽章檔「%1」不存在
+VerificationSignatureInvalid=簽章檔「%1」無效
 
 [CustomMessages]
 

@@ -181,6 +181,16 @@ public partial class LocalizationTests
         Assert.Equal("5 x", Plurals.Format("{0} x", 5, uk));
     }
 
+    [Fact]
+    public void PublishKeepsWpfTranslationsForTheWindowsLanguages()
+    {
+        // Directory.Build.props lists the languages whose satellite assemblies the self-contained publish keeps; WPF's own
+        // text (the text box menu) would stay English in a language left out.
+        string props = File.ReadAllText(Path.Combine(Root, "Directory.Build.props"));
+        string list = Regex.Match(props, "<SatelliteResourceLanguages>([^<]*)</SatelliteResourceLanguages>").Groups[1].Value;
+        Assert.Equal(UiLanguage.All.Select(l => l.Culture).Order(StringComparer.Ordinal), list.Split(';').Order(StringComparer.Ordinal));
+    }
+
     // ── The installer (installer/Krupno.iss and messages.iss) ──
 
     /// <summary>The Inno Setup name of a culture: "pt-BR" → "ptbr".</summary>
