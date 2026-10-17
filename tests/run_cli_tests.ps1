@@ -74,6 +74,8 @@ Run "cmyk_toy_tif"    @("$fx\profiles\cmyk_toy.tif", "-m", "$mod\legacy_x2.onnx"
 Run "gray_icc"        @("$fx\profiles\gray.png", "-m", "$mod\legacy_x2.onnx", "-o", "$out\gray_icc.png")
 Run "gray_alpha_icc"  @("$fx\profiles\gray_alpha.png", "-m", "$mod\legacy_x2.onnx", "-o", "$out\gray_alpha_icc.png")
 Run "noise_legacy"    @("$img\noise_300x200.png", "-m", "$mod\legacy_x2.onnx", "-o", "$out\noise_legacy.png")
+# fp16 input and output: the conversion on the way in and on the way out (a row of the tile core at a time).
+Run "noise_half"      @("$img\noise_300x200.png", "-m", "$mod\half_x2.onnx", "-o", "$out\noise_half.png")
 Run "batch"           @($img, "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\batch")
 Run "broken"          @("$fx\broken\broken.png", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\broken.png") -Expect 1
 Run "broken_gif"      @("$fx\broken\broken.gif", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\broken_gif.png") -Expect 1

@@ -94,10 +94,12 @@ for device in ("gpu", "cpu"):
     expect_nearest("noise_300x200.png", f"noise_probe_{device}.png", 3, [0, 0, 1])
 expect_nearest("big_1500x1000.png", "big_red_notile.png", 4, [1, 0, 0])
 expect_nearest("noise_300x200.png", "noise_legacy.png", 2, [1, 1, 1])
+expect_nearest("noise_300x200.png", "noise_half.png", 2, [1, 1, 0])
 expect_model("noise_red_cpu", "Nearest red x4 (×4, Test)")
 expect_model("big_fixed_cpu", "fixed64_x2 (×2)")
 expect_model("noise_probe_cpu", "probe_x3 (×3)")
 expect_model("noise_legacy", "Legacy x2 (×2, Test)")
+expect_model("noise_half", "half_x2 (×2), fp16")
 
 # Alpha: RGB is exact, alpha is Lanczos (compared approximately with Pillow's Lanczos).
 # Under fully transparent pixels (columns 0 and 1 of the fixture) the color is filled from the nearest visible pixel

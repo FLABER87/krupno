@@ -217,7 +217,7 @@ powershell -ExecutionPolicy Bypass -File tests\run_cli_tests.ps1
 
 The script creates the input images (`tests/make_fixtures.py`), runs `krupno-cli.exe` on the GPU and on the CPU, and puts the results and logs into `tests/out/cli`.
 Then `tests/check_outputs.py` compares them with the expectations, and the script exits with code 0 only if everything matches. A run takes about 15 s.
-Covered: tiling (including a model with a static 64×64 input and a run without tiling), a probe run of a model without metadata, reading `krupno.*` and `upscalr.*` metadata,
+Covered: tiling (including a model with a static 64×64 input and a run without tiling), a probe run of a model without metadata, a model with fp16 input and output, reading `krupno.*` and `upscalr.*` metadata,
 fractional scale, ×8 in two passes, alpha channel (with the color fill under transparent pixels), EXIF rotation, ICC profiles (a Display P3 image keeps its pixels and profile; CMYK and grayscale images are converted to sRGB, also with a CMYK profile far from SWOP), folder processing,
 strength (the blend is checked against the same Lanczos filter computed in numpy; with transparency the alpha must stay as at full strength),
 a save that fails in the background during a batch, target sizes (`--width` with the name it gives, `--long-side` after the EXIF rotation, `-s` together with a target size refused),
