@@ -1,9 +1,19 @@
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Krupno.Core.Imaging;
 using Krupno.Core.Inference;
 
 namespace Krupno.App.Infrastructure;
+
+/// <summary>What the number under "Other" in "Scale" sets.</summary>
+public enum CustomScaleMode
+{
+    Scale,
+    Width,
+    Height,
+    LongSide,
+}
 
 /// <summary>User choices kept between launches: %LOCALAPPDATA%\Krupno\settings.json.</summary>
 public sealed class AppSettings
@@ -26,6 +36,33 @@ public sealed class AppSettings
     public string? DeviceName { get; set; }
 
     public int? DeviceIndex { get; set; }
+
+    /// <summary>How much of the network's result goes into the output, in percent.</summary>
+    public int? Strength { get; set; }
+
+    /// <summary>The final scale (×2, ×3, ×4, ×8); 0 for "Other", see <see cref="CustomScaleMode"/>.</summary>
+    public double? Scale { get; set; }
+
+    /// <summary>What the number under "Other" sets: a scale, or the width, height or long side of the result.</summary>
+    public CustomScaleMode? CustomScaleMode { get; set; }
+
+    /// <summary>The number under "Other", as typed.</summary>
+    public string? CustomScaleValue { get; set; }
+
+    public ImageFileFormat? Format { get; set; }
+
+    public int? JpegQuality { get; set; }
+
+    /// <summary>Where results go; null means next to the originals.</summary>
+    public string? OutputFolder { get; set; }
+
+    /// <summary>The tile size from "Advanced"; 0 means no tiling.</summary>
+    public int? TileSize { get; set; }
+
+    /// <summary>"Seamless tiles" in "Advanced": a 64 px tile overlap instead of 32.</summary>
+    public bool? SeamlessTiles { get; set; }
+
+    public WindowBounds? Window { get; set; }
 
     public static AppSettings Load()
     {

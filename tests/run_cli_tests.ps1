@@ -48,6 +48,17 @@ Run "big_red_notile"  @("$img\big_1500x1000.png", "-m", "$mod\nearest_red_x4.onn
 Run "alpha_red"       @("$img\alpha_257x129.png", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\alpha_red.png")
 Run "noise_red_x2_5"  @("$img\noise_300x200.png", "-m", "$mod\nearest_red_x4.onnx", "-s", "2.5", "-o", "$out\noise_red_x2_5.png")
 Run "noise_red_x8"    @("$img\noise_300x200.png", "-m", "$mod\nearest_red_x4.onnx", "-s", "8", "-o", "$out\noise_red_x8.png")
+# Strength: the network's result mixed with a plain Lanczos resize; with transparency the alpha must stay as at full strength.
+Run "noise_red_s50"   @("$img\noise_300x200.png", "-m", "$mod\nearest_red_x4.onnx", "--strength", "50", "-o", "$out\noise_red_s50.png")
+Run "alpha_red_s30"   @("$img\alpha_257x129.png", "-m", "$mod\nearest_red_x4.onnx", "--strength", "30", "-o", "$out\alpha_red_s30.png")
+Run "strength_0"      @("$img\noise_300x200.png", "-m", "$mod\nearest_red_x4.onnx", "--strength", "0", "-o", "$out\strength_0.png") -Expect 2
+# Target sizes: --width gives that width (×2.5 here) and a name saying so next to the source; --long-side counts the longer
+# side after the EXIF rotation (90×160 → 540×960); -s together with a target size is refused.
+New-Item -ItemType Directory -Force "$out\target" | Out-Null
+Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\target\noise.png"
+Run "target_width"    @("$out\target\noise.png", "-m", "$mod\nearest_red_x4.onnx", "--width", "750")
+Run "target_long"     @("$img\orient6.jpg", "-m", "$mod\nearest_red_x4.onnx", "--long-side", "960", "-o", "$out\target_long.png")
+Run "target_conflict" @("$img\noise_300x200.png", "-m", "$mod\nearest_red_x4.onnx", "-s", "2", "--width", "750", "-o", "$out\target_conflict.png") -Expect 2
 Run "orient6_red"     @("$img\orient6.jpg", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\orient6_red.png")
 if (Test-Path -LiteralPath "$img\icc_60x40.png") {
     Run "icc_red"     @("$img\icc_60x40.png", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\icc_red.png")
@@ -63,6 +74,8 @@ Run "cmyk_toy_tif"    @("$fx\profiles\cmyk_toy.tif", "-m", "$mod\legacy_x2.onnx"
 Run "gray_icc"        @("$fx\profiles\gray.png", "-m", "$mod\legacy_x2.onnx", "-o", "$out\gray_icc.png")
 Run "gray_alpha_icc"  @("$fx\profiles\gray_alpha.png", "-m", "$mod\legacy_x2.onnx", "-o", "$out\gray_alpha_icc.png")
 Run "noise_legacy"    @("$img\noise_300x200.png", "-m", "$mod\legacy_x2.onnx", "-o", "$out\noise_legacy.png")
+# fp16 input and output: the conversion on the way in and on the way out (a row of the tile core at a time).
+Run "noise_half"      @("$img\noise_300x200.png", "-m", "$mod\half_x2.onnx", "-o", "$out\noise_half.png")
 Run "batch"           @($img, "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\batch")
 Run "broken"          @("$fx\broken\broken.png", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\broken.png") -Expect 1
 Run "broken_gif"      @("$fx\broken\broken.gif", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\broken_gif.png") -Expect 1
@@ -76,6 +89,12 @@ New-Item -ItemType Directory -Force "$out\dup" | Out-Null
 Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\dup\x.png"
 Copy-Item -LiteralPath "$img\orient6.jpg" "$out\dup\x.jpg"
 Run "dup_names"       @("$out\dup", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\dup_out")
+# The first file of a batch is written while the second one is processed. A folder in the way of its output file makes that
+# save fail in the background: it must be reported with the file's number, and the rest of the batch still saved.
+New-Item -ItemType Directory -Force "$out\bgsave", "$out\bgsave_out\a.png" | Out-Null
+Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\bgsave\a.png"
+Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\bgsave\b.png"
+Run "bg_save_fail"    @("$out\bgsave", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\bgsave_out") -Expect 1
 
 & $Python "$PSScriptRoot\check_outputs.py" $fx $out
 $checkCode = $LASTEXITCODE

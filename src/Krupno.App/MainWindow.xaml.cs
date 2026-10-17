@@ -10,10 +10,12 @@ namespace Krupno.App;
 
 public partial class MainWindow : Window
 {
-    private readonly MainViewModel _viewModel = new();
+    private readonly AppSettings _settings = AppSettings.Load();
+    private readonly MainViewModel _viewModel;
 
     public MainWindow()
     {
+        _viewModel = new MainViewModel(_settings);
         InitializeComponent();
         // On a laptop at 200% scaling the height can be as little as ~720 logical pixels, so stay within the screen.
         // The minimum size gives way too: otherwise it wins over the smaller Width/Height and the window sticks out of the screen.
@@ -25,13 +27,24 @@ public partial class MainWindow : Window
         DataContext = _viewModel;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         Loaded += OnLoaded;
-        SourceInitialized += (_, _) => WindowTheme.Apply(this);
+        SourceInitialized += (_, _) =>
+        {
+            WindowTheme.Apply(this);
+            // The size and position from the last session replace the default ones set above.
+            if (_settings.Window is { } bounds)
+                WindowPlacement.Restore(this, bounds);
+        };
         SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
     }
 
     protected override void OnClosing(CancelEventArgs e)
     {
         SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
+        if (WindowPlacement.Read(this) is { } bounds)
+        {
+            _settings.Window = bounds;
+            _settings.Save();
+        }
         _viewModel.Dispose();
         base.OnClosing(e);
     }
@@ -43,12 +56,24 @@ public partial class MainWindow : Window
             Dispatcher.BeginInvoke(() => WindowTheme.Apply(this));
     }
 
-    private async void OnLoaded(object sender, RoutedEventArgs e)
+    private void OnLoaded(object sender, RoutedEventArgs e)
     {
         // Files passed on the command line (for example, via "Open with").
-        var paths = Environment.GetCommandLineArgs().Skip(1).ToArray();
+        var paths = Environment.GetCommandLineArgs().Skip(1).Where(a => a != SingleInstance.NewWindowSwitch).ToArray();
         if (paths.Length > 0)
-            await _viewModel.SetFilesAsync(paths);
+            _ = _viewModel.OpenExternalAsync(paths, SingleInstance.StartedAt);
+        // The files of the Krupno.exe started after this one: one per file of an Explorer selection.
+        SingleInstance.Attach((handedOver, arrivedAt) => Dispatcher.BeginInvoke(() => OnHandedOver(handedOver, arrivedAt)));
+    }
+
+    /// <summary>Another Krupno.exe handed its files over (or none: it was started again): come forward and take them.</summary>
+    private void OnHandedOver(string[] paths, DateTime arrivedAt)
+    {
+        if (WindowState == WindowState.Minimized)
+            WindowState = WindowState.Normal;
+        Activate();
+        if (paths.Length > 0)
+            _ = _viewModel.OpenExternalAsync(paths, arrivedAt);
     }
 
     /// <summary>Progress on the taskbar button: TaskbarItemInfo is outside the visual tree, so it's easier to update from here.</summary>
@@ -89,6 +114,10 @@ public partial class MainWindow : Window
             case Key.C when Keyboard.FocusedElement is not TextBox:
                 if (_viewModel.CopyResultCommand.CanExecute(null))
                     _viewModel.CopyResultCommand.Execute(null);
+                break;
+            case Key.V when Keyboard.FocusedElement is not TextBox:
+                if (_viewModel.PasteCommand.CanExecute(null))
+                    _viewModel.PasteCommand.Execute(null);
                 break;
             default:
                 return;

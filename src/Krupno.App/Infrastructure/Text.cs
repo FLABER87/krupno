@@ -1,5 +1,6 @@
 using System.Globalization;
 using Krupno.Core.Inference;
+using Krupno.Core.Processing;
 
 namespace Krupno.App.Infrastructure;
 
@@ -35,6 +36,15 @@ public static class Text
     };
 
     public static string Scale(double scale) => "×" + scale.ToString("0.##", Culture);
+
+    /// <summary>"×4", or for a target size "to 3840 px wide", "to 2160 px high", "to 3840 px long side".</summary>
+    public static string ScaleChoice(double scale, ScaleTarget? target) => target?.Side switch
+    {
+        null => Scale(scale),
+        TargetSide.Width => $"to {target.Pixels} px wide",
+        TargetSide.Height => $"to {target.Pixels} px high",
+        _ => $"to {target.Pixels} px long side",
+    };
 
     /// <summary>"NVIDIA GeForce RTX 3080" → "RTX 3080", "Intel(R) UHD Graphics 770" → "UHD Graphics 770".</summary>
     public static string ShortAdapterName(string? name)

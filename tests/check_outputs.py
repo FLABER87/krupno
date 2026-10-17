@@ -42,6 +42,46 @@ def expect_nearest(src_name, out_name, scale, keep):
     check(out_name, ok, f"max diff {int(np.abs(got - exp).max())}" if got.shape == exp.shape else f"shape {got.shape} != {exp.shape}")
 
 
+def lanczos_weights(src, dst):
+    """The weights of Resampler.Kernel.Create: Lanczos-3, stretched when downscaling, cut off at the edges and normalized."""
+    scale = dst / src
+    filter_scale = max(1.0, 1.0 / scale)
+    support = 3.0 * filter_scale
+    max_count = int(np.ceil(support * 2)) + 1
+    weights = np.zeros((dst, src))
+    for i in range(dst):
+        center = (i + 0.5) / scale
+        left = max(0, int(np.floor(center - support)))
+        right = min(src, int(np.ceil(center + support)))
+        n = min(right - left, max_count)
+        x = (np.arange(left, left + n) + 0.5 - center) / filter_scale
+        k = np.where(np.abs(x) < 3, np.sinc(x) * np.sinc(x / 3), 0.0)
+        weights[i, left:left + n] = k / k.sum() if k.sum() != 0 else 1.0 / n
+    return weights
+
+
+def lanczos(a, height, width):
+    """Resampler.Resize before rounding, per channel: the horizontal pass, then the vertical one."""
+    rows = np.einsum("xw,hwc->hxc", lanczos_weights(a.shape[1], width), a.astype(np.float64))
+    return np.einsum("yh,hxc->yxc", lanczos_weights(a.shape[0], height), rows)
+
+
+def expect_blend(out_name, network, src, strength, alpha=None):
+    """--strength: network + (1 - strength) × (plain - network), the plain resize clipped to 0..255 like a saved image.
+    Computed in float64 here, so a pixel may be off by 1 at a rounding boundary. alpha: the alpha it must keep exactly."""
+    if not (out / out_name).exists():
+        return check(out_name, False, "file missing")
+    plain = np.clip(lanczos(src, network.shape[0], network.shape[1]), 0, 255)
+    exp = np.clip(np.floor(plain + strength * (network - plain) + 0.5), 0, 255)
+    got = np.asarray(Image.open(out / out_name)).astype(np.int32)
+    if got.shape[:2] != exp.shape[:2]:
+        return check(out_name, False, f"shape {got.shape} != {exp.shape}")
+    diff = int(np.abs(got[..., :3] - exp).max())
+    alpha_ok = alpha is None or (got.shape[2] == 4 and bool((got[..., 3] == alpha).all()))
+    check(out_name, diff <= 1 and alpha_ok, f"max diff {diff} (≤1) from the blend with Lanczos"
+          + (f", alpha {'kept' if alpha_ok else 'changed'}" if alpha is not None else ""))
+
+
 def expect_model(label, text):
     """Model name and scale in the CLI output: shows that the metadata was read."""
     check(f"{label}.log", text in log(label), f'"Model: {text}"')
@@ -54,10 +94,12 @@ for device in ("gpu", "cpu"):
     expect_nearest("noise_300x200.png", f"noise_probe_{device}.png", 3, [0, 0, 1])
 expect_nearest("big_1500x1000.png", "big_red_notile.png", 4, [1, 0, 0])
 expect_nearest("noise_300x200.png", "noise_legacy.png", 2, [1, 1, 1])
+expect_nearest("noise_300x200.png", "noise_half.png", 2, [1, 1, 0])
 expect_model("noise_red_cpu", "Nearest red x4 (×4, Test)")
 expect_model("big_fixed_cpu", "fixed64_x2 (×2)")
 expect_model("noise_probe_cpu", "probe_x3 (×3)")
 expect_model("noise_legacy", "Legacy x2 (×2, Test)")
+expect_model("noise_half", "half_x2 (×2), fp16")
 
 # Alpha: RGB is exact, alpha is Lanczos (compared approximately with Pillow's Lanczos).
 # Under fully transparent pixels (columns 0 and 1 of the fixture) the color is filled from the nearest visible pixel
@@ -74,10 +116,31 @@ pil_alpha = np.asarray(Image.fromarray(src[..., 3].astype(np.uint8)).resize((257
 alpha_err = float(np.abs(got[..., 3] - pil_alpha).mean()) if got.shape[2] == 4 else 999
 check("alpha_red.png", rgb_ok and alpha_err < 1.5, f"rgb exact={rgb_ok}, alpha mean diff vs Pillow Lanczos {alpha_err:.2f}")
 
+# Strength: the network's result mixed with a plain Lanczos resize of the pixels the network saw (with transparency, the
+# colors filled in under alpha 0); the alpha is the one of the full-strength result.
+noise = load(img / "noise_300x200.png")
+expect_blend("noise_red_s50.png", np.repeat(np.repeat(noise, 4, 0), 4, 1) * np.array([1, 0, 0]), noise, 0.5)
+expect_blend("alpha_red_s30.png", exp_rgb, bled, 0.3, alpha=got[..., 3] if got.shape[2] == 4 else None)
+check("strength_0.log", "--strength" in log("strength_0") and not (out / "strength_0.png").exists(),
+      " | ".join(line for line in log("strength_0").splitlines() if line.strip()) or "empty output")
+
 # Fractional scale: ×2.5 with a ×4 model means downscaling the ×4 result with a Lanczos filter.
 got = load(out / "noise_red_x2_5.png")
 check("noise_red_x2_5.png", got.shape == (500, 750, 3) and int(got[..., 1:].max()) == 0,
       f"shape {got.shape}, G/B max {int(got[..., 1:].max())}")
+
+# Target sizes. --width 750 on 300×200 is ×2.5, and the name next to the source says the target; --long-side 960 on the
+# rotated 90×160 image is ×6 (two passes); -s together with a target size is refused before any work.
+path = out / "target" / "noise_750w.png"
+got = load(path) if path.exists() else np.zeros((0, 0, 3), np.int32)
+check("target/noise_750w.png", got.shape == (500, 750, 3) and int(got[..., 1:].max(initial=0)) == 0,
+      f"shape {got.shape}" + ("" if path.exists() else ", file missing"))
+path = out / "target_long.png"
+got = load(path) if path.exists() else np.zeros((0, 0, 3), np.int32)
+check("target_long.png", got.shape == (960, 540, 3) and got.size > 0 and got[:40, -40:, 0].mean() > 200,
+      f"shape {got.shape}, top-right R {got[:40, -40:, 0].mean() if got.size else 0:.0f}")
+check("target_conflict.log", "Use only one of" in log("target_conflict") and not (out / "target_conflict.png").exists(),
+      " | ".join(line for line in log("target_conflict").splitlines() if line.strip()) or "empty output")
 
 # Multiple passes: ×8 with a ×4 model means two passes (×16), then downscaling to ×8.
 got = load(out / "noise_red_x8.png")
@@ -173,6 +236,15 @@ dup = out / "dup_out"
 check("dup_names", (dup / "x.png").exists() and (dup / "x (2).png").exists()
       and Image.open(dup / "x.png").size == (90 * 4, 160 * 4) and Image.open(dup / "x (2).png").size == (1200, 800),
       ", ".join(sorted(p.name for p in dup.iterdir())) if dup.exists() else "folder missing")
+
+# A save that fails in the background (the first file of a batch is written while the second one is processed): reported with
+# the file's number, counted as failed, no temporary file left behind, and the second file saved as usual.
+text = log("bg_save_fail")
+bgsave = out / "bgsave_out"
+check("bg_save_fail", "[1/2] Not saved:" in text and "Done: 1 of 2" in text
+      and not (list(bgsave.glob("krupno-*.tmp")) if bgsave.exists() else []),
+      " | ".join(line for line in text.splitlines() if "Not saved" in line or "Done" in line) or "empty output")
+expect_nearest("noise_300x200.png", "bgsave_out/b.png", 4, [1, 0, 0])
 
 print("ALL OK" if failures == 0 else f"{failures} FAILED")
 sys.exit(1 if failures else 0)

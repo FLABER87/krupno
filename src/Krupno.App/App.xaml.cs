@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Threading;
+using Krupno.App.Infrastructure;
 
 namespace Krupno.App;
 
@@ -18,13 +19,28 @@ public partial class App : Application
             "dark" => ThemeMode.Dark,
             _ => ThemeMode,
         };
+        Log.Start();
         DispatcherUnhandledException += OnUnhandledException;
+        // Off the UI thread: the process is going down, so only the log can tell what happened.
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+            Log.Error("Unhandled exception, the app is closing", args.ExceptionObject as Exception);
+        TaskScheduler.UnobservedTaskException += (_, args) => Log.Error("Unobserved task exception", args.Exception);
         base.OnStartup(e);
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        SingleInstance.Release();
+        Log.Info("Session ended");
+        Log.Close();
+        base.OnExit(e);
     }
 
     private static void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        MessageBox.Show(e.Exception.Message, "Krupno — Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        Log.Error("Unhandled exception", e.Exception);
+        string details = Log.FilePath is { } path ? $"\n\nDetails are in the log:\n{path}" : "";
+        MessageBox.Show(e.Exception.Message + details, "Krupno — Error", MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
     }
 }

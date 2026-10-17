@@ -59,7 +59,7 @@
                         </StackPanel>
                     </Button>
                     <TextBlock Style="{StaticResource Hint}" Margin="0,14,0,0"
-                               Text="PNG, JPEG, TIFF, BMP, GIF, WebP, HEIC · Ctrl+O" />
+                               Text="PNG, JPEG, TIFF, BMP, GIF, WebP, HEIC · Ctrl+O · Ctrl+V to paste" />
                 </StackPanel>
             </Grid>
 
@@ -184,7 +184,7 @@
                                     HorizontalAlignment="Stretch" Height="40" FontSize="15">
                                 <TextBlock Text="Select files" />
                             </Button>
-                            <TextBlock Style="{StaticResource Hint}" Text="Ctrl+O" />
+                            <TextBlock Style="{StaticResource Hint}" Text="Ctrl+O · Ctrl+V to paste" />
                         </StackPanel>
 
                         <!-- Ready to start -->
@@ -250,6 +250,11 @@
                                     </StackPanel>
                                 </Button>
                             </UniformGrid>
+                            <Button Style="{StaticResource LinkButton}" Command="{Binding CopyErrorDetailsCommand}"
+                                    HorizontalAlignment="Center" Margin="0,10,0,0"
+                                    Visibility="{Binding HasErrorReport, Converter={StaticResource BoolToVisibility}}">
+                                <TextBlock Text="Copy error details" />
+                            </Button>
                             <TextBlock Style="{StaticResource Hint}" Text="Ctrl+C — copy the result" />
                         </StackPanel>
 
@@ -269,6 +274,10 @@
                             <Button Style="{DynamicResource AccentButtonStyle}" Command="{Binding UpscaleCommand}"
                                     HorizontalAlignment="Stretch" Height="40" FontSize="15" Margin="0,10,0,0">
                                 <TextBlock Text="Try again" />
+                            </Button>
+                            <Button Style="{StaticResource LinkButton}" Command="{Binding CopyErrorDetailsCommand}"
+                                    HorizontalAlignment="Center" Margin="0,10,0,0" ToolTip="For a bug report: versions, GPU, model, settings and the error">
+                                <TextBlock Text="Copy error details" />
                             </Button>
                         </StackPanel>
                     </Grid>
@@ -342,10 +351,29 @@
                             <TextBlock Text="{Binding AllModelsToggleText}" />
                         </Button>
 
+                        <!-- Strength -->
+                        <DockPanel Margin="0,16,0,4">
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding StrengthText}" VerticalAlignment="Center" FontSize="12" />
+                            <TextBlock Style="{StaticResource SectionHeader}" Text="Strength" />
+                        </DockPanel>
+                        <Slider Minimum="10" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"
+                                Value="{Binding Strength}" AutomationProperties.Name="Strength" />
+                        <TextBlock Style="{StaticResource Caption}" Margin="2,4,0,0"
+                                   Text="Below 100%, a plain resize of the original is mixed in: fewer invented textures, softer sharpening." />
+
                         <!-- Scale -->
                         <TextBlock Style="{StaticResource SectionHeader}" Text="Scale" Margin="0,16,0,8" />
                         <ListBox Style="{StaticResource SegmentedList}" ItemsSource="{Binding Scales}"
                                  SelectedItem="{Binding SelectedScale}" />
+                        <!-- "Other": a scale of one's own, or one side of the result in pixels -->
+                        <DockPanel Margin="0,8,0,0" Visibility="{Binding IsCustomScale, Converter={StaticResource BoolToVisibility}}">
+                            <ComboBox DockPanel.Dock="Left" Width="150" ItemsSource="{Binding CustomModes}"
+                                      SelectedItem="{Binding SelectedCustomMode}" DisplayMemberPath="Label"
+                                      AutomationProperties.Name="What the number sets" />
+                            <TextBox Margin="8,0,0,0" VerticalContentAlignment="Center"
+                                     Text="{Binding CustomValueText, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.Name="Scale or size" />
+                        </DockPanel>
                         <TextBlock Style="{StaticResource Caption}" Text="{Binding SizePreview}" Margin="2,6,0,0" />
 
                         <!-- Saving -->
@@ -395,6 +423,9 @@
                                           DisplayMemberPath="Label" HorizontalAlignment="Stretch" />
                                 <TextBlock Style="{StaticResource Caption}" Margin="0,6,0,0"
                                            Text="Smaller tiles use less video memory. If memory runs out, the tile size is reduced automatically." />
+                                <CheckBox Content="Seamless tiles" IsChecked="{Binding SeamlessTiles}" Margin="0,12,0,0" />
+                                <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0"
+                                           Text="Twice the overlap between tiles (64 px): no visible seams even with deep models, but more tiles to run: about 1.5 times as many for a 1920 × 1200 photo with auto tiles." />
                             </StackPanel>
                         </Expander>
                     </StackPanel>

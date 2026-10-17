@@ -1,6 +1,7 @@
 using System.Globalization;
 using Krupno.Core.Imaging;
 using Krupno.Core.Inference;
+using Krupno.Core.Processing;
 
 namespace Krupno.Cli;
 
@@ -21,10 +22,15 @@ internal sealed class CliOptions
           -m, --model <name|path> model from the catalog or path to an .onnx file
                                   (default: {ModelCatalog.DefaultModelName}; if it is missing, the first one alphabetically)
           -s, --scale <number>    final scale, e.g. 2, 3, 4, 8 or 2.5 (default: the model's own scale)
+              --width <px>        a width for every result instead of a scale; the height follows the proportions
+              --height <px>       the same for the height
+              --long-side <px>    the same for the longer side, whichever it is for each image
           -f, --format <fmt>      png | jpg | tiff | bmp (default: from the output extension, or png)
           -q, --quality <1-100>   JPEG quality (default: 95)
           -t, --tile <px>         tile size; 0 = no tiling (default: 384)
               --pad <px>          tile overlap (default: 32; 64 leaves no visible seams even with deep models)
+              --strength <1-100>  how much of the network's result to keep, in percent; the rest is a plain
+                                  Lanczos resize, which tones down invented textures (default: 100)
           -d, --device <dev>      auto | cpu | gpu0, gpu1, … (default: auto)
               --list-models       list the models found
               --list-devices      list the devices
@@ -37,10 +43,12 @@ internal sealed class CliOptions
     public string? Output { get; private set; }
     public string? Model { get; private set; }
     public double Scale { get; private set; }
+    public ScaleTarget? Target { get; private set; }
     public ImageFileFormat? Format { get; private set; }
     public int Quality { get; private set; } = 95;
     public int Tile { get; private set; } = 384;
     public int Padding { get; private set; } = 32;
+    public int Strength { get; private set; } = 100;
     public string Device { get; private set; } = "auto";
     public bool ListModels { get; private set; }
     public bool ListDevices { get; private set; }
@@ -49,6 +57,8 @@ internal sealed class CliOptions
     public static CliOptions Parse(string[] args)
     {
         var options = new CliOptions();
+        // -s and the target sizes all set the size of the result, so only one of them makes sense.
+        var sizes = new List<string>();
         for (int i = 0; i < args.Length; i++)
         {
             string arg = args[i];
@@ -67,6 +77,12 @@ internal sealed class CliOptions
                     break;
                 case "-s" or "--scale":
                     options.Scale = ParseScale(Value());
+                    sizes.Add(arg);
+                    break;
+                case "--width" or "--height" or "--long-side":
+                    var side = arg switch { "--width" => TargetSide.Width, "--height" => TargetSide.Height, _ => TargetSide.LongSide };
+                    options.Target = new ScaleTarget(side, ParseInt(arg, Value(), 1, 1_000_000));
+                    sizes.Add(arg);
                     break;
                 case "-f" or "--format":
                     options.Format = ParseFormat(Value());
@@ -79,6 +95,9 @@ internal sealed class CliOptions
                     break;
                 case "--pad":
                     options.Padding = ParseInt(arg, Value(), 0, 256);
+                    break;
+                case "--strength":
+                    options.Strength = ParseInt(arg, Value().TrimEnd('%'), 1, 100);
                     break;
                 case "-d" or "--device":
                     options.Device = Value();
@@ -98,6 +117,8 @@ internal sealed class CliOptions
                     break;
             }
         }
+        if (sizes.Count > 1)
+            throw new CliException($"Use only one of -s, --width, --height and --long-side (got {string.Join(", ", sizes)}).");
         return options;
     }
 

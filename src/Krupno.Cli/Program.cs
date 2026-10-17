@@ -83,62 +83,108 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
         throw new CliException($"File or folder not found: {inputPath}");
 
     string modelPath = ResolveModel(options.Model);
+    using var keepAwake = new KeepAwake();
     var stopwatch = Stopwatch.StartNew();
     using var model = UpscaleModel.Load(modelPath, ParseDevice(options.Device));
 
-    var jobs = PlanJobs(options, options.Scale > 0 ? options.Scale : model.Info.Scale);
+    // Next to the source, the name says what was asked for: "_x4", "_x2.5", "_3840w".
+    string suffix = options.Target?.Suffix
+        ?? "_x" + (options.Scale > 0 ? options.Scale : model.Info.Scale).ToString("0.##", CultureInfo.InvariantCulture);
+    var jobs = PlanJobs(options, suffix);
     if (jobs.Count == 0)
         throw new CliException($"No supported images found in \"{options.Input}\".");
     var upscaler = new Upscaler(model);
-    var upscaleOptions = new UpscaleOptions { Scale = options.Scale, TileSize = options.Tile, TilePadding = options.Padding };
+    var upscaleOptions = new UpscaleOptions
+    {
+        Scale = options.Scale, Target = options.Target, TileSize = options.Tile, TilePadding = options.Padding,
+        Strength = options.Strength / 100.0,
+    };
 
     Console.WriteLine($"Model:  {model.Info}{(model.Info.IsHalfPrecision ? ", fp16" : "")}");
     Console.WriteLine($"Device: {model.Device}");
 
     int failed = 0;
-    for (int i = 0; i < jobs.Count; i++)
+    // The previous file's result while it is written in the background (see BatchSaving), and its "[i/n] " prefix.
+    Task? pendingSave = null;
+    string pendingPrefix = "";
+    try
     {
-        var (input, output) = jobs[i];
-        string prefix = jobs.Count > 1 ? $"[{i + 1}/{jobs.Count}] " : "";
-        Console.WriteLine($"{prefix}{input}");
-
-        try
+        for (int i = 0; i < jobs.Count; i++)
         {
-            var itemTimer = Stopwatch.StartNew();
-            var loaded = ImageCodec.Load(input);
-            var format = options.Format ?? ImageCodec.FormatFromExtension(output) ?? ImageFileFormat.Png;
-            var (outputWidth, outputHeight) = upscaler.OutputSize(loaded.Image.Width, loaded.Image.Height, upscaleOptions);
-            ImageCodec.EnsureCanSave(format, outputWidth, outputHeight);
+            var (input, output) = jobs[i];
+            string prefix = jobs.Count > 1 ? $"[{i + 1}/{jobs.Count}] " : "";
+            Console.WriteLine($"{prefix}{input}");
 
-            var progress = new ConsoleProgress();
-            var result = upscaler.Upscale(loaded.Image, upscaleOptions, progress, cancellationToken);
-            progress.Finish();
-            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                var itemTimer = Stopwatch.StartNew();
+                var loaded = ImageCodec.Load(input);
+                var format = options.Format ?? ImageCodec.FormatFromExtension(output) ?? ImageFileFormat.Png;
+                var (outputWidth, outputHeight) = upscaler.OutputSize(loaded.Image.Width, loaded.Image.Height, upscaleOptions);
+                ImageCodec.EnsureCanSave(format, outputWidth, outputHeight);
 
-            ImageCodec.Save(result, output, format, new SaveOptions { JpegQuality = options.Quality, Source = loaded });
-            Console.WriteLine($"  {loaded.Image.Width}×{loaded.Image.Height} → {result.Width}×{result.Height}  " +
-                              $"{itemTimer.Elapsed.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture)} s  → {output}");
+                var progress = new ConsoleProgress();
+                var result = upscaler.Upscale(loaded.Image, upscaleOptions, progress, cancellationToken);
+                progress.Finish();
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // One save at a time: the previous file is finished first.
+                FinishPendingSave();
+                var saveOptions = new SaveOptions { JpegQuality = options.Quality, Source = loaded };
+                if (i < jobs.Count - 1 && BatchSaving.CanSaveInBackground(result))
+                {
+                    // The line below comes before the file is written; a failed save is reported once the next file is done.
+                    pendingSave = Task.Run(() => ImageCodec.Save(result, output, format, saveOptions));
+                    pendingPrefix = prefix;
+                }
+                else
+                {
+                    ImageCodec.Save(result, output, format, saveOptions);
+                }
+                Console.WriteLine($"  {loaded.Image.Width}×{loaded.Image.Height} → {result.Width}×{result.Height}  " +
+                                  $"{itemTimer.Elapsed.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture)} s  → {output}");
+            }
+            catch (Exception ex) when (jobs.Count > 1 && ex is not OperationCanceledException)
+            {
+                // In batch mode one broken image must not stop the rest.
+                failed++;
+                Console.Error.WriteLine($"  Skipped: {ex.Message}");
+            }
+
+            if (model.FallbackReason is { } reason && i == 0)
+                Console.WriteLine($"  DirectML is unavailable, running on CPU: {reason}");
         }
-        catch (Exception ex) when (jobs.Count > 1 && ex is not OperationCanceledException)
-        {
-            // In batch mode one broken image must not stop the rest.
-            failed++;
-            Console.Error.WriteLine($"  Skipped: {ex.Message}");
-        }
-
-        if (model.FallbackReason is { } reason && i == 0)
-            Console.WriteLine($"  DirectML is unavailable, running on CPU: {reason}");
+    }
+    finally
+    {
+        // Also on Ctrl+C or an error: a result already being written is finished rather than cut off by the exit.
+        FinishPendingSave();
     }
 
     if (jobs.Count > 1)
         Console.WriteLine($"Done: {jobs.Count - failed} of {jobs.Count} in {stopwatch.Elapsed.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture)} s");
     return failed == 0 ? 0 : 1;
+
+    void FinishPendingSave()
+    {
+        if (pendingSave is null)
+            return;
+        try
+        {
+            pendingSave.GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            failed++;
+            Console.Error.WriteLine($"  {pendingPrefix}Not saved: {ex.Message}");
+        }
+        pendingSave = null;
+    }
 }
 
-static List<(string Input, string Output)> PlanJobs(CliOptions options, double scale)
+static List<(string Input, string Output)> PlanJobs(CliOptions options, string suffix)
 {
     string input = Path.GetFullPath(options.Input!);
-    string suffix = "_x" + scale.ToString("0.##", CultureInfo.InvariantCulture);
 
     if (Directory.Exists(input))
     {

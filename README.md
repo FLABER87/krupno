@@ -46,9 +46,9 @@ By default the app is installed for the current user, to `%LOCALAPPDATA%\Program
 Optional checkboxes:
 - a desktop shortcut;
 - the install folder in PATH, so `krupno-cli` can be run from any console;
-- an "Upscale with Krupno" item in the Explorer context menu for images and folders. It is shown when a single item is selected: with a command string, Explorer would open a window per file.
+- an "Upscale with Krupno" item in the Explorer context menu for images and folders, for a selection of up to 15 items (Explorer's limit for such items). Explorer starts Krupno.exe for each selected item; every one after the first hands its file to the window already open, so the whole selection lands in one queue.
 
-Uninstalling removes all of the above and leaves `%LOCALAPPDATA%\Krupno` (settings and your own models) alone. The installer UI is English only.
+Uninstalling removes all of the above and leaves `%LOCALAPPDATA%\Krupno` (settings, logs and your own models) alone. The installer UI is English only.
 
 To build the installer and the portable ZIP, you also need Inno Setup 6.5+ (`winget install JRSoftware.InnoSetup`):
 
@@ -156,13 +156,17 @@ krupno-cli photo.jpg                          # → photo_x4.png next to the sou
 krupno-cli photo.jpg -s 2 -f jpg -q 92        # ×2 result as JPEG
 krupno-cli C:\photos -o C:\photos_x4          # a whole folder
 krupno-cli photo.png -m realesr-general-x4v3 -d gpu1 -t 256
+krupno-cli photo.jpg --strength 70              # 70% network, 30% plain Lanczos resize
+krupno-cli C:\photos --long-side 3840           # every result 3840 px on its longer side
 krupno-cli --list-models --list-devices
 ```
 
-See `krupno-cli --help` for details. Ctrl+C cancels processing.
+See `krupno-cli --help` for details. Ctrl+C cancels processing. While it runs, Windows does not go to sleep on idle.
 
 A result never replaces a source image or another result of the same run: if `-o` points at the source's own folder,
 or a folder has both `photo.jpg` and `photo.png`, the second name gets ` (2)` (`photo (2).png`). An existing file from an earlier run is overwritten.
+
+In a batch, a file's line (size, time, output path) is printed as soon as it is upscaled, while its result is still being written in the background. If that save fails, `[i/n] Not saved: …` follows once the next file is done, the file counts as failed, and the exit code is 1.
 
 Without `-m`, `4xBHI_realplksr_dysample_real` is used, or the first model in alphabetical order if it is missing. `--list-models` marks the default model with an asterisk.
 
@@ -171,12 +175,16 @@ Without `-m`, `4xBHI_realplksr_dysample_real` is used, or the first model in alp
 The preview is on the left, the settings panel on the right.
 
 - **Opening files:** drag photos or a folder into the window, click "Select files", or pass a path on the command line. With Ctrl held, dropped files are added to the queue; without it, they replace it.
+- **One window.** Krupno.exe started while a window is open hands its files to that window over a named pipe (for the same user and session only) and exits; started with no files, it brings the window forward. Files that arrive within 2 seconds of each other are one selection (Explorer starts a Krupno.exe per selected file) and share one queue; a later one replaces the queue, like opening files. While processing runs, handed-over files are not opened, and a message says so. If the open window doesn't answer within 5 seconds, the new Krupno.exe opens a window of its own. `--new-window` always opens a separate window, for example to run two GPUs at once.
+- **Pasting:** Ctrl+V opens files copied in Explorer, or an image from the clipboard (a screenshot, "Copy image" in a browser). The queue works with files, so a pasted image is first saved as `Pictures\Krupno\Pasted <date> <time>.png`, and the result goes next to it like for any other file. A PNG on the clipboard (browsers and Office put one there) is saved as is, with transparency; a plain bitmap whose fourth byte is 0 everywhere, as most apps leave it, is taken as opaque.
 - **Models** are shown as cards with descriptive names ("Photo, fast", "Photo, maximum detail"…). The recommended and non-commercial models are marked, and technical details are in the tooltip. Known models are described in `ViewModels/ModelItem.cs`; the others are shown by file name.
-- **Scale and format** are picked with toggle buttons. The output size is shown right away, and JPEG has a quality slider.
-- **Device and tile size** are tucked away under "Advanced"; by default both are chosen automatically.
+- **Strength** (10–100%, under the models) mixes the network's result with a plain Lanczos resize of the original. Below 100% it tones down the textures a model invents and its oversharpening (see [How it works](#how-it-works)).
+- **Scale and format** are picked with toggle buttons. The output size is shown right away, and JPEG has a quality slider. "Other" takes a scale of your own (2.5, or 2,5) or a length for one side of the result: width, height or long side in pixels. With a size, every image of a batch gets its own scale, shown next to the output size, and the name says what was asked for (`photo_3840px.png`).
+- **Device and tile size** are tucked away under "Advanced"; by default both are chosen automatically. "Seamless tiles" there doubles the tile overlap to 64 px (`--pad 64` in the command-line tool): no visible seams even with deep models, at the cost of more tiles (35 instead of 24 for a 1920×1200 photo with auto tiles, about 1.5 times the time).
 - **Comparison:** a slider wipe or two frames side by side. Zoom is measured in output pixels (100% is pixel for pixel), the mouse wheel zooms toward the point under the cursor, the right or middle button pans the image, and a double click toggles "Fit to window" ↔ 1:1.
-- **During processing** finished tiles are highlighted on the preview, with the percentage, the remaining time and the tile number next to it. Progress also shows on the Windows taskbar icon.
-- **A batch** is shown as a strip of thumbnails with each file's status: processing, done, error. Clicking a thumbnail shows the comparison for that file.
+- **During processing** finished tiles are highlighted on the preview, with the percentage, the remaining time and the tile number next to it. Progress also shows on the Windows taskbar icon. While processing runs, Windows does not go to sleep on idle (the display may still turn off; closing the lid or choosing Sleep works as usual).
+- **A batch** is shown as a strip of thumbnails with each file's status: processing, done, error. A file keeps the "processing" mark while its result is written, which in a batch overlaps with the next file (see [How it works](#how-it-works)). Clicking a thumbnail shows the comparison for that file.
+- **Errors and the log.** Each session of the window writes a log to `%LOCALAPPDATA%\Krupno\logs` (the 20 newest are kept). It starts with the versions of Krupno, Windows, .NET, ONNX Runtime and DirectML and the GPUs with their driver versions, then records each run (model, device, tile, strength, scale, format), every file and its result, warnings (a reduced tile, the fallback to the CPU) and every error with its stack trace. After a failed run, "Copy error details" puts the same facts for that run on the clipboard, ready for a bug report, with the path to the log. The log stays on the computer, and it holds file paths, so look it over before sharing it. The command-line tool writes no log: everything goes to the console.
 - **The theme** is light or dark to match the system, with the system accent color. On Windows 10 the window title bar turns dark too. The `KRUPNO_THEME=light|dark` variable forces a theme for testing.
 
 Keyboard shortcuts:
@@ -189,9 +197,10 @@ Keyboard shortcuts:
 | Ctrl+0 / Ctrl+1 | fit to window / pixel for pixel |
 | Ctrl+Plus / Ctrl+Minus | zoom in / zoom out |
 | Ctrl+C | copy the result |
+| Ctrl+V | paste files or an image |
 
-The window starts with the same default model and the "Auto" device. The last chosen model and device are saved in `%LOCALAPPDATA%\Krupno\settings.json`.
-The GPU is saved by name, since its DXGI index may change. If the saved model or GPU is gone, or the settings file is corrupt or missing, the window falls back to the defaults.
+The first launch starts with the default model, ×4, PNG and the "Auto" device and tile. Every choice is saved in `%LOCALAPPDATA%\Krupno\settings.json` as soon as it is made: the model, strength, scale, format, JPEG quality, output folder, device, tile size and "Seamless tiles". The window's size and position (and whether it was maximized) are saved when it closes; a window that would land on a monitor that is no longer connected is moved onto a visible one.
+The GPU is saved by name, since its DXGI index may change. If the saved model or GPU is gone, a value is not one the window offers, or the settings file is corrupt or missing, the window falls back to the defaults. A saved output folder is checked before processing starts: if its drive is gone, the window says so right away instead of after the first file.
 
 The app icon is drawn by `tools/make_icon.py` (requires Pillow and numpy).
 
@@ -209,16 +218,19 @@ powershell -ExecutionPolicy Bypass -File tests\run_cli_tests.ps1
 
 The script creates the input images (`tests/make_fixtures.py`), runs `krupno-cli.exe` on the GPU and on the CPU, and puts the results and logs into `tests/out/cli`.
 Then `tests/check_outputs.py` compares them with the expectations, and the script exits with code 0 only if everything matches. A run takes about 15 s.
-Covered: tiling (including a model with a static 64×64 input and a run without tiling), a probe run of a model without metadata, reading `krupno.*` and `upscalr.*` metadata,
+Covered: tiling (including a model with a static 64×64 input and a run without tiling), a probe run of a model without metadata, a model with fp16 input and output, reading `krupno.*` and `upscalr.*` metadata,
 fractional scale, ×8 in two passes, alpha channel (with the color fill under transparent pixels), EXIF rotation, ICC profiles (a Display P3 image keeps its pixels and profile; CMYK and grayscale images are converted to sRGB, also with a CMYK profile far from SWOP), folder processing,
+strength (the blend is checked against the same Lanczos filter computed in numpy; with transparency the alpha must stay as at full strength),
+a save that fails in the background during a batch, target sizes (`--width` with the name it gives, `--long-side` after the EXIF rotation, `-s` together with a target size refused),
 output names that would overwrite a source or another result, and broken files.
 `python tests/make_fixtures.py --models` regenerates the models (it also needs the `onnx` package).
 On GitHub, the `.github/workflows/tests.yml` workflow (`windows-latest`) builds and runs these tests on every push and pull request. The runner has no GPU, and Krupno does not count "Microsoft Basic Render Driver" as one. So the workflow runs the script with the `-CheckFallback` switch: it sets `KRUPNO_BASIC_RENDER_DRIVER=1`, "Auto" picks that adapter, DirectML fails to start on it, and every "GPU" run must fall back to the CPU. This is how the fallback is tested. If the tests fail, `tests/out/cli` is uploaded as the `cli-tests-out` artifact.
+Dependabot (`.github/dependabot.yml`) opens weekly update PRs for ONNX Runtime and the GitHub Actions, so these tests check every update before it is merged. The Python requirements are left out: `tools/requirements.txt` sets deliberate lower bounds, which Dependabot would raise.
 
 The UI scripts launch `Krupno.exe` and drive the window through UI Automation.
 They need real models in `models/`: `4xBHI_realplksr_dysample_real` and `4xBHI_dat2_real_fp16` by default; others are set with the `-Model` and `-SlowModel` parameters.
 - `tests\gui_states.ps1` walks through the window states (empty, tile-by-tile processing, result, side-by-side comparison, batch, error, light theme) and saves screenshots to `tests/out/gui`. The script itself only checks that the states are reached; a human looks at the screenshots. The `color` scenario also checks pixels. A Display P3 image must look the way Windows' color-managed decoding shows it, before and after processing and in the filmstrip. An untagged copy must be shown unchanged, and the saved result must keep the stored pixels. About 2 min.
-- `tests\gui_keys.ps1` checks the keyboard shortcuts: preview zoom, Ctrl+Enter, Ctrl+C (image size on the clipboard) and Esc. The keys are sent through SendKeys, so it is best not to touch the keyboard and mouse during the run (about 30 s). If the Krupno window is not in the foreground, the script stops and sends no keys.
+- `tests\gui_keys.ps1` checks the keyboard shortcuts: preview zoom, Ctrl+Enter, Ctrl+C (image size on the clipboard), Ctrl+V (a bitmap and a PNG pasted from the clipboard are saved to `Pictures\Krupno` with the right size; the script deletes them afterwards) and Esc. It also checks handing files over to an open window: two Krupno.exe started together give one queue of two files and exit, and one started 3 seconds later replaces the queue (skipped if a Krupno window is already open). The UI scripts start their windows with `--new-window`, so a window you have open doesn't take their files. The keys are sent through SendKeys, so it is best not to touch the keyboard and mouse during the run (about 30 s). If the Krupno window is not in the foreground, the script stops and sends no keys.
 
 Both scripts swap `%LOCALAPPDATA%\Krupno\settings.json` for the duration of the run and restore the previous one afterwards.
 
@@ -229,7 +241,9 @@ Both scripts swap `%LOCALAPPDATA%\Krupno\settings.json` for the duration of the 
 - **Checked against a reference.** Without tiling, the result matches the PyTorch implementation of Real-ESRGAN within ±1 level, both on DirectML and on the CPU.
 - **Out of memory.** If the window does not fit on the device, the tile shrinks and the pass starts over. Up to 512 px, the tile steps down a 64 px grid, respecting the model's size multiple (512 → 448 → 384 → 320 → 256 → …, no smaller than 128). A larger window is halved, but not below 512: every failed attempt costs a graph compilation, about 10 s for DAT2. Previously the tile was always halved and skipped the size that would fit: DAT2 fp32 on 10 GB dropped from 384 straight to 192. The chosen tile is remembered for the model on that device: later frames of a batch and the second ×8 pass start with it right away, and the reduction message is printed once. With DAT2 fp32 and `-t 384`, a batch of two 1920×1200 frames takes 62.1 + 51.7 s: only the first frame spends the extra ~10 s. In the window, the limit lasts until the model or device changes, and the next processing run shows "Tile 320 px (chosen after running out of memory)" once. To try a larger tile again, for example after freeing VRAM, switch the model or restart the app. DirectML does not report spilling into shared memory as an exception, so it cannot be caught this way.
 - **CPU fallback.** In "Auto" mode the GPU with the most memory is used; if DirectML fails to start, the work runs on the CPU, and the window says so during processing. Running out of video memory is not a reason to fall back: once DirectML has created a session for the model, or when the error reads as out of memory, the tile shrinks instead. The software "Microsoft Basic Render Driver" does not count as a GPU: on a machine without a GPU it is not in the device list, and "Auto" goes straight to the CPU.
-- **Any scale.** The network runs as many times as needed (×8 with a ×4 model is two passes), then the result is resized precisely with a Lanczos-3 filter. If the last pass would not fit in memory at full size (×8 of a 1920×1200 photo makes a 30720×19200 intermediate), its input is first reduced so that the pass lands just above the target size, and a message says so.
+- **Any scale or size.** `--width`, `--height` and `--long-side` ("Other" in the window) set one side of the result in pixels instead of a scale: the scale is worked out for each image, the other side follows its proportions, and next to the source the name gets `_3840w`, `_2160h` or `_3840px`. The network runs as many times as needed (×8 with a ×4 model is two passes), then the result is resized precisely with a Lanczos-3 filter. If the last pass would not fit in memory at full size (×8 of a 1920×1200 photo makes a 30720×19200 intermediate), its input is first reduced so that the pass lands just above the target size, and a message says so. A size just above the model's own scale takes the second pass too: 3840 px wide from a 900 px photo is ×4.27, so a ×4 model runs twice (×16) and the result is reduced. The window shows the scale next to the output size for this reason.
+- **Strength.** Below 100%, the result is `plain + strength × (network − plain)`, where `plain` is a Lanczos resize of the pixels the network saw (with transparency, the colors filled in under alpha 0) to the output size, clipped to 0..255 like a saved image. The alpha stays as computed for the full-strength result. The mix is done band by band, so the plain resize never exists whole: for a 7680×4800 result it adds under a second on a 4-core CPU.
+- **Batches.** A result is written while the next file is loaded and upscaled, so the GPU doesn't wait for the encoder (compressing a 7680×4800 PNG can take seconds, most of a frame for a fast model). One save runs at a time, so files finish in order. The last file of a batch, and a result larger than 512 MB, are written right away instead: one more result in memory, plus the encoder's copy of it, could make a large batch run out of memory. On cancellation or an error, a result already being written is finished and counts as done.
 - **The alpha channel** is scaled separately (Lanczos); the network processes RGB. The color under fully transparent pixels is first filled from the nearest visible pixel, so the edges don't pick up the color stored there (usually black), and the final resize weights colors by alpha.
 - **EXIF rotation** is applied to the pixels. An RGB ICC profile is carried over to the result (see below), and the metadata too if the output format matches the source.
 - **Color profiles.** The pixels are upscaled as stored: an Adobe RGB or Display P3 photo stays in its color space, and the result carries the same profile (BMP, which can't hold one, is converted to sRGB). The result is always RGB, which a CMYK or grayscale profile can't describe. So CMYK and grayscale images are converted with their profile to sRGB on load, the way color-managed viewers show them, and the result has no profile (untagged means sRGB). A profile that doesn't fit the pixels, such as a grayscale profile on a color image, is dropped. The copy of the profile in the source's metadata (a PNG iCCP chunk, JPEG APP2 segments, a TIFF tag) stays behind, so only a profile that fits goes into the result. WPF draws everything as sRGB, so the window converts the comparison and the filmstrip thumbnails from the embedded profile to sRGB, for display only. WIC does the conversion, so the colors match Windows' own color-managed decoding. Krupno converts to sRGB, not to the monitor's profile. Profiles that match sRGB within a couple of levels are left alone. A large result is converted in place, a few megabytes at a time, without another full-size copy. Ctrl+C copies the result as it is shown, in sRGB.

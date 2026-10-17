@@ -22,17 +22,19 @@ sys.stdout.reconfigure(encoding="utf-8")
 root = args.root
 
 
-def resize_model(path, scale, dims, keep, meta=None):
-    """out = nearest_upscale(x, scale) * keep (per channel), so that a swapped channel order is visible."""
+def resize_model(path, scale, dims, keep, meta=None, half=False):
+    """out = nearest_upscale(x, scale) * keep (per channel), so that a swapped channel order is visible.
+    half: fp16 input and output, as some third-party models have."""
     import onnx
     from onnx import TensorProto, helper, numpy_helper
 
-    x = helper.make_tensor_value_info("input", TensorProto.FLOAT, dims)
+    element = TensorProto.FLOAT16 if half else TensorProto.FLOAT
+    x = helper.make_tensor_value_info("input", element, dims)
     out_dims = [d * scale if isinstance(d, int) and i >= 2 else (None if i >= 2 else d) for i, d in enumerate(dims)]
-    y = helper.make_tensor_value_info("output", TensorProto.FLOAT, out_dims)
+    y = helper.make_tensor_value_info("output", element, out_dims)
     inits = [
         numpy_helper.from_array(np.array([1, 1, scale, scale], np.float32), "scales"),
-        numpy_helper.from_array(np.array(keep, np.float32).reshape(1, 3, 1, 1), "keep"),
+        numpy_helper.from_array(np.array(keep, np.float16 if half else np.float32).reshape(1, 3, 1, 1), "keep"),
     ]
     nodes = [
         helper.make_node("Resize", ["input", "", "scales"], ["up"], mode="nearest",
@@ -138,6 +140,8 @@ if args.models:
     # Metadata with the legacy upscalr.* prefix (models converted before the project was renamed).
     resize_model(m / "legacy_x2.onnx", 2, [1, 3, "height", "width"], [1, 1, 1],
                  {"upscalr.scale": "2", "upscalr.name": "Legacy x2", "upscalr.architecture": "Test"})
+    # fp16 input and output: each byte level survives the trip through fp16 (b/255 has 11 significant bits), so the result is exact.
+    resize_model(m / "half_x2.onnx", 2, [1, 3, "height", "width"], [1, 1, 0], {"krupno.scale": "2"}, half=True)
 
 img = root / "images"
 img.mkdir(parents=True, exist_ok=True)

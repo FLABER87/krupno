@@ -1,6 +1,9 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -35,8 +38,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 {
     private const int CompactModelCount = 3;
     private const int ThumbnailHeight = 128;
+    /// <summary>The ranges of the quality and strength sliders.</summary>
+    private const int MinJpegQuality = 60, MaxJpegQuality = 100;
+    private const int MinStrength = 10, MaxStrength = 100;
+    /// <summary>The tile overlap of "Seamless tiles": 64 px leaves no visible seams even with deep models (README, "How it works").</summary>
+    private const int SeamlessPadding = 64;
+    /// <summary>The limits of "Other", the same as the command-line tool's.</summary>
+    private const double MaxCustomScale = 64;
+    private const int MaxTargetPixels = 1_000_000;
+    /// <summary>Files from outside that arrive closer together than this are one Explorer selection.</summary>
+    private static readonly TimeSpan ExternalSelectionGap = TimeSpan.FromSeconds(2);
 
-    private readonly AppSettings _settings = AppSettings.Load();
+    private readonly AppSettings _settings;
     private readonly List<ModelItem> _allModels = [];
     private readonly DispatcherTimer _toastTimer = new() { Interval = TimeSpan.FromSeconds(2.5) };
     private bool _refreshingModels;
@@ -62,12 +75,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private (int Width, int Height)? _sourceSize;
     private ModelItem? _selectedModel;
     private bool _showAllModels;
+    private int _strength = MaxStrength;
     private Option<double> _selectedScale;
+    private readonly Option<double> _customScale = new(0, "Other");
+    private Option<CustomScaleMode> _selectedCustomMode;
+    private string _customValueText;
     private Option<ImageFileFormat> _selectedFormat;
     private int _jpegQuality = 92;
     private string? _outputFolder;
     private Option<ExecutionDevice> _selectedDevice;
     private Option<int> _selectedTile;
+    private bool _seamlessTiles;
     private PanelState _state = PanelState.Empty;
     private bool _isBusy;
     private bool _isDragOver;
@@ -85,9 +103,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string? _errorTechnical;
     private TaskbarItemProgressState _taskbarState;
     private FileItem? _lastDone;
+    private string? _errorReport;
+    /// <summary>The fallback to the CPU is logged once per run.</summary>
+    private bool _fallbackReported;
+    /// <summary>When files last came from outside the window, see <see cref="OpenExternalAsync"/>.</summary>
+    private DateTime _lastExternalOpen = DateTime.MinValue;
 
-    public MainViewModel()
+    public MainViewModel(AppSettings settings)
     {
+        _settings = settings;
         var autoDevice = ExecutionDevice.Auto.Resolve();
         Devices =
         [
@@ -98,14 +122,29 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var savedDevice = FindSavedDevice();
         _selectedDevice = Devices.FirstOrDefault(d => d.Value == savedDevice) ?? Devices[0];
 
-        Scales = [new(2, "×2"), new(3, "×3"), new(4, "×4"), new(8, "×8")];
-        _selectedScale = Scales[2];
+        // The choices from the last session; a value the window doesn't offer (an edited settings file) falls back to the default.
+        if (_settings.Strength is int strength)
+            _strength = Math.Clamp(strength, MinStrength, MaxStrength);
+        // "Other" is saved as scale 0, with its mode and number alongside.
+        Scales = [new(2, "×2"), new(3, "×3"), new(4, "×4"), new(8, "×8"), _customScale];
+        _selectedScale = Scales.FirstOrDefault(s => s.Value == _settings.Scale) ?? Scales[2];
+        CustomModes =
+        [
+            new(CustomScaleMode.Scale, "Scale ×"), new(CustomScaleMode.Width, "Width, px"),
+            new(CustomScaleMode.Height, "Height, px"), new(CustomScaleMode.LongSide, "Long side, px"),
+        ];
+        _selectedCustomMode = CustomModes.FirstOrDefault(m => m.Value == _settings.CustomScaleMode) ?? CustomModes[3];
+        _customValueText = _settings.CustomScaleValue ?? DefaultCustomValue(_selectedCustomMode.Value);
 
         Formats = [new(ImageFileFormat.Png, "PNG"), new(ImageFileFormat.Jpeg, "JPEG"), new(ImageFileFormat.Tiff, "TIFF")];
-        _selectedFormat = Formats[0];
+        _selectedFormat = Formats.FirstOrDefault(f => f.Value == _settings.Format) ?? Formats[0];
+        if (_settings.JpegQuality is int quality)
+            _jpegQuality = Math.Clamp(quality, MinJpegQuality, MaxJpegQuality);
+        _outputFolder = _settings.OutputFolder;
 
         TileSizes = [new(384, "Auto"), new(256, "256 px"), new(512, "512 px"), new(768, "768 px"), new(1024, "1024 px"), new(0, "No tiling")];
-        _selectedTile = TileSizes[0];
+        _selectedTile = TileSizes.FirstOrDefault(t => t.Value == _settings.TileSize) ?? TileSizes[0];
+        _seamlessTiles = _settings.SeamlessTiles == true;
 
         PrimaryCommand = new RelayCommand(() =>
         {
@@ -113,15 +152,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 OpenFiles(append: false);
             else
                 _ = UpscaleAsync();
-        }, () => !IsBusy && (State == PanelState.Empty || SelectedModel is not null));
+        }, () => !IsBusy && (State == PanelState.Empty || (SelectedModel is not null && ScaleChoice is not null)));
         OpenCommand = new RelayCommand(() => OpenFiles(append: false), () => !IsBusy);
         AddFilesCommand = new RelayCommand(() => OpenFiles(append: true), () => !IsBusy);
         ClearFilesCommand = new RelayCommand(ClearFiles, () => !IsBusy && HasFiles);
-        UpscaleCommand = new RelayCommand(() => _ = UpscaleAsync(), () => !IsBusy && HasFiles && SelectedModel is not null);
+        UpscaleCommand = new RelayCommand(() => _ = UpscaleAsync(),
+            () => !IsBusy && HasFiles && SelectedModel is not null && ScaleChoice is not null);
         CancelCommand = new RelayCommand(() => _cts?.Cancel(), () => IsBusy);
         OpenResultCommand = new RelayCommand(OpenResult, () => ResultFile is not null);
         ShowInFolderCommand = new RelayCommand(ShowInFolder, () => ResultFile is not null);
         CopyResultCommand = new RelayCommand(CopyResult, () => After is not null);
+        PasteCommand = new RelayCommand(() => _ = PasteAsync(), () => !IsBusy);
+        CopyErrorDetailsCommand = new RelayCommand(CopyErrorDetails, () => ErrorReport is not null);
         BrowseOutputCommand = new RelayCommand(BrowseOutput, () => !IsBusy);
         ResetOutputCommand = new RelayCommand(() => OutputFolder = null, () => !IsBusy && OutputFolder is not null);
         RefreshModelsCommand = new RelayCommand(RefreshModels, () => !IsBusy);
@@ -235,6 +277,22 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>How much of the network's result goes into the output, in percent; the rest is a plain resize of the original.</summary>
+    public int Strength
+    {
+        get => _strength;
+        set
+        {
+            if (SetProperty(ref _strength, value))
+            {
+                OnPropertyChanged(nameof(StrengthText));
+                OnOutputSettingsChanged();
+            }
+        }
+    }
+
+    public string StrengthText => $"{Strength}%";
+
     // ── Scale and saving ────────────────────────────────────────────
 
     public IReadOnlyList<Option<double>> Scales { get; }
@@ -245,14 +303,97 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         set
         {
             if (value is not null && SetProperty(ref _selectedScale, value))
+            {
+                OnPropertyChanged(nameof(IsCustomScale));
                 OnOutputSettingsChanged();
+            }
         }
     }
 
-    public string SizePreview => _sourceSize is { } size
-        ? $"{Text.Size(size.Width, size.Height)}  →  " +
-          Text.Size((int)Math.Round(size.Width * SelectedScale.Value), (int)Math.Round(size.Height * SelectedScale.Value))
-        : "Select a file to see the output size";
+    /// <summary>"Other": a scale of the user's own, or a length for one side of the result.</summary>
+    public bool IsCustomScale => SelectedScale == _customScale;
+
+    public IReadOnlyList<Option<CustomScaleMode>> CustomModes { get; }
+
+    public Option<CustomScaleMode> SelectedCustomMode
+    {
+        get => _selectedCustomMode;
+        set
+        {
+            if (value is null || !SetProperty(ref _selectedCustomMode, value))
+                return;
+            // "3840" means nothing as a scale, and "2.5" nothing as a size: start the new mode from its own example.
+            if (ScaleChoice is null)
+                CustomValueText = DefaultCustomValue(value.Value);
+            OnOutputSettingsChanged();
+        }
+    }
+
+    public string CustomValueText
+    {
+        get => _customValueText;
+        set
+        {
+            if (SetProperty(ref _customValueText, value ?? ""))
+            {
+                OnOutputSettingsChanged();
+                // The buttons are disabled while the number is not valid.
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+    }
+
+    /// <summary>The scale and target size chosen under "Scale"; null while "Other" holds something that isn't a valid number.</summary>
+    private (double Scale, ScaleTarget? Target)? ScaleChoice
+    {
+        get
+        {
+            if (!IsCustomScale)
+                return (SelectedScale.Value, null);
+
+            string text = CustomValueText.Trim();
+            var mode = SelectedCustomMode.Value;
+            if (mode == CustomScaleMode.Scale)
+            {
+                // "2,5" as well as "2.5": a decimal comma is what many keyboards type.
+                return double.TryParse(text.TrimStart('×', 'x', 'X').Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture,
+                           out double scale) && scale is > 0 and <= MaxCustomScale
+                    ? (scale, null)
+                    : null;
+            }
+
+            var side = mode switch
+            {
+                CustomScaleMode.Width => TargetSide.Width,
+                CustomScaleMode.Height => TargetSide.Height,
+                _ => TargetSide.LongSide,
+            };
+            return int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out int pixels) && pixels is > 0 and <= MaxTargetPixels
+                ? (0, new ScaleTarget(side, pixels))
+                : null;
+        }
+    }
+
+    public string SizePreview
+    {
+        get
+        {
+            if (ScaleChoice is not { } choice)
+            {
+                return SelectedCustomMode.Value == CustomScaleMode.Scale
+                    ? $"Enter a scale above 0, up to {MaxCustomScale}"
+                    : "Enter a size in pixels";
+            }
+            if (_sourceSize is not { } size)
+                return "Select a file to see the output size";
+
+            double scale = choice.Target?.ScaleFor(size.Width, size.Height) ?? choice.Scale;
+            var (width, height) = Upscaler.OutputSize(size.Width, size.Height, scale);
+            string preview = $"{Text.Size(size.Width, size.Height)}  →  {Text.Size((int)width, (int)height)}";
+            // With a target size the scale differs from image to image, and above the model's own it takes more passes.
+            return choice.Target is null ? preview : $"{preview}  ({Text.Scale(scale)})";
+        }
+    }
 
     public IReadOnlyList<Option<ImageFileFormat>> Formats { get; }
 
@@ -330,6 +471,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>Twice the overlap between tiles: no visible seams, but more tiles to run.</summary>
+    public bool SeamlessTiles
+    {
+        get => _seamlessTiles;
+        set
+        {
+            if (SetProperty(ref _seamlessTiles, value))
+            {
+                OnPropertyChanged(nameof(AdvancedSummary));
+                OnOutputSettingsChanged();
+            }
+        }
+    }
+
     public string AdvancedSummary
     {
         get
@@ -341,7 +496,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 384 when SelectedTile == TileSizes[0] => "auto tiles",
                 var size => $"{size} px tiles",
             };
-            return $"{Text.Device(device)} · {tile}";
+            return $"{Text.Device(device)} · {tile}{(SeamlessTiles ? ", seamless" : "")}";
         }
     }
 
@@ -384,9 +539,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public bool IsIdle => !IsBusy;
 
-    public string UpscaleButtonText => Files.Count > 1
-        ? $"Upscale {Text.Files(Files.Count)} {Text.Scale(SelectedScale.Value)}"
-        : $"Upscale {Text.Scale(SelectedScale.Value)}";
+    public string UpscaleButtonText
+    {
+        get
+        {
+            string choice = ScaleChoice is { } c ? " " + Text.ScaleChoice(c.Scale, c.Target) : "";
+            return Files.Count > 1 ? $"Upscale {Text.Files(Files.Count)}{choice}" : $"Upscale{choice}";
+        }
+    }
 
     /// <summary>A note above the button: cancellation, an unreadable file, etc.</summary>
     public string? Notice
@@ -457,6 +617,22 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         private set => SetProperty(ref _errorTechnical, value);
     }
 
+    /// <summary>The last run's errors for a bug report (see <see cref="BuildErrorReport"/>); null if it had none.</summary>
+    private string? ErrorReport
+    {
+        get => _errorReport;
+        set
+        {
+            if (SetProperty(ref _errorReport, value))
+            {
+                OnPropertyChanged(nameof(HasErrorReport));
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+    }
+
+    public bool HasErrorReport => _errorReport is not null;
+
     public TaskbarItemProgressState TaskbarState
     {
         get => _taskbarState;
@@ -474,6 +650,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand OpenResultCommand { get; }
     public ICommand ShowInFolderCommand { get; }
     public ICommand CopyResultCommand { get; }
+    public ICommand PasteCommand { get; }
+    public ICommand CopyErrorDetailsCommand { get; }
     public ICommand BrowseOutputCommand { get; }
     public ICommand ResetOutputCommand { get; }
     public ICommand RefreshModelsCommand { get; }
@@ -481,6 +659,24 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand ToggleAllModelsCommand { get; }
 
     private FileItem? ResultFile => CurrentFile is { IsDone: true } current ? current : _lastDone;
+
+    /// <summary>
+    /// Files from outside the window: its command line, or another Krupno.exe that handed its files over (see SingleInstance).
+    /// Explorer starts a Krupno.exe for every selected file, a moment apart, so files that arrive within a couple of seconds of
+    /// each other are one selection and share one queue; a later selection replaces the queue, like opening files.
+    /// </summary>
+    public async Task OpenExternalAsync(string[] paths, DateTime arrivedAt)
+    {
+        bool append = arrivedAt - _lastExternalOpen < ExternalSelectionGap;
+        _lastExternalOpen = arrivedAt;
+        if (IsBusy)
+        {
+            Log.Warning($"Processing is running, files not opened: {string.Join(", ", paths)}");
+            ShowToast("Processing is running: these files weren't opened. Open them when it ends.");
+            return;
+        }
+        await SetFilesAsync(paths, append);
+    }
 
     /// <summary>Accepts files and folders from the dialog, drag and drop, or the command line.</summary>
     public async Task SetFilesAsync(IEnumerable<string> paths, bool append = false)
@@ -652,13 +848,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             After = after;
             SetSourceSize((before.PixelWidth, before.PixelHeight));
             if (afterError is not null)
+            {
+                Log.Warning($"Can't show the result {file.OutputPath}: {afterError}");
                 ShowToast($"Can't show the result: {afterError}");
+            }
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception ex)
         {
+            Log.Error($"Can't show {file.Path}", ex);
             if (version != _previewVersion)
                 return;
             Before = null;
@@ -691,16 +891,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private async Task UpscaleAsync()
     {
-        if (IsBusy || !HasFiles || SelectedModel is null)
+        if (IsBusy || !HasFiles || SelectedModel is not { } modelItem || ScaleChoice is not { } choice)
             return;
 
         var files = Files.ToList();
-        var settings = (Scale: SelectedScale.Value, Tile: SelectedTile.Value, Format: SelectedFormat.Value,
-            Quality: JpegQuality, Folder: OutputFolder);
+        var deviceOption = SelectedDevice;
+        var settings = (Scale: choice.Scale, Target: choice.Target, Tile: SelectedTile.Value,
+            Padding: SeamlessTiles ? SeamlessPadding : UpscaleOptions.Default.TilePadding, Strength: Strength,
+            Format: SelectedFormat.Value, Quality: JpegQuality, Folder: OutputFolder);
         // All names up front: a result must not overwrite a queued source ("photo.png" → "photo_x4.png" while
         // "photo_x4.png" waits in the queue) or another result ("photo.jpg" and "photo.png" → "photo_x4.png").
         var outputs = OutputPaths.MakeUnique(files.Select(f => f.Path),
-            files.Select(f => BuildOutputPath(f.Path, settings.Folder, settings.Scale, settings.Format)).ToList());
+            files.Select(f => BuildOutputPath(f.Path, settings.Folder, settings.Scale, settings.Target, settings.Format)).ToList());
         foreach (var file in files)
         {
             file.State = FileState.Pending;
@@ -725,12 +927,42 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         int succeeded = 0, failed = 0;
         string? firstError = null;
         long lastBytes = 0;
+        // The previous file's result while it is written in the background, see BatchSaving.
+        Task? pendingSave = null;
+        // The run may take many minutes without any input. The request is released on this (UI) thread, which made it:
+        // the awaits below come back to it.
+        using var keepAwake = new KeepAwake();
+        // What went wrong, for the log and "Copy error details": the file (null for the run as a whole) and the error.
+        var errors = new List<(string? File, Exception Error)>();
+        UpscaleModel? runModel = null;
+        ErrorReport = null;
+        _fallbackReported = false;
 
         try
         {
+            if (settings.Folder is { } folder)
+            {
+                // The folder may come from an earlier session, on a drive that is gone now: fail before the work, not after it.
+                try
+                {
+                    await Task.Run(() => Directory.CreateDirectory(folder));
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    throw new InvalidOperationException(
+                        $"Can't save to the output folder: {ex.Message} Choose another folder or save next to the originals.", ex);
+                }
+            }
+
             var model = await GetModelAsync();
+            runModel = model;
+            Log.Info("Run started\n" + DescribeRun());
             var upscaler = new Upscaler(model);
-            var options = new UpscaleOptions { Scale = settings.Scale, TileSize = settings.Tile };
+            var options = new UpscaleOptions
+            {
+                Scale = settings.Scale, Target = settings.Target, TileSize = settings.Tile, TilePadding = settings.Padding,
+                Strength = settings.Strength / 100.0,
+            };
 
             for (int i = 0; i < files.Count; i++)
             {
@@ -746,6 +978,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 try
                 {
                     var loaded = await Task.Run(() => ImageCodec.Load(file.Path), cancellationToken);
+                    Log.Info($"File {index + 1} of {files.Count}: {file.Path} ({Text.Size(loaded.Image.Width, loaded.Image.Height)})");
                     // The user may be looking at another file of the batch meanwhile: the canvas shows only the selected one,
                     // so every step checks the selection again after an await.
                     if (CurrentFile == file)
@@ -772,57 +1005,35 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                         OnProgress(p, file, index, files.Count, model, tiles, work));
                     var result = await upscaler.UpscaleAsync(loaded.Image, options, progress, cancellationToken);
 
+                    // One save at a time (see BatchSaving): the previous file is finished first.
+                    if (pendingSave is not null)
+                        await pendingSave;
+                    pendingSave = null;
+
+                    // Not canceled with the run: the result is computed, so it is written whatever happens next.
                     string output = outputs[index];
-                    await Task.Run(() => ImageCodec.Save(result, output, settings.Format,
-                        new SaveOptions { Source = loaded, JpegQuality = settings.Quality }), cancellationToken);
-
-                    // The file is written: record it before anything that can still be canceled.
-                    file.OutputPath = output;
-                    file.State = FileState.Done;
-                    _lastDone = file;
-                    lastBytes = new FileInfo(output).Length;
-                    succeeded++;
-
-                    if (CurrentFile == file)
+                    var save = Task.Run(() => ImageCodec.Save(result, output, settings.Format,
+                        new SaveOptions { Source = loaded, JpegQuality = settings.Quality }));
+                    if (index < files.Count - 1 && BatchSaving.CanSaveInBackground(result))
                     {
-                        Tiles = null;
-                        BitmapSource? after = null;
-                        try
-                        {
-                            // The result is saved, so its pixels can be converted for display in place.
-                            after = await Task.Run(() => ImageCodec.ToBitmapSource(result, loaded, convertInPlace: true));
-                        }
-                        catch (OutOfMemoryException)
-                        {
-                            // The result is saved; without a preview the canvas just shows the original.
-                        }
-                        if (CurrentFile == file)
-                            After = after;
+                        pendingSave = SaveInBackgroundAsync(file, save, output, result, loaded);
+                        continue;
                     }
+                    await save;
+                    await OnSavedAsync(file, output, result, loaded);
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    file.State = FileState.Error;
-                    file.Error = Friendly(ex);
-                    firstError ??= file.Error;
-                    if (CurrentFile == file)
-                    {
-                        Tiles = null;
-                        if (ex is NotSupportedException)
-                        {
-                            // The file couldn't be read, so don't leave the previous image on the canvas.
-                            Before = null;
-                            After = null;
-                            PreviewError = file.Error;
-                        }
-                    }
-                    failed++;
+                    OnFailed(file, ex);
                     if (files.Count == 1)
                         throw;
                 }
             }
+            if (pendingSave is not null)
+                await pendingSave;
 
             string elapsed = Text.Seconds(total.Elapsed);
+            Log.Info($"Run finished in {elapsed}: {succeeded} of {Text.Files(files.Count)} done");
             if (succeeded == 0)
             {
                 // Every file of the batch failed: that is not a success, whatever the count.
@@ -853,6 +1064,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         catch (OperationCanceledException)
         {
+            // A result already being written is finished: it is computed, and its file counts as done.
+            if (pendingSave is not null)
+                await pendingSave;
+            Log.Info("Run canceled");
             foreach (var file in files.Where(f => f.IsProcessing))
                 file.State = FileState.Pending;
             Tiles = null;
@@ -862,6 +1077,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
+            // A single file's error is rethrown here after it is recorded.
+            if (!errors.Any(e => e.Error == ex))
+            {
+                errors.Add((null, ex));
+                Log.Error("Run failed", ex);
+            }
             Tiles = null;
             ErrorDetail = Friendly(ex);
             ErrorTechnical = ex.Message;
@@ -874,6 +1095,86 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _cts = null;
             IsBusy = false;
             ProgressNote = null;
+            if (errors.Count > 0)
+                ErrorReport = BuildErrorReport(DescribeRun(), errors);
+        }
+
+        // The model, the device and the settings, for the log and the error report.
+        string DescribeRun()
+        {
+            var info = runModel?.Info;
+            string modelLine = info is null
+                ? $"Model: {modelItem.Name} · {modelItem.Entry.Path}"
+                : $"Model: {info}{(info.IsHalfPrecision ? ", fp16" : "")} · {info.Path}";
+            string device = runModel?.Device.ToString() ?? deviceOption.Label;
+            string fallback = runModel?.FallbackReason is { } reason ? $"; DirectML is unavailable: {reason}" : "";
+            string tile = $"{(settings.Tile == 0 ? "no tiling" : $"tile {settings.Tile} px")}, overlap {settings.Padding} px";
+            string format = settings.Format == ImageFileFormat.Jpeg ? $"JPEG {settings.Quality}" : settings.Format.ToString().ToUpperInvariant();
+            return $"{modelLine}\nDevice: {device} (selected: {deviceOption.Label}{fallback}) · {tile} · strength {settings.Strength}% · " +
+                   $"{Text.ScaleChoice(settings.Scale, settings.Target)} · {format} · {Text.Files(files.Count)} → {settings.Folder ?? "next to the originals"}";
+        }
+
+        // The file is written: record it, and show the result if its file is the one on the canvas.
+        async Task OnSavedAsync(FileItem file, string output, ImageBuffer result, LoadedImage loaded)
+        {
+            file.OutputPath = output;
+            file.State = FileState.Done;
+            _lastDone = file;
+            lastBytes = new FileInfo(output).Length;
+            succeeded++;
+            Log.Info($"Saved {output} ({Text.Bytes(lastBytes)})");
+
+            if (CurrentFile == file)
+            {
+                Tiles = null;
+                BitmapSource? after = null;
+                try
+                {
+                    // The result is saved, so its pixels can be converted for display in place.
+                    after = await Task.Run(() => ImageCodec.ToBitmapSource(result, loaded, convertInPlace: true));
+                }
+                catch (OutOfMemoryException)
+                {
+                    // The result is saved; without a preview the canvas just shows the original.
+                }
+                if (CurrentFile == file)
+                    After = after;
+            }
+        }
+
+        void OnFailed(FileItem file, Exception ex)
+        {
+            errors.Add((file.Path, ex));
+            Log.Error($"Failed: {file.Path}", ex);
+            file.State = FileState.Error;
+            file.Error = Friendly(ex);
+            firstError ??= file.Error;
+            if (CurrentFile == file)
+            {
+                Tiles = null;
+                if (ex is NotSupportedException)
+                {
+                    // The file couldn't be read, so don't leave the previous image on the canvas.
+                    Before = null;
+                    After = null;
+                    PreviewError = file.Error;
+                }
+            }
+            failed++;
+        }
+
+        // Awaited before the next save and at the end, so it never throws: a failure is recorded on its own file.
+        async Task SaveInBackgroundAsync(FileItem file, Task save, string output, ImageBuffer result, LoadedImage loaded)
+        {
+            try
+            {
+                await save;
+                await OnSavedAsync(file, output, result, loaded);
+            }
+            catch (Exception ex)
+            {
+                OnFailed(file, ex);
+            }
         }
     }
 
@@ -882,14 +1183,22 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         // The session is created lazily, and DirectML may have just fallen back to the CPU: say so, the run is much slower then.
         string device = Text.Device(model.Device);
-        if (model.FallbackReason is not null)
+        if (model.FallbackReason is { } reason)
+        {
             ProgressNote ??= "DirectML is unavailable, running on the CPU";
+            if (!_fallbackReported)
+                Log.Warning($"DirectML is unavailable, running on the CPU: {reason}");
+            _fallbackReported = true;
+        }
 
         if (p.Message is { } message)
         {
             // A warning stays visible for the rest of the run; a stage ("Resizing to …") only replaces the detail line.
             if (p.IsWarning)
+            {
                 ProgressNote = message;
+                Log.Warning(message);
+            }
             else
                 ProgressDetail = count > 1 ? $"File {index + 1} of {count} · {message}" : message;
             return;
@@ -1043,7 +1352,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private void OnModelSettingsChanged()
     {
-        SaveSelection();
+        SaveSettings();
         InvalidateResult();
         if (IsBusy)
             return;
@@ -1058,6 +1367,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         OnPropertyChanged(nameof(SizePreview));
         OnPropertyChanged(nameof(UpscaleButtonText));
+        SaveSettings();
         InvalidateResult();
     }
 
@@ -1087,11 +1397,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
+            Log.Error($"Can't read the model {item.Entry.Path}", ex);
             item.Details = $"{Path.GetFileName(item.Entry.Path)}\nCan't read the model: {ex.Message}";
         }
     }
 
-    private void SaveSelection()
+    private void SaveSettings()
     {
         if (_refreshingModels)
             return;
@@ -1102,6 +1413,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _settings.DeviceKind = device.Kind;
         _settings.DeviceName = device.AdapterName;
         _settings.DeviceIndex = device.Kind == DeviceKind.Gpu ? device.AdapterIndex : null;
+        _settings.Strength = Strength;
+        _settings.Scale = SelectedScale.Value;
+        _settings.CustomScaleMode = SelectedCustomMode.Value;
+        _settings.CustomScaleValue = CustomValueText;
+        _settings.Format = SelectedFormat.Value;
+        _settings.JpegQuality = JpegQuality;
+        _settings.OutputFolder = OutputFolder;
+        _settings.TileSize = SelectedTile.Value;
+        _settings.SeamlessTiles = SeamlessTiles;
         _settings.Save();
     }
 
@@ -1179,6 +1499,92 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// Ctrl+V: files copied in Explorer open as if dropped; an image (a screenshot, "Copy image" in a browser) is saved as a PNG
+    /// first, see <see cref="PastedImage"/>. Either one replaces the queue, like opening files.
+    /// </summary>
+    private async Task PasteAsync()
+    {
+        if (IsBusy)
+            return;
+
+        string[]? files = null;
+        PastedImage? image = null;
+        try
+        {
+            if (Clipboard.ContainsFileDropList())
+                files = [.. Clipboard.GetFileDropList().Cast<string>()];
+            else
+                image = PastedImage.FromClipboard();
+        }
+        catch (Exception ex)
+        {
+            // Nobody awaits this task, so every failure ends up here rather than vanishing.
+            Log.Error("Can't paste", ex);
+            ShowToast(ex is ExternalException ? "The clipboard is in use by another app — try again" : $"Can't paste: {ex.Message}");
+            return;
+        }
+
+        if (files is not null)
+        {
+            await SetFilesAsync(files);
+            return;
+        }
+        if (image is null)
+        {
+            ShowToast("The clipboard holds no image or files");
+            return;
+        }
+
+        string path;
+        try
+        {
+            path = await Task.Run(image.Save);
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Can't save the pasted image", ex);
+            ShowToast($"Can't save the pasted image: {ex.Message}");
+            return;
+        }
+        Log.Info($"Pasted image saved to {path}");
+        await SetFilesAsync([path]);
+        ShowToast($"Pasted image saved to {path}");
+    }
+
+    private void CopyErrorDetails()
+    {
+        if (ErrorReport is not { } report)
+            return;
+        try
+        {
+            Clipboard.SetText(report);
+            ShowToast("Error details copied — paste them into a bug report");
+        }
+        catch (Exception)
+        {
+            ShowToast("The clipboard is in use by another app — try again");
+        }
+    }
+
+    /// <summary>
+    /// What "Copy error details" puts on the clipboard: the computer, the run and its errors with their stack traces (the first
+    /// few; the log has every one), and where the log is.
+    /// </summary>
+    private static string BuildErrorReport(string run, IReadOnlyList<(string? File, Exception Error)> errors)
+    {
+        const int MaxErrors = 5;
+        var report = new StringBuilder();
+        report.AppendLine(SystemInfo.Describe()).AppendLine(run.ReplaceLineEndings());
+        foreach (var (file, error) in errors.Take(MaxErrors))
+            report.AppendLine().AppendLine(file is null ? "Error:" : $"Failed: {file}").AppendLine(error.ToString());
+        if (errors.Count > MaxErrors)
+            report.AppendLine().AppendLine($"… and {errors.Count - MaxErrors} more, see the log");
+        if (Log.FilePath is { } log)
+            report.AppendLine().AppendLine($"Log: {log}");
+        return report.ToString();
+    }
+
     private void ShowToast(string message)
     {
         Toast = message;
@@ -1186,10 +1592,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _toastTimer.Start();
     }
 
-    private static string BuildOutputPath(string input, string? folder, double scale, ImageFileFormat format)
+    /// <summary>The name says what was asked for: "photo_x4.png", "photo_x2.5.png", "photo_3840w.png" (see ScaleTarget.Suffix).</summary>
+    private static string BuildOutputPath(string input, string? folder, double scale, ScaleTarget? target, ImageFileFormat format)
     {
         string directory = folder ?? Path.GetDirectoryName(input)!;
-        string suffix = "_x" + scale.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        string suffix = target?.Suffix ?? "_x" + scale.ToString("0.##", CultureInfo.InvariantCulture);
         return Path.Combine(directory, Path.GetFileNameWithoutExtension(input) + suffix + ImageCodec.GetExtension(format));
     }
+
+    private static string DefaultCustomValue(CustomScaleMode mode) => mode switch
+    {
+        CustomScaleMode.Scale => "2.5",
+        CustomScaleMode.Height => "2160",
+        _ => "3840",
+    };
 }

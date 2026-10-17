@@ -14,8 +14,22 @@ public static class Resampler
     {
         var result = new ImageBuffer(width, height);
         Resize(source.Pixels, source.Width, source.Height, ImageBuffer.BytesPerPixel, result.Pixels, width, height,
-            premultiply: false, cancellationToken);
+            premultiply: false, keep: null, cancellationToken);
         return result;
+    }
+
+    /// <summary>
+    /// Mixes the resize of <paramref name="source"/> to the size of <paramref name="destination"/> into it: each color becomes
+    /// <c>resized + keep × (destination − resized)</c>, and alpha stays as it is. Done band by band, so the resized image never
+    /// exists whole (a large result takes gigabytes).
+    /// </summary>
+    /// <param name="keep">How much of <paramref name="destination"/> to keep, 0..1.</param>
+    public static void BlendResized(ImageBuffer source, ImageBuffer destination, float keep, CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(keep, 0f);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(keep, 1f);
+        Resize(source.Pixels, source.Width, source.Height, ImageBuffer.BytesPerPixel, destination.Pixels,
+            destination.Width, destination.Height, premultiply: false, keep, cancellationToken);
     }
 
     /// <summary>
@@ -26,7 +40,7 @@ public static class Resampler
     {
         var result = new ImageBuffer(width, height);
         Resize(source.Pixels, source.Width, source.Height, ImageBuffer.BytesPerPixel, result.Pixels, width, height,
-            premultiply: true, cancellationToken);
+            premultiply: true, keep: null, cancellationToken);
         return result;
     }
 
@@ -35,17 +49,22 @@ public static class Resampler
         CancellationToken cancellationToken = default)
     {
         var result = GC.AllocateUninitializedArray<byte>(newWidth * newHeight);
-        Resize(plane, width, height, 1, result, newWidth, newHeight, premultiply: false, cancellationToken);
+        Resize(plane, width, height, 1, result, newWidth, newHeight, premultiply: false, keep: null, cancellationToken);
         return result;
     }
 
+    /// <param name="keep">Null to write the result into <paramref name="dst"/>; otherwise how much of the colors already in
+    /// <paramref name="dst"/> to keep when mixing the result in (alpha is left alone), see <see cref="BlendResized"/>.</param>
     private static void Resize(byte[] src, int srcW, int srcH, int channels, byte[] dst, int dstW, int dstH, bool premultiply,
-        CancellationToken cancellationToken)
+        float? keep, CancellationToken cancellationToken)
     {
         var horizontal = Kernel.Create(srcW, dstW);
         var vertical = Kernel.Create(srcH, dstH);
         int bandCount = (dstH + BandRows - 1) / BandRows;
         int rowLength = dstW * channels;
+        // Blending leaves alpha, the fourth byte of BGRA, as it is.
+        bool blend = keep.HasValue;
+        float mix = keep ?? 0;
 
         // One intermediate buffer per worker, sized for the tallest band: a buffer per band would allocate gigabytes
         // on the large object heap for a big result.
@@ -124,11 +143,23 @@ public static class Resampler
                 {
                     for (int i = 0; i < rowLength; i++)
                     {
+                        if (blend && (i & 3) == 3)
+                            continue;
+
                         float sum = 0;
                         int t = (start - firstRow) * rowLength + i;
                         for (int k = 0; k < count; k++, t += rowLength)
                             sum += vertical.Weights[weights + k] * temp[t];
-                        dst[dstRow + i] = ToByte(sum);
+                        if (blend)
+                        {
+                            // Mixed with the resized image as it would be saved: Lanczos overshoots 0..255 near sharp edges.
+                            float resized = Math.Clamp(sum, 0f, 255f);
+                            dst[dstRow + i] = ToByte(resized + mix * (dst[dstRow + i] - resized));
+                        }
+                        else
+                        {
+                            dst[dstRow + i] = ToByte(sum);
+                        }
                     }
                 }
             }
