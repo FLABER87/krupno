@@ -44,6 +44,9 @@ public sealed class AppSettings
     /// <summary>The tile size from "Advanced"; 0 means no tiling.</summary>
     public int? TileSize { get; set; }
 
+    /// <summary>"Seamless tiles" in "Advanced": a 64 px tile overlap instead of 32.</summary>
+    public bool? SeamlessTiles { get; set; }
+
     public WindowBounds? Window { get; set; }
 
     public static AppSettings Load()

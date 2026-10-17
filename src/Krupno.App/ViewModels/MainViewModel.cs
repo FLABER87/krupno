@@ -40,6 +40,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     /// <summary>The ranges of the quality and strength sliders.</summary>
     private const int MinJpegQuality = 60, MaxJpegQuality = 100;
     private const int MinStrength = 10, MaxStrength = 100;
+    /// <summary>The tile overlap of "Seamless tiles": 64 px leaves no visible seams even with deep models (README, "How it works").</summary>
+    private const int SeamlessPadding = 64;
 
     private readonly AppSettings _settings;
     private readonly List<ModelItem> _allModels = [];
@@ -74,6 +76,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string? _outputFolder;
     private Option<ExecutionDevice> _selectedDevice;
     private Option<int> _selectedTile;
+    private bool _seamlessTiles;
     private PanelState _state = PanelState.Empty;
     private bool _isBusy;
     private bool _isDragOver;
@@ -122,6 +125,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         TileSizes = [new(384, "Auto"), new(256, "256 px"), new(512, "512 px"), new(768, "768 px"), new(1024, "1024 px"), new(0, "No tiling")];
         _selectedTile = TileSizes.FirstOrDefault(t => t.Value == _settings.TileSize) ?? TileSizes[0];
+        _seamlessTiles = _settings.SeamlessTiles == true;
 
         PrimaryCommand = new RelayCommand(() =>
         {
@@ -364,6 +368,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>Twice the overlap between tiles: no visible seams, but more tiles to run.</summary>
+    public bool SeamlessTiles
+    {
+        get => _seamlessTiles;
+        set
+        {
+            if (SetProperty(ref _seamlessTiles, value))
+            {
+                OnPropertyChanged(nameof(AdvancedSummary));
+                OnOutputSettingsChanged();
+            }
+        }
+    }
+
     public string AdvancedSummary
     {
         get
@@ -375,7 +393,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 384 when SelectedTile == TileSizes[0] => "auto tiles",
                 var size => $"{size} px tiles",
             };
-            return $"{Text.Device(device)} · {tile}";
+            return $"{Text.Device(device)} · {tile}{(SeamlessTiles ? ", seamless" : "")}";
         }
     }
 
@@ -752,8 +770,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         var files = Files.ToList();
         var deviceOption = SelectedDevice;
-        var settings = (Scale: SelectedScale.Value, Tile: SelectedTile.Value, Strength: Strength, Format: SelectedFormat.Value,
-            Quality: JpegQuality, Folder: OutputFolder);
+        var settings = (Scale: SelectedScale.Value, Tile: SelectedTile.Value,
+            Padding: SeamlessTiles ? SeamlessPadding : UpscaleOptions.Default.TilePadding, Strength: Strength,
+            Format: SelectedFormat.Value, Quality: JpegQuality, Folder: OutputFolder);
         // All names up front: a result must not overwrite a queued source ("photo.png" → "photo_x4.png" while
         // "photo_x4.png" waits in the queue) or another result ("photo.jpg" and "photo.png" → "photo_x4.png").
         var outputs = OutputPaths.MakeUnique(files.Select(f => f.Path),
@@ -813,7 +832,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             runModel = model;
             Log.Info("Run started\n" + DescribeRun());
             var upscaler = new Upscaler(model);
-            var options = new UpscaleOptions { Scale = settings.Scale, TileSize = settings.Tile, Strength = settings.Strength / 100.0 };
+            var options = new UpscaleOptions
+            {
+                Scale = settings.Scale, TileSize = settings.Tile, TilePadding = settings.Padding, Strength = settings.Strength / 100.0,
+            };
 
             for (int i = 0; i < files.Count; i++)
             {
@@ -959,7 +981,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 : $"Model: {info}{(info.IsHalfPrecision ? ", fp16" : "")} · {info.Path}";
             string device = runModel?.Device.ToString() ?? deviceOption.Label;
             string fallback = runModel?.FallbackReason is { } reason ? $"; DirectML is unavailable: {reason}" : "";
-            string tile = settings.Tile == 0 ? "no tiling" : $"tile {settings.Tile} px";
+            string tile = $"{(settings.Tile == 0 ? "no tiling" : $"tile {settings.Tile} px")}, overlap {settings.Padding} px";
             string format = settings.Format == ImageFileFormat.Jpeg ? $"JPEG {settings.Quality}" : settings.Format.ToString().ToUpperInvariant();
             return $"{modelLine}\nDevice: {device} (selected: {deviceOption.Label}{fallback}) · {tile} · strength {settings.Strength}% · " +
                    $"{Text.Scale(settings.Scale)} · {format} · {Text.Files(files.Count)} → {settings.Folder ?? "next to the originals"}";
@@ -1270,6 +1292,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _settings.JpegQuality = JpegQuality;
         _settings.OutputFolder = OutputFolder;
         _settings.TileSize = SelectedTile.Value;
+        _settings.SeamlessTiles = SeamlessTiles;
         _settings.Save();
     }
 

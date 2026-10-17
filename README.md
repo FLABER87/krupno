@@ -178,7 +178,7 @@ The preview is on the left, the settings panel on the right.
 - **Models** are shown as cards with descriptive names ("Photo, fast", "Photo, maximum detail"…). The recommended and non-commercial models are marked, and technical details are in the tooltip. Known models are described in `ViewModels/ModelItem.cs`; the others are shown by file name.
 - **Strength** (10–100%, under the models) mixes the network's result with a plain Lanczos resize of the original. Below 100% it tones down the textures a model invents and its oversharpening (see [How it works](#how-it-works)).
 - **Scale and format** are picked with toggle buttons. The output size is shown right away, and JPEG has a quality slider.
-- **Device and tile size** are tucked away under "Advanced"; by default both are chosen automatically.
+- **Device and tile size** are tucked away under "Advanced"; by default both are chosen automatically. "Seamless tiles" there doubles the tile overlap to 64 px (`--pad 64` in the command-line tool): no visible seams even with deep models, at the cost of more tiles (35 instead of 24 for a 1920×1200 photo with auto tiles, about 1.5 times the time).
 - **Comparison:** a slider wipe or two frames side by side. Zoom is measured in output pixels (100% is pixel for pixel), the mouse wheel zooms toward the point under the cursor, the right or middle button pans the image, and a double click toggles "Fit to window" ↔ 1:1.
 - **During processing** finished tiles are highlighted on the preview, with the percentage, the remaining time and the tile number next to it. Progress also shows on the Windows taskbar icon. While processing runs, Windows does not go to sleep on idle (the display may still turn off; closing the lid or choosing Sleep works as usual).
 - **A batch** is shown as a strip of thumbnails with each file's status: processing, done, error. A file keeps the "processing" mark while its result is written, which in a batch overlaps with the next file (see [How it works](#how-it-works)). Clicking a thumbnail shows the comparison for that file.
@@ -197,7 +197,7 @@ Keyboard shortcuts:
 | Ctrl+C | copy the result |
 | Ctrl+V | paste files or an image |
 
-The first launch starts with the default model, ×4, PNG and the "Auto" device and tile. Every choice is saved in `%LOCALAPPDATA%\Krupno\settings.json` as soon as it is made: the model, strength, scale, format, JPEG quality, output folder, device and tile size. The window's size and position (and whether it was maximized) are saved when it closes; a window that would land on a monitor that is no longer connected is moved onto a visible one.
+The first launch starts with the default model, ×4, PNG and the "Auto" device and tile. Every choice is saved in `%LOCALAPPDATA%\Krupno\settings.json` as soon as it is made: the model, strength, scale, format, JPEG quality, output folder, device, tile size and "Seamless tiles". The window's size and position (and whether it was maximized) are saved when it closes; a window that would land on a monitor that is no longer connected is moved onto a visible one.
 The GPU is saved by name, since its DXGI index may change. If the saved model or GPU is gone, a value is not one the window offers, or the settings file is corrupt or missing, the window falls back to the defaults. A saved output folder is checked before processing starts: if its drive is gone, the window says so right away instead of after the first file.
 
 The app icon is drawn by `tools/make_icon.py` (requires Pillow and numpy).
