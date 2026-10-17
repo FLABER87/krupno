@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Error_CannotOpen" xml:space="preserve">
+    <value>「{0}」を開けません。ファイルが壊れているか、画像ではありません。</value>
+  </data>
+  <data name="Error_FormatSizeLimit" xml:space="preserve">
+    <value>{0} では 1 辺が {1} px を超える画像を保存できませんが、結果は {2}×{3} です。TIFF で保存するか、倍率を小さくしてください。</value>
+  </data>
+  <data name="Error_ImageTooLarge" xml:space="preserve">
+    <value>画像 {0}×{1} は大きすぎて、メモリ内で処理できません。</value>
+  </data>
+  <data name="Error_IntermediateTooLarge" xml:space="preserve">
+    <value>中間結果が大きすぎて、メモリ内で処理できません。</value>
+  </data>
+  <data name="Error_NeedsStoreExtension" xml:space="preserve">
+    <value>Windows で「{0}」を開けません。{1} 形式には Microsoft Store の拡張機能が必要です。</value>
+  </data>
+  <data name="Error_ResultTooLarge" xml:space="preserve">
+    <value>結果 {0}×{1} は大きすぎて、メモリ内で処理できません。</value>
+  </data>
+  <data name="Model_ContradictoryMetadata" xml:space="preserve">
+    <value>モデルのメタデータが矛盾しています。ウィンドウは {0} px 以下かつ {1} px 以上である必要があります。</value>
+  </data>
+  <data name="Model_FileNotFound" xml:space="preserve">
+    <value>モデル ファイルが見つかりません：{0}</value>
+  </data>
+  <data name="Model_NoScale" xml:space="preserve">
+    <value>出力 [{0}] からモデルの倍率を判別できませんでした。</value>
+  </data>
+  <data name="Model_OneFixedSide" xml:space="preserve">
+    <value>入力の 1 辺だけが固定されたモデルには対応していません。</value>
+  </data>
+  <data name="Model_RgbOnly" xml:space="preserve">
+    <value>RGB モデルのみ対応していますが、このモデルの入力は {0} チャンネルです。</value>
+  </data>
+  <data name="Model_Shape" xml:space="preserve">
+    <value>入力と出力の形状は [1, 3, H, W] である必要があります。</value>
+  </data>
+  <data name="Model_SingleInput" xml:space="preserve">
+    <value>画像入力が 1 つだけのモデルが必要です。</value>
+  </data>
+  <data name="Model_TensorType" xml:space="preserve">
+    <value>テンソル型 {0} には対応していません。float32 または float16 が必要です。</value>
+  </data>
+  <data name="Progress_Blending" xml:space="preserve">
+    <value>単純なリサイズと合成しています（強度 {0}%）</value>
+  </data>
+  <data name="Progress_PassReduced" xml:space="preserve">
+    <value>パス {0} は元のサイズではメモリに収まらないため、入力を {1}×{2} に縮小します</value>
+  </data>
+  <data name="Progress_Resizing" xml:space="preserve">
+    <value>{0}×{1} にリサイズしています</value>
+  </data>
+  <data name="Progress_TileFromLimit" xml:space="preserve">
+    <value>タイル {0} px（メモリ不足のため選択）</value>
+  </data>
+  <data name="Progress_TileReduced" xml:space="preserve">
+    <value>ウィンドウ {0}×{1} がデバイスに収まらなかったため、タイルを {2} px に縮小します</value>
+  </data>
+</root>

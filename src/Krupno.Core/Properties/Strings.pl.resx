@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Error_CannotOpen" xml:space="preserve">
+    <value>Nie można otworzyć pliku „{0}”: plik jest uszkodzony lub nie jest obrazem.</value>
+  </data>
+  <data name="Error_FormatSizeLimit" xml:space="preserve">
+    <value>Format {0} nie obsługuje obrazów o boku większym niż {1} px, a wynik ma {2}×{3}. Zapisz jako TIFF lub wybierz mniejszą skalę.</value>
+  </data>
+  <data name="Error_ImageTooLarge" xml:space="preserve">
+    <value>Obraz {0}×{1} jest zbyt duży, aby przetworzyć go w pamięci.</value>
+  </data>
+  <data name="Error_IntermediateTooLarge" xml:space="preserve">
+    <value>Wynik pośredni jest zbyt duży, aby przetworzyć go w pamięci.</value>
+  </data>
+  <data name="Error_NeedsStoreExtension" xml:space="preserve">
+    <value>System Windows nie może otworzyć pliku „{0}”: format {1} wymaga rozszerzenia ze sklepu Microsoft Store.</value>
+  </data>
+  <data name="Error_ResultTooLarge" xml:space="preserve">
+    <value>Wynik {0}×{1} jest zbyt duży, aby przetworzyć go w pamięci.</value>
+  </data>
+  <data name="Model_ContradictoryMetadata" xml:space="preserve">
+    <value>Metadane modelu są sprzeczne: okno musi mieć co najwyżej {0} px, ale co najmniej {1} px.</value>
+  </data>
+  <data name="Model_FileNotFound" xml:space="preserve">
+    <value>Nie znaleziono pliku modelu: {0}</value>
+  </data>
+  <data name="Model_NoScale" xml:space="preserve">
+    <value>Nie można określić skali modelu na podstawie jego wyjścia [{0}].</value>
+  </data>
+  <data name="Model_OneFixedSide" xml:space="preserve">
+    <value>Modele z tylko jednym stałym bokiem wejścia nie są obsługiwane.</value>
+  </data>
+  <data name="Model_RgbOnly" xml:space="preserve">
+    <value>Obsługiwane są tylko modele RGB, a wejście tego modelu ma {0} kanał.|Obsługiwane są tylko modele RGB, a wejście tego modelu ma {0} kanały.|Obsługiwane są tylko modele RGB, a wejście tego modelu ma {0} kanałów.</value>
+  </data>
+  <data name="Model_Shape" xml:space="preserve">
+    <value>Oczekiwano wejścia i wyjścia o kształcie [1, 3, H, W].</value>
+  </data>
+  <data name="Model_SingleInput" xml:space="preserve">
+    <value>Oczekiwano modelu z jednym wejściem obrazu.</value>
+  </data>
+  <data name="Model_TensorType" xml:space="preserve">
+    <value>Typ tensora {0} nie jest obsługiwany; wymagany jest float32 lub float16.</value>
+  </data>
+  <data name="Progress_Blending" xml:space="preserve">
+    <value>Mieszanie ze zwykłym przeskalowaniem, siła {0}%</value>
+  </data>
+  <data name="Progress_PassReduced" xml:space="preserve">
+    <value>Przebieg {0} nie mieści się w pamięci w pełnym rozmiarze, zmniejszanie jego wejścia do {1}×{2}</value>
+  </data>
+  <data name="Progress_Resizing" xml:space="preserve">
+    <value>Skalowanie do {0}×{1}</value>
+  </data>
+  <data name="Progress_TileFromLimit" xml:space="preserve">
+    <value>Kafelek {0} px (wybrany po wyczerpaniu pamięci)</value>
+  </data>
+  <data name="Progress_TileReduced" xml:space="preserve">
+    <value>Okno {0}×{1} nie zmieściło się na urządzeniu, zmniejszanie kafelka do {2} px</value>
+  </data>
+</root>

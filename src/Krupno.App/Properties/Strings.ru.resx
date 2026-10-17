@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddFiles" xml:space="preserve">
+    <value>Добавить файлы</value>
+  </data>
+  <data name="Auto" xml:space="preserve">
+    <value>Авто</value>
+  </data>
+  <data name="Badge_NonCommercial" xml:space="preserve">
+    <value>Некоммерческая</value>
+  </data>
+  <data name="Badge_Recommended" xml:space="preserve">
+    <value>Рекомендуется</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="Cancel_ToolTip" xml:space="preserve">
+    <value>Остановить (Esc)</value>
+  </data>
+  <data name="Change" xml:space="preserve">
+    <value>Изменить</value>
+  </data>
+  <data name="Chip_Original" xml:space="preserve">
+    <value>Оригинал · {0} × {1}</value>
+  </data>
+  <data name="Chip_Result" xml:space="preserve">
+    <value>Результат · {0} × {1}</value>
+  </data>
+  <data name="ClearList" xml:space="preserve">
+    <value>Очистить список</value>
+  </data>
+  <data name="Compare_SideBySide" xml:space="preserve">
+    <value>Рядом</value>
+  </data>
+  <data name="Compare_SideBySideToolTip" xml:space="preserve">
+    <value>Оригинал и результат рядом</value>
+  </data>
+  <data name="Compare_Split" xml:space="preserve">
+    <value>Шторка</value>
+  </data>
+  <data name="Compare_SplitToolTip" xml:space="preserve">
+    <value>Шторка: перетаскивайте разделитель</value>
+  </data>
+  <data name="Compare_Unavailable" xml:space="preserve">
+    <value>Сравнение станет доступно после обработки</value>
+  </data>
+  <data name="CopyErrorDetails" xml:space="preserve">
+    <value>Копировать сведения об ошибке</value>
+  </data>
+  <data name="CopyErrorDetails_ToolTip" xml:space="preserve">
+    <value>Для отчета об ошибке: версии, GPU, модель, настройки и ошибка</value>
+  </data>
+  <data name="CustomMode_Height" xml:space="preserve">
+    <value>Высота, px</value>
+  </data>
+  <data name="CustomMode_LongSide" xml:space="preserve">
+    <value>Длинная сторона, px</value>
+  </data>
+  <data name="CustomMode_Name" xml:space="preserve">
+    <value>Что задает число</value>
+  </data>
+  <data name="CustomMode_Scale" xml:space="preserve">
+    <value>Масштаб ×</value>
+  </data>
+  <data name="CustomMode_Width" xml:space="preserve">
+    <value>Ширина, px</value>
+  </data>
+  <data name="CustomValue_Name" xml:space="preserve">
+    <value>Масштаб или размер</value>
+  </data>
+  <data name="Device" xml:space="preserve">
+    <value>Устройство</value>
+  </data>
+  <data name="Device_AutoWith" xml:space="preserve">
+    <value>Авто ({0})</value>
+  </data>
+  <data name="Device_CpuSlow" xml:space="preserve">
+    <value>CPU (медленно)</value>
+  </data>
+  <data name="Dialog_AddImages" xml:space="preserve">
+    <value>Добавить изображения</value>
+  </data>
+  <data name="Dialog_Filter" xml:space="preserve">
+    <value>Изображения|{0}|Все файлы|*.*</value>
+  </data>
+  <data name="Dialog_OutputFolder" xml:space="preserve">
+    <value>Папка результатов</value>
+  </data>
+  <data name="Dialog_SelectImages" xml:space="preserve">
+    <value>Выбрать изображения</value>
+  </data>
+  <data name="Done_Files" xml:space="preserve">
+    <value>Готово: {0} за {1}</value>
+  </data>
+  <data name="Done_InTime" xml:space="preserve">
+    <value>Готово за {0} · {1}</value>
+  </data>
+  <data name="Done_Partial" xml:space="preserve">
+    <value>Готово: {0} из {1}, с ошибкой: {2}</value>
+  </data>
+  <data name="Done_SavedNextToOriginals" xml:space="preserve">
+    <value>Сохранено рядом с оригиналами</value>
+  </data>
+  <data name="DropToOpen" xml:space="preserve">
+    <value>Отпустите, чтобы открыть</value>
+  </data>
+  <data name="Empty_Description" xml:space="preserve">
+    <value>Нейросеть увеличивает изображение в 2–8 раз и дорисовывает детали. Можно добавить сразу несколько файлов — они обрабатываются по очереди.</value>
+  </data>
+  <data name="Empty_Formats" xml:space="preserve">
+    <value>PNG, JPEG, TIFF, BMP, GIF, WebP, HEIC · Ctrl+O · Ctrl+V — вставить</value>
+  </data>
+  <data name="Empty_Title" xml:space="preserve">
+    <value>Перетащите сюда фото или папку</value>
+  </data>
+  <data name="Error_NoModelSelected" xml:space="preserve">
+    <value>Модель не выбрана.</value>
+  </data>
+  <data name="Error_NoneUpscaled" xml:space="preserve">
+    <value>Не удалось увеличить ни один из файлов ({0}). {1}</value>
+  </data>
+  <data name="Error_OutputFolder" xml:space="preserve">
+    <value>Не удается сохранить в папку результатов: {0} Выберите другую папку или сохраняйте рядом с оригиналами.</value>
+  </data>
+  <data name="Error_Title" xml:space="preserve">
+    <value>Не удалось увеличить</value>
+  </data>
+  <data name="File_Done" xml:space="preserve">
+    <value>Готово: {0}</value>
+  </data>
+  <data name="File_Processing" xml:space="preserve">
+    <value>Обработка…</value>
+  </data>
+  <data name="Files" xml:space="preserve">
+    <value>{0} файл|{0} файла|{0} файлов</value>
+  </data>
+  <data name="Friendly_AccessDenied" xml:space="preserve">
+    <value>Отказано в доступе к файлу или папке. Выберите другую папку результатов.</value>
+  </data>
+  <data name="Friendly_FileNotFound" xml:space="preserve">
+    <value>Файл не найден. Возможно, он был перемещен или удален.</value>
+  </data>
+  <data name="Friendly_Gpu" xml:space="preserve">
+    <value>GPU не справился с этой моделью. Выберите другое устройство или размер плитки в разделе «Дополнительно» либо более легкую модель.</value>
+  </data>
+  <data name="Friendly_IO" xml:space="preserve">
+    <value>Не удалось прочитать или записать файл. {0}</value>
+  </data>
+  <data name="Hint_CopyResult" xml:space="preserve">
+    <value>Ctrl+C — копировать результат</value>
+  </data>
+  <data name="Hint_OpenPaste" xml:space="preserve">
+    <value>Ctrl+O · Ctrl+V — вставить</value>
+  </data>
+  <data name="Hint_Start" xml:space="preserve">
+    <value>Ctrl+Enter</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Язык</value>
+  </data>
+  <data name="Language_Restart" xml:space="preserve">
+    <value>Новый язык вступит в силу после перезапуска Krupno.</value>
+  </data>
+  <data name="Language_Windows" xml:space="preserve">
+    <value>Язык Windows</value>
+  </data>
+  <data name="Model_Classic" xml:space="preserve">
+    <value>Классика</value>
+  </data>
+  <data name="Model_Custom" xml:space="preserve">
+    <value>Своя модель</value>
+  </data>
+  <data name="Model_Draft" xml:space="preserve">
+    <value>Черновик</value>
+  </data>
+  <data name="Model_General" xml:space="preserve">
+    <value>Универсальная</value>
+  </data>
+  <data name="Model_PhotoDetail" xml:space="preserve">
+    <value>Фото, максимум деталей</value>
+  </data>
+  <data name="Model_PhotoFast" xml:space="preserve">
+    <value>Фото, быстро</value>
+  </data>
+  <data name="ModelDetails_CantRead" xml:space="preserve">
+    <value>Не удается прочитать модель: {0}</value>
+  </data>
+  <data name="ModelDetails_FixedTile" xml:space="preserve">
+    <value>Плитка {0} px (задана моделью)</value>
+  </data>
+  <data name="ModelDetails_License" xml:space="preserve">
+    <value>Лицензия: {0}</value>
+  </data>
+  <data name="ModelDetails_MaxWindow" xml:space="preserve">
+    <value>Окно до {0} px</value>
+  </data>
+  <data name="ModelDetails_NoLicense" xml:space="preserve">
+    <value>Лицензия не указана</value>
+  </data>
+  <data name="Models_All" xml:space="preserve">
+    <value>Все модели ({0})</value>
+  </data>
+  <data name="Models_ShowFewer" xml:space="preserve">
+    <value>Показать меньше</value>
+  </data>
+  <data name="NoModels" xml:space="preserve">
+    <value>Моделей пока нет. Поместите файлы .onnx в папку моделей и обновите список.</value>
+  </data>
+  <data name="NonCommercial_ToolTip" xml:space="preserve">
+    <value>Лицензия CC BY-NC-SA: только некоммерческое использование</value>
+  </data>
+  <data name="Note_DirectMLUnavailable" xml:space="preserve">
+    <value>DirectML недоступен, обработка на CPU</value>
+  </data>
+  <data name="Notice_Canceled" xml:space="preserve">
+    <value>Обработка отменена</value>
+  </data>
+  <data name="Open" xml:space="preserve">
+    <value>Открыть</value>
+  </data>
+  <data name="OpenModelsFolder" xml:space="preserve">
+    <value>Открыть папку моделей</value>
+  </data>
+  <data name="OutputFolder_NextToOriginal" xml:space="preserve">
+    <value>Рядом с оригиналом</value>
+  </data>
+  <data name="Pasted_FileName" xml:space="preserve">
+    <value>Вставлено {0}</value>
+  </data>
+  <data name="Percent" xml:space="preserve">
+    <value>{0}%</value>
+  </data>
+  <data name="Pixels" xml:space="preserve">
+    <value>{0} px</value>
+  </data>
+  <data name="PreviewError_Title" xml:space="preserve">
+    <value>Не удается открыть этот файл</value>
+  </data>
+  <data name="Progress_File" xml:space="preserve">
+    <value>Файл {0} из {1}</value>
+  </data>
+  <data name="Progress_Orientation" xml:space="preserve">
+    <value>ориентация {0} из {1}</value>
+  </data>
+  <data name="Progress_Pass" xml:space="preserve">
+    <value>проход {0} из {1}</value>
+  </data>
+  <data name="Progress_Percent" xml:space="preserve">
+    <value>Обработка… {0}%</value>
+  </data>
+  <data name="Progress_PreparingModel" xml:space="preserve">
+    <value>Подготовка модели…</value>
+  </data>
+  <data name="Progress_Tile" xml:space="preserve">
+    <value>плитка {0} из {1}</value>
+  </data>
+  <data name="Quality" xml:space="preserve">
+    <value>Качество</value>
+  </data>
+  <data name="RefreshModels" xml:space="preserve">
+    <value>Обновить список моделей</value>
+  </data>
+  <data name="Remaining_AlmostDone" xml:space="preserve">
+    <value>почти готово</value>
+  </data>
+  <data name="Remaining_Minutes" xml:space="preserve">
+    <value>≈ {0} мин</value>
+  </data>
+  <data name="Remaining_Seconds" xml:space="preserve">
+    <value>≈ {0} с</value>
+  </data>
+  <data name="SaveNextToOriginal" xml:space="preserve">
+    <value>Сохранять рядом с оригиналом</value>
+  </data>
+  <data name="Scale_Other" xml:space="preserve">
+    <value>Другой</value>
+  </data>
+  <data name="SeamlessTiles" xml:space="preserve">
+    <value>Плитки без швов</value>
+  </data>
+  <data name="SeamlessTiles_Description" xml:space="preserve">
+    <value>Вдвое большее перекрытие плиток (64 px): никаких видимых швов даже с глубокими моделями, но плиток больше — примерно в 1,5 раза для фото 1920 × 1200 с авто плитками.</value>
+  </data>
+  <data name="Section_Advanced" xml:space="preserve">
+    <value>Дополнительно</value>
+  </data>
+  <data name="Section_Model" xml:space="preserve">
+    <value>Модель</value>
+  </data>
+  <data name="Section_SaveAs" xml:space="preserve">
+    <value>Сохранить как</value>
+  </data>
+  <data name="Section_Scale" xml:space="preserve">
+    <value>Масштаб</value>
+  </data>
+  <data name="Section_Strength" xml:space="preserve">
+    <value>Сила</value>
+  </data>
+  <data name="SelectAnotherFile" xml:space="preserve">
+    <value>Выбрать другой файл</value>
+  </data>
+  <data name="SelectFiles" xml:space="preserve">
+    <value>Выбрать файлы</value>
+  </data>
+  <data name="ShowInFolder" xml:space="preserve">
+    <value>Показать в папке</value>
+  </data>
+  <data name="SizePreview_EnterScale" xml:space="preserve">
+    <value>Введите масштаб больше 0 и не более {0}</value>
+  </data>
+  <data name="SizePreview_EnterSize" xml:space="preserve">
+    <value>Введите размер в пикселях</value>
+  </data>
+  <data name="SizePreview_SelectFile" xml:space="preserve">
+    <value>Выберите файл, чтобы увидеть размер результата</value>
+  </data>
+  <data name="Speed_Fast" xml:space="preserve">
+    <value>быстро</value>
+  </data>
+  <data name="Speed_Slow" xml:space="preserve">
+    <value>медленно</value>
+  </data>
+  <data name="Speed_VeryFast" xml:space="preserve">
+    <value>очень быстро</value>
+  </data>
+  <data name="Speed_VerySlow" xml:space="preserve">
+    <value>очень медленно</value>
+  </data>
+  <data name="Strength_Description" xml:space="preserve">
+    <value>Ниже 100% к результату подмешивается обычное масштабирование оригинала: меньше выдуманных текстур, мягче резкость.</value>
+  </data>
+  <data name="Summary_AutoTiles" xml:space="preserve">
+    <value>авто плитки</value>
+  </data>
+  <data name="Summary_NoTiling" xml:space="preserve">
+    <value>без плиток</value>
+  </data>
+  <data name="Summary_Seamless" xml:space="preserve">
+    <value>без швов</value>
+  </data>
+  <data name="Summary_Tiles" xml:space="preserve">
+    <value>плитки {0} px</value>
+  </data>
+  <data name="Target_Height" xml:space="preserve">
+    <value>до {0} px в высоту</value>
+  </data>
+  <data name="Target_LongSide" xml:space="preserve">
+    <value>до {0} px по длинной стороне</value>
+  </data>
+  <data name="Target_Width" xml:space="preserve">
+    <value>до {0} px в ширину</value>
+  </data>
+  <data name="Tile_None" xml:space="preserve">
+    <value>Без плиток</value>
+  </data>
+  <data name="TileSize" xml:space="preserve">
+    <value>Размер плитки</value>
+  </data>
+  <data name="TileSize_Description" xml:space="preserve">
+    <value>Плитки меньшего размера занимают меньше видеопамяти. Если памяти не хватит, размер плитки уменьшится автоматически.</value>
+  </data>
+  <data name="Time_MinutesSeconds" xml:space="preserve">
+    <value>{0} мин {1} с</value>
+  </data>
+  <data name="Time_Seconds" xml:space="preserve">
+    <value>{0} с</value>
+  </data>
+  <data name="Toast_BusyNotOpened" xml:space="preserve">
+    <value>Идет обработка: эти файлы не открыты. Откройте их, когда она завершится.</value>
+  </data>
+  <data name="Toast_CantPaste" xml:space="preserve">
+    <value>Не удается вставить: {0}</value>
+  </data>
+  <data name="Toast_CantReadSelection" xml:space="preserve">
+    <value>Не удается прочитать выбранное: {0}</value>
+  </data>
+  <data name="Toast_CantSavePasted" xml:space="preserve">
+    <value>Не удается сохранить вставленное изображение: {0}</value>
+  </data>
+  <data name="Toast_CantShowResult" xml:space="preserve">
+    <value>Не удается показать результат: {0}</value>
+  </data>
+  <data name="Toast_ClipboardBusy" xml:space="preserve">
+    <value>Буфер обмена занят другим приложением — повторите попытку</value>
+  </data>
+  <data name="Toast_ClipboardEmpty" xml:space="preserve">
+    <value>В буфере обмена нет изображения или файлов</value>
+  </data>
+  <data name="Toast_ErrorDetailsCopied" xml:space="preserve">
+    <value>Сведения об ошибке скопированы — вставьте их в отчет об ошибке</value>
+  </data>
+  <data name="Toast_NoImagesInSelection" xml:space="preserve">
+    <value>Среди выбранного нет поддерживаемых изображений</value>
+  </data>
+  <data name="Toast_PastedSaved" xml:space="preserve">
+    <value>Вставленное изображение сохранено в {0}</value>
+  </data>
+  <data name="Toast_ResultCopied" xml:space="preserve">
+    <value>Результат скопирован в буфер обмена</value>
+  </data>
+  <data name="TryAgain" xml:space="preserve">
+    <value>Повторить</value>
+  </data>
+  <data name="Tta" xml:space="preserve">
+    <value>Аугментация при обработке (TTA)</value>
+  </data>
+  <data name="Tta_Description" xml:space="preserve">
+    <value>Изображение обрабатывается во всех 8 поворотах и отражениях, а результаты усредняются: чуть меньше шума и однонаправленных артефактов, но в 8 раз медленнее.</value>
+  </data>
+  <data name="Unhandled_LogDetails" xml:space="preserve">
+    <value>Подробности в журнале:
+{0}</value>
+  </data>
+  <data name="Unhandled_Title" xml:space="preserve">
+    <value>Krupno — ошибка</value>
+  </data>
+  <data name="Unit_GB" xml:space="preserve">
+    <value>{0} ГБ</value>
+  </data>
+  <data name="Unit_KB" xml:space="preserve">
+    <value>{0} КБ</value>
+  </data>
+  <data name="Unit_MB" xml:space="preserve">
+    <value>{0} МБ</value>
+  </data>
+  <data name="Upscale" xml:space="preserve">
+    <value>Увеличить</value>
+  </data>
+  <data name="Upscale_Files" xml:space="preserve">
+    <value>Увеличить {0}</value>
+  </data>
+  <data name="Upscale_FilesScale" xml:space="preserve">
+    <value>Увеличить {0} {1}</value>
+  </data>
+  <data name="Upscale_Scale" xml:space="preserve">
+    <value>Увеличить {0}</value>
+  </data>
+  <data name="Zoom_Actual" xml:space="preserve">
+    <value>Реальные пиксели (Ctrl + 1)</value>
+  </data>
+  <data name="Zoom_ActualName" xml:space="preserve">
+    <value>Реальный размер</value>
+  </data>
+  <data name="Zoom_Fit" xml:space="preserve">
+    <value>По размеру окна (Ctrl + 0)</value>
+  </data>
+  <data name="Zoom_FitName" xml:space="preserve">
+    <value>По размеру окна</value>
+  </data>
+  <data name="Zoom_In" xml:space="preserve">
+    <value>Увеличить (Ctrl + +)</value>
+  </data>
+  <data name="Zoom_InName" xml:space="preserve">
+    <value>Увеличить</value>
+  </data>
+  <data name="Zoom_Out" xml:space="preserve">
+    <value>Уменьшить (Ctrl + −)</value>
+  </data>
+  <data name="Zoom_OutName" xml:space="preserve">
+    <value>Уменьшить</value>
+  </data>
+</root>

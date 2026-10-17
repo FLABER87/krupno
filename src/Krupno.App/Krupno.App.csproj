@@ -22,4 +22,18 @@
     <Resource Include="Assets\Krupno.ico" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The window's text: Strings.resx in English, Strings.<culture>.resx the translations. Strings.Designer.cs is generated
+         by Visual Studio or Rider when Strings.resx is saved; it is public so that XAML can use it through x:Static. -->
+    <EmbeddedResource Update="Properties\Strings.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <Compile Update="Properties\Strings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Strings.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
 </Project>

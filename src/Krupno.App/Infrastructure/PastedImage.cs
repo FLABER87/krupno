@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Krupno.App.Properties;
 using Krupno.Core.Imaging;
 
 namespace Krupno.App.Infrastructure;
@@ -45,7 +46,7 @@ internal sealed class PastedImage
     public string Save()
     {
         Directory.CreateDirectory(Folder);
-        string name = "Pasted " + DateTime.Now.ToString("yyyy-MM-dd HHmmss", CultureInfo.InvariantCulture);
+        string name = string.Format(Strings.Pasted_FileName, DateTime.Now.ToString("yyyy-MM-dd HHmmss", CultureInfo.InvariantCulture));
         string path = Path.Combine(Folder, name + ".png");
         for (int n = 2; File.Exists(path); n++)
             path = Path.Combine(Folder, $"{name} ({n}).png");

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Error_CannotOpen" xml:space="preserve">
+    <value>Dosya açılamıyor: "{0}". Dosya bozuk veya bir görüntü değil.</value>
+  </data>
+  <data name="Error_FormatSizeLimit" xml:space="preserve">
+    <value>{0} biçimi, bir kenarı {1} px'den büyük görüntüleri desteklemez; sonuç ise {2}×{3}. TIFF olarak kaydedin veya daha küçük bir ölçek seçin.</value>
+  </data>
+  <data name="Error_ImageTooLarge" xml:space="preserve">
+    <value>Görüntü ({0}×{1}) bellekte işlenemeyecek kadar büyük.</value>
+  </data>
+  <data name="Error_IntermediateTooLarge" xml:space="preserve">
+    <value>Ara sonuç bellekte işlenemeyecek kadar büyük.</value>
+  </data>
+  <data name="Error_NeedsStoreExtension" xml:space="preserve">
+    <value>Windows bu dosyayı açamıyor: "{0}". {1} biçimi için Microsoft Store'dan bir uzantı gerekir.</value>
+  </data>
+  <data name="Error_ResultTooLarge" xml:space="preserve">
+    <value>Sonuç ({0}×{1}) bellekte işlenemeyecek kadar büyük.</value>
+  </data>
+  <data name="Model_ContradictoryMetadata" xml:space="preserve">
+    <value>Model meta verileri çelişkili: pencere en fazla {0} px, ancak en az {1} px olmalı.</value>
+  </data>
+  <data name="Model_FileNotFound" xml:space="preserve">
+    <value>Model dosyası bulunamadı: {0}</value>
+  </data>
+  <data name="Model_NoScale" xml:space="preserve">
+    <value>Modelin ölçeği, çıkışından ([{0}]) belirlenemedi.</value>
+  </data>
+  <data name="Model_OneFixedSide" xml:space="preserve">
+    <value>Yalnızca bir giriş kenarı sabit olan modeller desteklenmez.</value>
+  </data>
+  <data name="Model_RgbOnly" xml:space="preserve">
+    <value>Yalnızca RGB modeller desteklenir, ancak bu modelin girişinde {0} kanal var.|Yalnızca RGB modeller desteklenir, ancak bu modelin girişinde {0} kanal var.</value>
+  </data>
+  <data name="Model_Shape" xml:space="preserve">
+    <value>[1, 3, H, W] biçiminde bir giriş ve çıkış bekleniyordu.</value>
+  </data>
+  <data name="Model_SingleInput" xml:space="preserve">
+    <value>Tek bir görüntü girişi olan bir model bekleniyordu.</value>
+  </data>
+  <data name="Model_TensorType" xml:space="preserve">
+    <value>{0} tensör türü desteklenmiyor; float32 veya float16 gerekir.</value>
+  </data>
+  <data name="Progress_Blending" xml:space="preserve">
+    <value>Basit yeniden boyutlandırmayla karıştırılıyor, güç: %{0}</value>
+  </data>
+  <data name="Progress_PassReduced" xml:space="preserve">
+    <value>Geçiş {0} tam boyutta belleğe sığmıyor, girişi {1}×{2} boyutuna küçültülüyor</value>
+  </data>
+  <data name="Progress_Resizing" xml:space="preserve">
+    <value>Yeniden boyutlandırılıyor: {0}×{1}</value>
+  </data>
+  <data name="Progress_TileFromLimit" xml:space="preserve">
+    <value>Parça: {0} px (bellek yetmeyince seçildi)</value>
+  </data>
+  <data name="Progress_TileReduced" xml:space="preserve">
+    <value>{0}×{1} pencere cihaza sığmadı, parça {2} px boyutuna küçültülüyor</value>
+  </data>
+</root>

@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddFiles" xml:space="preserve">
+    <value>添加文件</value>
+  </data>
+  <data name="Auto" xml:space="preserve">
+    <value>自动</value>
+  </data>
+  <data name="Badge_NonCommercial" xml:space="preserve">
+    <value>非商业</value>
+  </data>
+  <data name="Badge_Recommended" xml:space="preserve">
+    <value>推荐</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="Cancel_ToolTip" xml:space="preserve">
+    <value>停止（Esc）</value>
+  </data>
+  <data name="Change" xml:space="preserve">
+    <value>更改</value>
+  </data>
+  <data name="Chip_Original" xml:space="preserve">
+    <value>原图 · {0} × {1}</value>
+  </data>
+  <data name="Chip_Result" xml:space="preserve">
+    <value>结果 · {0} × {1}</value>
+  </data>
+  <data name="ClearList" xml:space="preserve">
+    <value>清空列表</value>
+  </data>
+  <data name="Compare_SideBySide" xml:space="preserve">
+    <value>并排</value>
+  </data>
+  <data name="Compare_SideBySideToolTip" xml:space="preserve">
+    <value>原图与结果并排显示</value>
+  </data>
+  <data name="Compare_Split" xml:space="preserve">
+    <value>分屏</value>
+  </data>
+  <data name="Compare_SplitToolTip" xml:space="preserve">
+    <value>分屏视图：拖动分隔线</value>
+  </data>
+  <data name="Compare_Unavailable" xml:space="preserve">
+    <value>处理完成后即可对比</value>
+  </data>
+  <data name="CopyErrorDetails" xml:space="preserve">
+    <value>复制错误详情</value>
+  </data>
+  <data name="CopyErrorDetails_ToolTip" xml:space="preserve">
+    <value>用于错误报告：版本、GPU、模型、设置和错误信息</value>
+  </data>
+  <data name="CustomMode_Height" xml:space="preserve">
+    <value>高度，px</value>
+  </data>
+  <data name="CustomMode_LongSide" xml:space="preserve">
+    <value>长边，px</value>
+  </data>
+  <data name="CustomMode_Name" xml:space="preserve">
+    <value>数字的含义</value>
+  </data>
+  <data name="CustomMode_Scale" xml:space="preserve">
+    <value>倍数 ×</value>
+  </data>
+  <data name="CustomMode_Width" xml:space="preserve">
+    <value>宽度，px</value>
+  </data>
+  <data name="CustomValue_Name" xml:space="preserve">
+    <value>倍数或尺寸</value>
+  </data>
+  <data name="Device" xml:space="preserve">
+    <value>设备</value>
+  </data>
+  <data name="Device_AutoWith" xml:space="preserve">
+    <value>自动（{0}）</value>
+  </data>
+  <data name="Device_CpuSlow" xml:space="preserve">
+    <value>CPU（慢）</value>
+  </data>
+  <data name="Dialog_AddImages" xml:space="preserve">
+    <value>添加图像</value>
+  </data>
+  <data name="Dialog_Filter" xml:space="preserve">
+    <value>图像|{0}|所有文件|*.*</value>
+  </data>
+  <data name="Dialog_OutputFolder" xml:space="preserve">
+    <value>输出文件夹</value>
+  </data>
+  <data name="Dialog_SelectImages" xml:space="preserve">
+    <value>选择图像</value>
+  </data>
+  <data name="Done_Files" xml:space="preserve">
+    <value>完成：{0}，用时 {1}</value>
+  </data>
+  <data name="Done_InTime" xml:space="preserve">
+    <value>用时 {0} 完成 · {1}</value>
+  </data>
+  <data name="Done_Partial" xml:space="preserve">
+    <value>完成：{0}/{1}，{2} 个失败</value>
+  </data>
+  <data name="Done_SavedNextToOriginals" xml:space="preserve">
+    <value>已保存到原图旁边</value>
+  </data>
+  <data name="DropToOpen" xml:space="preserve">
+    <value>松开以打开</value>
+  </data>
+  <data name="Empty_Description" xml:space="preserve">
+    <value>神经网络将图像放大 2–8 倍并补全细节。可以一次添加多个文件，它们会依次处理。</value>
+  </data>
+  <data name="Empty_Formats" xml:space="preserve">
+    <value>PNG、JPEG、TIFF、BMP、GIF、WebP、HEIC · Ctrl+O · Ctrl+V 粘贴</value>
+  </data>
+  <data name="Empty_Title" xml:space="preserve">
+    <value>将照片或文件夹拖到这里</value>
+  </data>
+  <data name="Error_NoModelSelected" xml:space="preserve">
+    <value>未选择模型。</value>
+  </data>
+  <data name="Error_NoneUpscaled" xml:space="preserve">
+    <value>{0} 个文件均未能放大。{1}</value>
+  </data>
+  <data name="Error_OutputFolder" xml:space="preserve">
+    <value>无法保存到输出文件夹：{0} 请选择其他文件夹，或保存到原图旁边。</value>
+  </data>
+  <data name="Error_Title" xml:space="preserve">
+    <value>放大失败</value>
+  </data>
+  <data name="File_Done" xml:space="preserve">
+    <value>完成：{0}</value>
+  </data>
+  <data name="File_Processing" xml:space="preserve">
+    <value>正在处理…</value>
+  </data>
+  <data name="Files" xml:space="preserve">
+    <value>{0} 个文件</value>
+  </data>
+  <data name="Friendly_AccessDenied" xml:space="preserve">
+    <value>拒绝访问文件或文件夹。请选择其他输出文件夹。</value>
+  </data>
+  <data name="Friendly_FileNotFound" xml:space="preserve">
+    <value>未找到文件。它可能已被移动或删除。</value>
+  </data>
+  <data name="Friendly_Gpu" xml:space="preserve">
+    <value>GPU 无法运行此模型。请在“高级”中选择其他设备或分块大小，或使用更轻量的模型。</value>
+  </data>
+  <data name="Friendly_IO" xml:space="preserve">
+    <value>无法读取或写入文件。{0}</value>
+  </data>
+  <data name="Hint_CopyResult" xml:space="preserve">
+    <value>Ctrl+C — 复制结果</value>
+  </data>
+  <data name="Hint_OpenPaste" xml:space="preserve">
+    <value>Ctrl+O · Ctrl+V 粘贴</value>
+  </data>
+  <data name="Hint_Start" xml:space="preserve">
+    <value>Ctrl+Enter</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>语言</value>
+  </data>
+  <data name="Language_Restart" xml:space="preserve">
+    <value>新语言将在重启 Krupno 后生效。</value>
+  </data>
+  <data name="Language_Windows" xml:space="preserve">
+    <value>Windows 语言</value>
+  </data>
+  <data name="Model_Classic" xml:space="preserve">
+    <value>经典</value>
+  </data>
+  <data name="Model_Custom" xml:space="preserve">
+    <value>自定义模型</value>
+  </data>
+  <data name="Model_Draft" xml:space="preserve">
+    <value>草稿</value>
+  </data>
+  <data name="Model_General" xml:space="preserve">
+    <value>通用</value>
+  </data>
+  <data name="Model_PhotoDetail" xml:space="preserve">
+    <value>照片，最多细节</value>
+  </data>
+  <data name="Model_PhotoFast" xml:space="preserve">
+    <value>照片，快速</value>
+  </data>
+  <data name="ModelDetails_CantRead" xml:space="preserve">
+    <value>无法读取模型：{0}</value>
+  </data>
+  <data name="ModelDetails_FixedTile" xml:space="preserve">
+    <value>分块 {0} px（由模型决定）</value>
+  </data>
+  <data name="ModelDetails_License" xml:space="preserve">
+    <value>许可：{0}</value>
+  </data>
+  <data name="ModelDetails_MaxWindow" xml:space="preserve">
+    <value>窗口最大 {0} px</value>
+  </data>
+  <data name="ModelDetails_NoLicense" xml:space="preserve">
+    <value>未注明许可</value>
+  </data>
+  <data name="Models_All" xml:space="preserve">
+    <value>全部模型（{0}）</value>
+  </data>
+  <data name="Models_ShowFewer" xml:space="preserve">
+    <value>收起</value>
+  </data>
+  <data name="NoModels" xml:space="preserve">
+    <value>还没有模型。请将 .onnx 文件放入模型文件夹并刷新列表。</value>
+  </data>
+  <data name="NonCommercial_ToolTip" xml:space="preserve">
+    <value>CC BY-NC-SA 许可：仅限非商业用途</value>
+  </data>
+  <data name="Note_DirectMLUnavailable" xml:space="preserve">
+    <value>DirectML 不可用，正在使用 CPU</value>
+  </data>
+  <data name="Notice_Canceled" xml:space="preserve">
+    <value>已取消处理</value>
+  </data>
+  <data name="Open" xml:space="preserve">
+    <value>打开</value>
+  </data>
+  <data name="OpenModelsFolder" xml:space="preserve">
+    <value>打开模型文件夹</value>
+  </data>
+  <data name="OutputFolder_NextToOriginal" xml:space="preserve">
+    <value>原图旁边</value>
+  </data>
+  <data name="Pasted_FileName" xml:space="preserve">
+    <value>粘贴 {0}</value>
+  </data>
+  <data name="Percent" xml:space="preserve">
+    <value>{0}%</value>
+  </data>
+  <data name="Pixels" xml:space="preserve">
+    <value>{0} px</value>
+  </data>
+  <data name="PreviewError_Title" xml:space="preserve">
+    <value>无法打开此文件</value>
+  </data>
+  <data name="Progress_File" xml:space="preserve">
+    <value>第 {0} 个文件，共 {1} 个</value>
+  </data>
+  <data name="Progress_Orientation" xml:space="preserve">
+    <value>方向 {0}/{1}</value>
+  </data>
+  <data name="Progress_Pass" xml:space="preserve">
+    <value>第 {0}/{1} 遍</value>
+  </data>
+  <data name="Progress_Percent" xml:space="preserve">
+    <value>正在处理… {0}%</value>
+  </data>
+  <data name="Progress_PreparingModel" xml:space="preserve">
+    <value>正在准备模型…</value>
+  </data>
+  <data name="Progress_Tile" xml:space="preserve">
+    <value>分块 {0}/{1}</value>
+  </data>
+  <data name="Quality" xml:space="preserve">
+    <value>质量</value>
+  </data>
+  <data name="RefreshModels" xml:space="preserve">
+    <value>刷新模型列表</value>
+  </data>
+  <data name="Remaining_AlmostDone" xml:space="preserve">
+    <value>即将完成</value>
+  </data>
+  <data name="Remaining_Minutes" xml:space="preserve">
+    <value>约 {0} 分钟</value>
+  </data>
+  <data name="Remaining_Seconds" xml:space="preserve">
+    <value>约 {0} 秒</value>
+  </data>
+  <data name="SaveNextToOriginal" xml:space="preserve">
+    <value>保存到原图旁边</value>
+  </data>
+  <data name="Scale_Other" xml:space="preserve">
+    <value>其他</value>
+  </data>
+  <data name="SeamlessTiles" xml:space="preserve">
+    <value>无缝分块</value>
+  </data>
+  <data name="SeamlessTiles_Description" xml:space="preserve">
+    <value>分块之间的重叠加倍（64 px）：即使是深层模型也看不到接缝，但分块更多——自动分块时 1920 × 1200 的照片约多 1.5 倍。</value>
+  </data>
+  <data name="Section_Advanced" xml:space="preserve">
+    <value>高级</value>
+  </data>
+  <data name="Section_Model" xml:space="preserve">
+    <value>模型</value>
+  </data>
+  <data name="Section_SaveAs" xml:space="preserve">
+    <value>保存为</value>
+  </data>
+  <data name="Section_Scale" xml:space="preserve">
+    <value>倍数</value>
+  </data>
+  <data name="Section_Strength" xml:space="preserve">
+    <value>强度</value>
+  </data>
+  <data name="SelectAnotherFile" xml:space="preserve">
+    <value>选择其他文件</value>
+  </data>
+  <data name="SelectFiles" xml:space="preserve">
+    <value>选择文件</value>
+  </data>
+  <data name="ShowInFolder" xml:space="preserve">
+    <value>在文件夹中显示</value>
+  </data>
+  <data name="SizePreview_EnterScale" xml:space="preserve">
+    <value>请输入大于 0 且不超过 {0} 的倍数</value>
+  </data>
+  <data name="SizePreview_EnterSize" xml:space="preserve">
+    <value>请输入以像素为单位的尺寸</value>
+  </data>
+  <data name="SizePreview_SelectFile" xml:space="preserve">
+    <value>选择文件以查看输出尺寸</value>
+  </data>
+  <data name="Speed_Fast" xml:space="preserve">
+    <value>快</value>
+  </data>
+  <data name="Speed_Slow" xml:space="preserve">
+    <value>慢</value>
+  </data>
+  <data name="Speed_VeryFast" xml:space="preserve">
+    <value>很快</value>
+  </data>
+  <data name="Speed_VerySlow" xml:space="preserve">
+    <value>很慢</value>
+  </data>
+  <data name="Strength_Description" xml:space="preserve">
+    <value>低于 100% 时会混入原图的普通缩放：更少臆造的纹理，锐化更柔和。</value>
+  </data>
+  <data name="Summary_AutoTiles" xml:space="preserve">
+    <value>自动分块</value>
+  </data>
+  <data name="Summary_NoTiling" xml:space="preserve">
+    <value>不分块</value>
+  </data>
+  <data name="Summary_Seamless" xml:space="preserve">
+    <value>无缝</value>
+  </data>
+  <data name="Summary_Tiles" xml:space="preserve">
+    <value>{0} px 分块</value>
+  </data>
+  <data name="Target_Height" xml:space="preserve">
+    <value>至高 {0} px</value>
+  </data>
+  <data name="Target_LongSide" xml:space="preserve">
+    <value>至长边 {0} px</value>
+  </data>
+  <data name="Target_Width" xml:space="preserve">
+    <value>至宽 {0} px</value>
+  </data>
+  <data name="Tile_None" xml:space="preserve">
+    <value>不分块</value>
+  </data>
+  <data name="TileSize" xml:space="preserve">
+    <value>分块大小</value>
+  </data>
+  <data name="TileSize_Description" xml:space="preserve">
+    <value>分块越小，占用的显存越少。显存不足时会自动减小分块。</value>
+  </data>
+  <data name="Time_MinutesSeconds" xml:space="preserve">
+    <value>{0} 分 {1} 秒</value>
+  </data>
+  <data name="Time_Seconds" xml:space="preserve">
+    <value>{0} 秒</value>
+  </data>
+  <data name="Toast_BusyNotOpened" xml:space="preserve">
+    <value>正在处理中：这些文件未打开。请在处理结束后再打开。</value>
+  </data>
+  <data name="Toast_CantPaste" xml:space="preserve">
+    <value>无法粘贴：{0}</value>
+  </data>
+  <data name="Toast_CantReadSelection" xml:space="preserve">
+    <value>无法读取所选内容：{0}</value>
+  </data>
+  <data name="Toast_CantSavePasted" xml:space="preserve">
+    <value>无法保存粘贴的图像：{0}</value>
+  </data>
+  <data name="Toast_CantShowResult" xml:space="preserve">
+    <value>无法显示结果：{0}</value>
+  </data>
+  <data name="Toast_ClipboardBusy" xml:space="preserve">
+    <value>剪贴板正被其他应用占用，请重试</value>
+  </data>
+  <data name="Toast_ClipboardEmpty" xml:space="preserve">
+    <value>剪贴板中没有图像或文件</value>
+  </data>
+  <data name="Toast_ErrorDetailsCopied" xml:space="preserve">
+    <value>错误详情已复制，请粘贴到错误报告中</value>
+  </data>
+  <data name="Toast_NoImagesInSelection" xml:space="preserve">
+    <value>所选内容中没有支持的图像</value>
+  </data>
+  <data name="Toast_PastedSaved" xml:space="preserve">
+    <value>粘贴的图像已保存到 {0}</value>
+  </data>
+  <data name="Toast_ResultCopied" xml:space="preserve">
+    <value>结果已复制到剪贴板</value>
+  </data>
+  <data name="TryAgain" xml:space="preserve">
+    <value>重试</value>
+  </data>
+  <data name="Tta" xml:space="preserve">
+    <value>测试时增强（TTA）</value>
+  </data>
+  <data name="Tta_Description" xml:space="preserve">
+    <value>图像会以全部 8 种旋转和镜像分别处理，再取平均：噪点和单向伪影略少，但速度慢 8 倍。</value>
+  </data>
+  <data name="Unhandled_LogDetails" xml:space="preserve">
+    <value>详情请见日志：
+{0}</value>
+  </data>
+  <data name="Unhandled_Title" xml:space="preserve">
+    <value>Krupno — 错误</value>
+  </data>
+  <data name="Unit_GB" xml:space="preserve">
+    <value>{0} GB</value>
+  </data>
+  <data name="Unit_KB" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Unit_MB" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="Upscale" xml:space="preserve">
+    <value>放大</value>
+  </data>
+  <data name="Upscale_Files" xml:space="preserve">
+    <value>放大 {0}</value>
+  </data>
+  <data name="Upscale_FilesScale" xml:space="preserve">
+    <value>放大 {0} {1}</value>
+  </data>
+  <data name="Upscale_Scale" xml:space="preserve">
+    <value>放大 {0}</value>
+  </data>
+  <data name="Zoom_Actual" xml:space="preserve">
+    <value>实际像素（Ctrl + 1）</value>
+  </data>
+  <data name="Zoom_ActualName" xml:space="preserve">
+    <value>实际大小</value>
+  </data>
+  <data name="Zoom_Fit" xml:space="preserve">
+    <value>适应窗口（Ctrl + 0）</value>
+  </data>
+  <data name="Zoom_FitName" xml:space="preserve">
+    <value>适应窗口</value>
+  </data>
+  <data name="Zoom_In" xml:space="preserve">
+    <value>放大视图（Ctrl + +）</value>
+  </data>
+  <data name="Zoom_InName" xml:space="preserve">
+    <value>放大视图</value>
+  </data>
+  <data name="Zoom_Out" xml:space="preserve">
+    <value>缩小（Ctrl + −）</value>
+  </data>
+  <data name="Zoom_OutName" xml:space="preserve">
+    <value>缩小</value>
+  </data>
+</root>

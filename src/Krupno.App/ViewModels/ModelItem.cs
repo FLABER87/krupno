@@ -1,4 +1,5 @@
 using Krupno.App.Infrastructure;
+using Krupno.App.Properties;
 using Krupno.Core.Inference;
 
 namespace Krupno.App.ViewModels;
@@ -34,8 +35,8 @@ public sealed class ModelItem : ObservableObject
 
     public string? BadgeText => Badge switch
     {
-        ModelBadge.Recommended => "Recommended",
-        ModelBadge.NonCommercial => "Non-commercial",
+        ModelBadge.Recommended => Strings.Badge_Recommended,
+        ModelBadge.NonCommercial => Strings.Badge_NonCommercial,
         _ => null,
     };
 
@@ -57,7 +58,7 @@ public sealed class ModelItem : ObservableObject
         string key = entry.Name.ToLowerInvariant();
         return Known.TryGetValue(key, out var preset)
             ? new ModelItem(entry, preset.Title, preset.Subtitle, preset.Badge, preset.Order)
-            : new ModelItem(entry, entry.Name.Replace('_', ' '), "Custom model", ModelBadge.None, int.MaxValue);
+            : new ModelItem(entry, entry.Name.Replace('_', ' '), Strings.Model_Custom, ModelBadge.None, int.MaxValue);
     }
 
     private sealed record Preset(string Title, string Subtitle, ModelBadge Badge, int Order);
@@ -68,12 +69,13 @@ public sealed class ModelItem : ObservableObject
     /// </summary>
     private static readonly Dictionary<string, Preset> Known = new()
     {
-        [ModelCatalog.DefaultModelName.ToLowerInvariant()] = new("Photo, fast", "BHI RealPLKSR · fast", ModelBadge.Recommended, 0),
-        ["4xbhi_dat2_real_fp16"] = new("Photo, maximum detail", "BHI DAT2 · slow", ModelBadge.None, 1),
-        ["4x-ultrasharpv2"] = new("General purpose", "UltraSharpV2 · slow", ModelBadge.NonCommercial, 2),
-        ["4xbhi_dat2_real"] = new("Photo, maximum detail", "BHI DAT2 fp32 · very slow", ModelBadge.None, 3),
-        ["realesrgan_x4plus_fp16"] = new("Classic", "Real-ESRGAN x4plus · fast", ModelBadge.None, 4),
-        ["realesrgan_x4plus"] = new("Classic", "Real-ESRGAN x4plus fp32", ModelBadge.None, 5),
-        ["realesr-general-x4v3"] = new("Draft", "Real-ESRGAN general · very fast", ModelBadge.None, 6),
+        [ModelCatalog.DefaultModelName.ToLowerInvariant()] =
+            new(Strings.Model_PhotoFast, $"BHI RealPLKSR · {Strings.Speed_Fast}", ModelBadge.Recommended, 0),
+        ["4xbhi_dat2_real_fp16"] = new(Strings.Model_PhotoDetail, $"BHI DAT2 · {Strings.Speed_Slow}", ModelBadge.None, 1),
+        ["4x-ultrasharpv2"] = new(Strings.Model_General, $"UltraSharpV2 · {Strings.Speed_Slow}", ModelBadge.NonCommercial, 2),
+        ["4xbhi_dat2_real"] = new(Strings.Model_PhotoDetail, $"BHI DAT2 fp32 · {Strings.Speed_VerySlow}", ModelBadge.None, 3),
+        ["realesrgan_x4plus_fp16"] = new(Strings.Model_Classic, $"Real-ESRGAN x4plus · {Strings.Speed_Fast}", ModelBadge.None, 4),
+        ["realesrgan_x4plus"] = new(Strings.Model_Classic, "Real-ESRGAN x4plus fp32", ModelBadge.None, 5),
+        ["realesr-general-x4v3"] = new(Strings.Model_Draft, $"Real-ESRGAN general · {Strings.Speed_VeryFast}", ModelBadge.None, 6),
     };
 }

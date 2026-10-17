@@ -20,4 +20,17 @@
     <InternalsVisibleTo Include="Krupno.Core.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Progress messages and errors that reach the user, in English and the translations (see Krupno.App's Strings.resx). -->
+    <EmbeddedResource Update="Properties\Strings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <Compile Update="Properties\Strings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Strings.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
 </Project>

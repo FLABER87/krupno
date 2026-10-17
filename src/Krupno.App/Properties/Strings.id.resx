@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddFiles" xml:space="preserve">
+    <value>Tambahkan file</value>
+  </data>
+  <data name="Auto" xml:space="preserve">
+    <value>Otomatis</value>
+  </data>
+  <data name="Badge_NonCommercial" xml:space="preserve">
+    <value>Nonkomersial</value>
+  </data>
+  <data name="Badge_Recommended" xml:space="preserve">
+    <value>Direkomendasikan</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Batal</value>
+  </data>
+  <data name="Cancel_ToolTip" xml:space="preserve">
+    <value>Hentikan (Esc)</value>
+  </data>
+  <data name="Change" xml:space="preserve">
+    <value>Ubah</value>
+  </data>
+  <data name="Chip_Original" xml:space="preserve">
+    <value>Asli · {0} × {1}</value>
+  </data>
+  <data name="Chip_Result" xml:space="preserve">
+    <value>Hasil · {0} × {1}</value>
+  </data>
+  <data name="ClearList" xml:space="preserve">
+    <value>Kosongkan daftar</value>
+  </data>
+  <data name="Compare_SideBySide" xml:space="preserve">
+    <value>Berdampingan</value>
+  </data>
+  <data name="Compare_SideBySideToolTip" xml:space="preserve">
+    <value>Asli dan hasil berdampingan</value>
+  </data>
+  <data name="Compare_Split" xml:space="preserve">
+    <value>Terbagi</value>
+  </data>
+  <data name="Compare_SplitToolTip" xml:space="preserve">
+    <value>Tampilan terbagi: seret pembatasnya</value>
+  </data>
+  <data name="Compare_Unavailable" xml:space="preserve">
+    <value>Perbandingan tersedia setelah pemrosesan</value>
+  </data>
+  <data name="CopyErrorDetails" xml:space="preserve">
+    <value>Salin detail kesalahan</value>
+  </data>
+  <data name="CopyErrorDetails_ToolTip" xml:space="preserve">
+    <value>Untuk laporan bug: versi, GPU, model, pengaturan, dan kesalahannya</value>
+  </data>
+  <data name="CustomMode_Height" xml:space="preserve">
+    <value>Tinggi, px</value>
+  </data>
+  <data name="CustomMode_LongSide" xml:space="preserve">
+    <value>Sisi panjang, px</value>
+  </data>
+  <data name="CustomMode_Name" xml:space="preserve">
+    <value>Yang ditentukan angka</value>
+  </data>
+  <data name="CustomMode_Scale" xml:space="preserve">
+    <value>Skala ×</value>
+  </data>
+  <data name="CustomMode_Width" xml:space="preserve">
+    <value>Lebar, px</value>
+  </data>
+  <data name="CustomValue_Name" xml:space="preserve">
+    <value>Skala atau ukuran</value>
+  </data>
+  <data name="Device" xml:space="preserve">
+    <value>Perangkat</value>
+  </data>
+  <data name="Device_AutoWith" xml:space="preserve">
+    <value>Otomatis ({0})</value>
+  </data>
+  <data name="Device_CpuSlow" xml:space="preserve">
+    <value>CPU (lambat)</value>
+  </data>
+  <data name="Dialog_AddImages" xml:space="preserve">
+    <value>Tambahkan gambar</value>
+  </data>
+  <data name="Dialog_Filter" xml:space="preserve">
+    <value>Gambar|{0}|Semua file|*.*</value>
+  </data>
+  <data name="Dialog_OutputFolder" xml:space="preserve">
+    <value>Folder output</value>
+  </data>
+  <data name="Dialog_SelectImages" xml:space="preserve">
+    <value>Pilih gambar</value>
+  </data>
+  <data name="Done_Files" xml:space="preserve">
+    <value>Selesai: {0} dalam {1}</value>
+  </data>
+  <data name="Done_InTime" xml:space="preserve">
+    <value>Selesai dalam {0} · {1}</value>
+  </data>
+  <data name="Done_Partial" xml:space="preserve">
+    <value>Selesai: {0} dari {1}, {2} gagal</value>
+  </data>
+  <data name="Done_SavedNextToOriginals" xml:space="preserve">
+    <value>Disimpan di samping file asli</value>
+  </data>
+  <data name="DropToOpen" xml:space="preserve">
+    <value>Lepaskan untuk membuka</value>
+  </data>
+  <data name="Empty_Description" xml:space="preserve">
+    <value>Jaringan saraf memperbesar gambar 2–8 kali dan melengkapi detailnya. Anda dapat menambahkan beberapa file sekaligus; file diproses satu per satu.</value>
+  </data>
+  <data name="Empty_Formats" xml:space="preserve">
+    <value>PNG, JPEG, TIFF, BMP, GIF, WebP, HEIC · Ctrl+O · Ctrl+V untuk menempel</value>
+  </data>
+  <data name="Empty_Title" xml:space="preserve">
+    <value>Seret foto atau folder ke sini</value>
+  </data>
+  <data name="Error_NoModelSelected" xml:space="preserve">
+    <value>Tidak ada model yang dipilih.</value>
+  </data>
+  <data name="Error_NoneUpscaled" xml:space="preserve">
+    <value>Tidak satu pun dari {0} file dapat diperbesar. {1}</value>
+  </data>
+  <data name="Error_OutputFolder" xml:space="preserve">
+    <value>Tidak dapat menyimpan ke folder output: {0} Pilih folder lain atau simpan di samping file asli.</value>
+  </data>
+  <data name="Error_Title" xml:space="preserve">
+    <value>Gagal memperbesar</value>
+  </data>
+  <data name="File_Done" xml:space="preserve">
+    <value>Selesai: {0}</value>
+  </data>
+  <data name="File_Processing" xml:space="preserve">
+    <value>Memproses…</value>
+  </data>
+  <data name="Files" xml:space="preserve">
+    <value>{0} file</value>
+  </data>
+  <data name="Friendly_AccessDenied" xml:space="preserve">
+    <value>Akses ke file atau folder ditolak. Pilih folder output lain.</value>
+  </data>
+  <data name="Friendly_FileNotFound" xml:space="preserve">
+    <value>File tidak ditemukan. File mungkin telah dipindahkan atau dihapus.</value>
+  </data>
+  <data name="Friendly_Gpu" xml:space="preserve">
+    <value>GPU tidak sanggup menjalankan model ini. Pilih perangkat atau ukuran ubin lain di “Lanjutan”, atau model yang lebih ringan.</value>
+  </data>
+  <data name="Friendly_IO" xml:space="preserve">
+    <value>Tidak dapat membaca atau menulis file. {0}</value>
+  </data>
+  <data name="Hint_CopyResult" xml:space="preserve">
+    <value>Ctrl+C — salin hasil</value>
+  </data>
+  <data name="Hint_OpenPaste" xml:space="preserve">
+    <value>Ctrl+O · Ctrl+V untuk menempel</value>
+  </data>
+  <data name="Hint_Start" xml:space="preserve">
+    <value>Ctrl+Enter</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Bahasa</value>
+  </data>
+  <data name="Language_Restart" xml:space="preserve">
+    <value>Bahasa baru berlaku setelah Krupno dimulai ulang.</value>
+  </data>
+  <data name="Language_Windows" xml:space="preserve">
+    <value>Bahasa Windows</value>
+  </data>
+  <data name="Model_Classic" xml:space="preserve">
+    <value>Klasik</value>
+  </data>
+  <data name="Model_Custom" xml:space="preserve">
+    <value>Model kustom</value>
+  </data>
+  <data name="Model_Draft" xml:space="preserve">
+    <value>Draf</value>
+  </data>
+  <data name="Model_General" xml:space="preserve">
+    <value>Serbaguna</value>
+  </data>
+  <data name="Model_PhotoDetail" xml:space="preserve">
+    <value>Foto, detail maksimum</value>
+  </data>
+  <data name="Model_PhotoFast" xml:space="preserve">
+    <value>Foto, cepat</value>
+  </data>
+  <data name="ModelDetails_CantRead" xml:space="preserve">
+    <value>Tidak dapat membaca model: {0}</value>
+  </data>
+  <data name="ModelDetails_FixedTile" xml:space="preserve">
+    <value>Ubin {0} px (ditetapkan oleh model)</value>
+  </data>
+  <data name="ModelDetails_License" xml:space="preserve">
+    <value>Lisensi: {0}</value>
+  </data>
+  <data name="ModelDetails_MaxWindow" xml:space="preserve">
+    <value>Jendela hingga {0} px</value>
+  </data>
+  <data name="ModelDetails_NoLicense" xml:space="preserve">
+    <value>Lisensi tidak ditentukan</value>
+  </data>
+  <data name="Models_All" xml:space="preserve">
+    <value>Semua model ({0})</value>
+  </data>
+  <data name="Models_ShowFewer" xml:space="preserve">
+    <value>Tampilkan lebih sedikit</value>
+  </data>
+  <data name="NoModels" xml:space="preserve">
+    <value>Belum ada model. Letakkan file .onnx di folder model lalu segarkan daftar.</value>
+  </data>
+  <data name="NonCommercial_ToolTip" xml:space="preserve">
+    <value>Lisensi CC BY-NC-SA: hanya untuk penggunaan nonkomersial</value>
+  </data>
+  <data name="Note_DirectMLUnavailable" xml:space="preserve">
+    <value>DirectML tidak tersedia, berjalan di CPU</value>
+  </data>
+  <data name="Notice_Canceled" xml:space="preserve">
+    <value>Pemrosesan dibatalkan</value>
+  </data>
+  <data name="Open" xml:space="preserve">
+    <value>Buka</value>
+  </data>
+  <data name="OpenModelsFolder" xml:space="preserve">
+    <value>Buka folder model</value>
+  </data>
+  <data name="OutputFolder_NextToOriginal" xml:space="preserve">
+    <value>Di samping file asli</value>
+  </data>
+  <data name="Pasted_FileName" xml:space="preserve">
+    <value>Ditempel {0}</value>
+  </data>
+  <data name="Percent" xml:space="preserve">
+    <value>{0}%</value>
+  </data>
+  <data name="Pixels" xml:space="preserve">
+    <value>{0} px</value>
+  </data>
+  <data name="PreviewError_Title" xml:space="preserve">
+    <value>Tidak dapat membuka file ini</value>
+  </data>
+  <data name="Progress_File" xml:space="preserve">
+    <value>File {0} dari {1}</value>
+  </data>
+  <data name="Progress_Orientation" xml:space="preserve">
+    <value>orientasi {0} dari {1}</value>
+  </data>
+  <data name="Progress_Pass" xml:space="preserve">
+    <value>tahap {0} dari {1}</value>
+  </data>
+  <data name="Progress_Percent" xml:space="preserve">
+    <value>Memproses… {0}%</value>
+  </data>
+  <data name="Progress_PreparingModel" xml:space="preserve">
+    <value>Menyiapkan model…</value>
+  </data>
+  <data name="Progress_Tile" xml:space="preserve">
+    <value>ubin {0} dari {1}</value>
+  </data>
+  <data name="Quality" xml:space="preserve">
+    <value>Kualitas</value>
+  </data>
+  <data name="RefreshModels" xml:space="preserve">
+    <value>Segarkan daftar model</value>
+  </data>
+  <data name="Remaining_AlmostDone" xml:space="preserve">
+    <value>hampir selesai</value>
+  </data>
+  <data name="Remaining_Minutes" xml:space="preserve">
+    <value>≈ {0} mnt</value>
+  </data>
+  <data name="Remaining_Seconds" xml:space="preserve">
+    <value>≈ {0} dtk</value>
+  </data>
+  <data name="SaveNextToOriginal" xml:space="preserve">
+    <value>Simpan di samping file asli</value>
+  </data>
+  <data name="Scale_Other" xml:space="preserve">
+    <value>Lainnya</value>
+  </data>
+  <data name="SeamlessTiles" xml:space="preserve">
+    <value>Ubin mulus</value>
+  </data>
+  <data name="SeamlessTiles_Description" xml:space="preserve">
+    <value>Tumpang tindih antarubin dua kali lipat (64 px): tidak ada sambungan yang terlihat bahkan dengan model yang dalam, tetapi ubin yang diproses lebih banyak: sekitar 1,5 kali lipat untuk foto 1920 × 1200 dengan ubin otomatis.</value>
+  </data>
+  <data name="Section_Advanced" xml:space="preserve">
+    <value>Lanjutan</value>
+  </data>
+  <data name="Section_Model" xml:space="preserve">
+    <value>Model</value>
+  </data>
+  <data name="Section_SaveAs" xml:space="preserve">
+    <value>Simpan sebagai</value>
+  </data>
+  <data name="Section_Scale" xml:space="preserve">
+    <value>Skala</value>
+  </data>
+  <data name="Section_Strength" xml:space="preserve">
+    <value>Kekuatan</value>
+  </data>
+  <data name="SelectAnotherFile" xml:space="preserve">
+    <value>Pilih file lain</value>
+  </data>
+  <data name="SelectFiles" xml:space="preserve">
+    <value>Pilih file</value>
+  </data>
+  <data name="ShowInFolder" xml:space="preserve">
+    <value>Tampilkan di folder</value>
+  </data>
+  <data name="SizePreview_EnterScale" xml:space="preserve">
+    <value>Masukkan skala di atas 0, hingga {0}</value>
+  </data>
+  <data name="SizePreview_EnterSize" xml:space="preserve">
+    <value>Masukkan ukuran dalam piksel</value>
+  </data>
+  <data name="SizePreview_SelectFile" xml:space="preserve">
+    <value>Pilih file untuk melihat ukuran hasil</value>
+  </data>
+  <data name="Speed_Fast" xml:space="preserve">
+    <value>cepat</value>
+  </data>
+  <data name="Speed_Slow" xml:space="preserve">
+    <value>lambat</value>
+  </data>
+  <data name="Speed_VeryFast" xml:space="preserve">
+    <value>sangat cepat</value>
+  </data>
+  <data name="Speed_VerySlow" xml:space="preserve">
+    <value>sangat lambat</value>
+  </data>
+  <data name="Strength_Description" xml:space="preserve">
+    <value>Di bawah 100%, hasil dicampur dengan pengubahan ukuran biasa dari aslinya: lebih sedikit tekstur rekaan, penajaman lebih lembut.</value>
+  </data>
+  <data name="Summary_AutoTiles" xml:space="preserve">
+    <value>ubin otomatis</value>
+  </data>
+  <data name="Summary_NoTiling" xml:space="preserve">
+    <value>tanpa ubin</value>
+  </data>
+  <data name="Summary_Seamless" xml:space="preserve">
+    <value>mulus</value>
+  </data>
+  <data name="Summary_Tiles" xml:space="preserve">
+    <value>ubin {0} px</value>
+  </data>
+  <data name="Target_Height" xml:space="preserve">
+    <value>ke tinggi {0} px</value>
+  </data>
+  <data name="Target_LongSide" xml:space="preserve">
+    <value>ke sisi panjang {0} px</value>
+  </data>
+  <data name="Target_Width" xml:space="preserve">
+    <value>ke lebar {0} px</value>
+  </data>
+  <data name="Tile_None" xml:space="preserve">
+    <value>Tanpa ubin</value>
+  </data>
+  <data name="TileSize" xml:space="preserve">
+    <value>Ukuran ubin</value>
+  </data>
+  <data name="TileSize_Description" xml:space="preserve">
+    <value>Ubin yang lebih kecil memakai lebih sedikit memori video. Jika memori habis, ukuran ubin dikurangi secara otomatis.</value>
+  </data>
+  <data name="Time_MinutesSeconds" xml:space="preserve">
+    <value>{0} mnt {1} dtk</value>
+  </data>
+  <data name="Time_Seconds" xml:space="preserve">
+    <value>{0} dtk</value>
+  </data>
+  <data name="Toast_BusyNotOpened" xml:space="preserve">
+    <value>Pemrosesan sedang berjalan: file ini tidak dibuka. Buka setelah selesai.</value>
+  </data>
+  <data name="Toast_CantPaste" xml:space="preserve">
+    <value>Tidak dapat menempel: {0}</value>
+  </data>
+  <data name="Toast_CantReadSelection" xml:space="preserve">
+    <value>Tidak dapat membaca pilihan: {0}</value>
+  </data>
+  <data name="Toast_CantSavePasted" xml:space="preserve">
+    <value>Tidak dapat menyimpan gambar yang ditempel: {0}</value>
+  </data>
+  <data name="Toast_CantShowResult" xml:space="preserve">
+    <value>Tidak dapat menampilkan hasil: {0}</value>
+  </data>
+  <data name="Toast_ClipboardBusy" xml:space="preserve">
+    <value>Clipboard sedang digunakan aplikasi lain — coba lagi</value>
+  </data>
+  <data name="Toast_ClipboardEmpty" xml:space="preserve">
+    <value>Clipboard tidak berisi gambar atau file</value>
+  </data>
+  <data name="Toast_ErrorDetailsCopied" xml:space="preserve">
+    <value>Detail kesalahan disalin — tempelkan ke laporan bug</value>
+  </data>
+  <data name="Toast_NoImagesInSelection" xml:space="preserve">
+    <value>Pilihan tidak berisi gambar yang didukung</value>
+  </data>
+  <data name="Toast_PastedSaved" xml:space="preserve">
+    <value>Gambar yang ditempel disimpan ke {0}</value>
+  </data>
+  <data name="Toast_ResultCopied" xml:space="preserve">
+    <value>Hasil disalin ke clipboard</value>
+  </data>
+  <data name="TryAgain" xml:space="preserve">
+    <value>Coba lagi</value>
+  </data>
+  <data name="Tta" xml:space="preserve">
+    <value>Augmentasi saat pengujian (TTA)</value>
+  </data>
+  <data name="Tta_Description" xml:space="preserve">
+    <value>Gambar diproses dalam 8 rotasi dan pencerminan, lalu hasilnya dirata-ratakan: sedikit lebih sedikit derau dan artefak yang condong ke satu arah, tetapi 8 kali lebih lambat.</value>
+  </data>
+  <data name="Unhandled_LogDetails" xml:space="preserve">
+    <value>Detailnya ada di log:
+{0}</value>
+  </data>
+  <data name="Unhandled_Title" xml:space="preserve">
+    <value>Krupno — Kesalahan</value>
+  </data>
+  <data name="Unit_GB" xml:space="preserve">
+    <value>{0} GB</value>
+  </data>
+  <data name="Unit_KB" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Unit_MB" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="Upscale" xml:space="preserve">
+    <value>Perbesar</value>
+  </data>
+  <data name="Upscale_Files" xml:space="preserve">
+    <value>Perbesar {0}</value>
+  </data>
+  <data name="Upscale_FilesScale" xml:space="preserve">
+    <value>Perbesar {0} {1}</value>
+  </data>
+  <data name="Upscale_Scale" xml:space="preserve">
+    <value>Perbesar {0}</value>
+  </data>
+  <data name="Zoom_Actual" xml:space="preserve">
+    <value>Piksel sebenarnya (Ctrl + 1)</value>
+  </data>
+  <data name="Zoom_ActualName" xml:space="preserve">
+    <value>Ukuran sebenarnya</value>
+  </data>
+  <data name="Zoom_Fit" xml:space="preserve">
+    <value>Paskan ke jendela (Ctrl + 0)</value>
+  </data>
+  <data name="Zoom_FitName" xml:space="preserve">
+    <value>Paskan ke jendela</value>
+  </data>
+  <data name="Zoom_In" xml:space="preserve">
+    <value>Perbesar tampilan (Ctrl + +)</value>
+  </data>
+  <data name="Zoom_InName" xml:space="preserve">
+    <value>Perbesar tampilan</value>
+  </data>
+  <data name="Zoom_Out" xml:space="preserve">
+    <value>Perkecil (Ctrl + −)</value>
+  </data>
+  <data name="Zoom_OutName" xml:space="preserve">
+    <value>Perkecil</value>
+  </data>
+</root>

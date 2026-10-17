@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Error_CannotOpen" xml:space="preserve">
+    <value>Không thể mở “{0}”: tệp bị hỏng hoặc không phải là ảnh.</value>
+  </data>
+  <data name="Error_FormatSizeLimit" xml:space="preserve">
+    <value>{0} không lưu được ảnh có cạnh lớn hơn {1} px, mà kết quả là {2}×{3}. Hãy lưu dưới dạng TIFF hoặc chọn tỷ lệ nhỏ hơn.</value>
+  </data>
+  <data name="Error_ImageTooLarge" xml:space="preserve">
+    <value>Ảnh {0}×{1} quá lớn để xử lý trong bộ nhớ.</value>
+  </data>
+  <data name="Error_IntermediateTooLarge" xml:space="preserve">
+    <value>Kết quả trung gian quá lớn để xử lý trong bộ nhớ.</value>
+  </data>
+  <data name="Error_NeedsStoreExtension" xml:space="preserve">
+    <value>Windows không thể mở “{0}”: định dạng {1} cần tiện ích mở rộng từ Microsoft Store.</value>
+  </data>
+  <data name="Error_ResultTooLarge" xml:space="preserve">
+    <value>Kết quả {0}×{1} quá lớn để xử lý trong bộ nhớ.</value>
+  </data>
+  <data name="Model_ContradictoryMetadata" xml:space="preserve">
+    <value>Siêu dữ liệu của mô hình mâu thuẫn: cửa sổ phải tối đa {0} px nhưng tối thiểu {1} px.</value>
+  </data>
+  <data name="Model_FileNotFound" xml:space="preserve">
+    <value>Không tìm thấy tệp mô hình: {0}</value>
+  </data>
+  <data name="Model_NoScale" xml:space="preserve">
+    <value>Không xác định được tỷ lệ của mô hình từ đầu ra [{0}].</value>
+  </data>
+  <data name="Model_OneFixedSide" xml:space="preserve">
+    <value>Không hỗ trợ mô hình chỉ có một cạnh đầu vào cố định.</value>
+  </data>
+  <data name="Model_RgbOnly" xml:space="preserve">
+    <value>Chỉ hỗ trợ mô hình RGB, nhưng đầu vào của mô hình này có {0} kênh.</value>
+  </data>
+  <data name="Model_Shape" xml:space="preserve">
+    <value>Cần đầu vào và đầu ra có dạng [1, 3, H, W].</value>
+  </data>
+  <data name="Model_SingleInput" xml:space="preserve">
+    <value>Cần một mô hình có đúng một đầu vào ảnh.</value>
+  </data>
+  <data name="Model_TensorType" xml:space="preserve">
+    <value>Không hỗ trợ kiểu tensor {0}; cần float32 hoặc float16.</value>
+  </data>
+  <data name="Progress_Blending" xml:space="preserve">
+    <value>Đang trộn với ảnh đổi kích thước thông thường, cường độ {0}%</value>
+  </data>
+  <data name="Progress_PassReduced" xml:space="preserve">
+    <value>Lượt {0} không vừa bộ nhớ ở kích thước đầy đủ, giảm đầu vào xuống {1}×{2}</value>
+  </data>
+  <data name="Progress_Resizing" xml:space="preserve">
+    <value>Đang đổi kích thước thành {0}×{1}</value>
+  </data>
+  <data name="Progress_TileFromLimit" xml:space="preserve">
+    <value>Ô {0} px (chọn sau khi hết bộ nhớ)</value>
+  </data>
+  <data name="Progress_TileReduced" xml:space="preserve">
+    <value>Cửa sổ {0}×{1} không vừa thiết bị, giảm ô xuống {2} px</value>
+  </data>
+</root>

@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Krupno.Core.Properties;
 
 namespace Krupno.Core.Imaging;
 
@@ -138,8 +139,7 @@ public static class ImageCodec
         if (width > max || height > max)
         {
             throw new InvalidOperationException(
-                $"{format.ToString().ToUpperInvariant()} can't hold an image larger than {max} px on a side, and the result is " +
-                $"{width}×{height}. Save as TIFF or choose a smaller scale.");
+                string.Format(Strings.Error_FormatSizeLimit, format.ToString().ToUpperInvariant(), max, width, height));
         }
     }
 
@@ -267,8 +267,8 @@ public static class ImageCodec
         string name = Path.GetFileName(path);
         string extension = Path.GetExtension(path).ToLowerInvariant();
         return extension is ".webp" or ".heic" or ".heif" or ".avif" or ".jxr" or ".wdp"
-            ? $"Windows cannot open \"{name}\": the {extension.TrimStart('.').ToUpperInvariant()} format requires an extension from the Microsoft Store."
-            : $"Cannot open \"{name}\": the file is corrupt or is not an image.";
+            ? string.Format(Strings.Error_NeedsStoreExtension, name, extension.TrimStart('.').ToUpperInvariant())
+            : string.Format(Strings.Error_CannotOpen, name);
     }
 
     /// <summary>The EXIF orientation, the embedded color profiles and the stored pixel format, read without decoding the pixels.</summary>
