@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddFiles" xml:space="preserve">
+    <value>Dodaj pliki</value>
+  </data>
+  <data name="Auto" xml:space="preserve">
+    <value>Automatycznie</value>
+  </data>
+  <data name="Badge_NonCommercial" xml:space="preserve">
+    <value>Niekomercyjny</value>
+  </data>
+  <data name="Badge_Recommended" xml:space="preserve">
+    <value>Zalecany</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Anuluj</value>
+  </data>
+  <data name="Cancel_ToolTip" xml:space="preserve">
+    <value>Zatrzymaj (Esc)</value>
+  </data>
+  <data name="Change" xml:space="preserve">
+    <value>Zmień</value>
+  </data>
+  <data name="Chip_Original" xml:space="preserve">
+    <value>Oryginał · {0} × {1}</value>
+  </data>
+  <data name="Chip_Result" xml:space="preserve">
+    <value>Wynik · {0} × {1}</value>
+  </data>
+  <data name="ClearList" xml:space="preserve">
+    <value>Wyczyść listę</value>
+  </data>
+  <data name="Compare_SideBySide" xml:space="preserve">
+    <value>Obok siebie</value>
+  </data>
+  <data name="Compare_SideBySideToolTip" xml:space="preserve">
+    <value>Oryginał i wynik obok siebie</value>
+  </data>
+  <data name="Compare_Split" xml:space="preserve">
+    <value>Podział</value>
+  </data>
+  <data name="Compare_SplitToolTip" xml:space="preserve">
+    <value>Widok podzielony: przeciągnij linię podziału</value>
+  </data>
+  <data name="Compare_Unavailable" xml:space="preserve">
+    <value>Porównanie będzie dostępne po przetworzeniu</value>
+  </data>
+  <data name="CopyErrorDetails" xml:space="preserve">
+    <value>Kopiuj szczegóły błędu</value>
+  </data>
+  <data name="CopyErrorDetails_ToolTip" xml:space="preserve">
+    <value>Do zgłoszenia błędu: wersje, GPU, model, ustawienia i błąd</value>
+  </data>
+  <data name="CustomMode_Height" xml:space="preserve">
+    <value>Wysokość, px</value>
+  </data>
+  <data name="CustomMode_LongSide" xml:space="preserve">
+    <value>Dłuższy bok, px</value>
+  </data>
+  <data name="CustomMode_Name" xml:space="preserve">
+    <value>Co określa liczba</value>
+  </data>
+  <data name="CustomMode_Scale" xml:space="preserve">
+    <value>Skala ×</value>
+  </data>
+  <data name="CustomMode_Width" xml:space="preserve">
+    <value>Szerokość, px</value>
+  </data>
+  <data name="CustomValue_Name" xml:space="preserve">
+    <value>Skala lub rozmiar</value>
+  </data>
+  <data name="Device" xml:space="preserve">
+    <value>Urządzenie</value>
+  </data>
+  <data name="Device_AutoWith" xml:space="preserve">
+    <value>Automatycznie ({0})</value>
+  </data>
+  <data name="Device_CpuSlow" xml:space="preserve">
+    <value>CPU (wolno)</value>
+  </data>
+  <data name="Dialog_AddImages" xml:space="preserve">
+    <value>Dodaj obrazy</value>
+  </data>
+  <data name="Dialog_Filter" xml:space="preserve">
+    <value>Obrazy|{0}|Wszystkie pliki|*.*</value>
+  </data>
+  <data name="Dialog_OutputFolder" xml:space="preserve">
+    <value>Folder wyjściowy</value>
+  </data>
+  <data name="Dialog_SelectImages" xml:space="preserve">
+    <value>Wybierz obrazy</value>
+  </data>
+  <data name="Done_Files" xml:space="preserve">
+    <value>Gotowe: {0} w {1}</value>
+  </data>
+  <data name="Done_InTime" xml:space="preserve">
+    <value>Gotowe w {0} · {1}</value>
+  </data>
+  <data name="Done_Partial" xml:space="preserve">
+    <value>Gotowe: {0} z {1}, nieudane: {2}</value>
+  </data>
+  <data name="Done_SavedNextToOriginals" xml:space="preserve">
+    <value>Zapisano obok oryginałów</value>
+  </data>
+  <data name="DropToOpen" xml:space="preserve">
+    <value>Upuść, aby otworzyć</value>
+  </data>
+  <data name="Empty_Description" xml:space="preserve">
+    <value>Sieć neuronowa powiększa obraz 2–8 razy i uzupełnia szczegóły. Możesz dodać kilka plików naraz; zostaną przetworzone po kolei.</value>
+  </data>
+  <data name="Empty_Formats" xml:space="preserve">
+    <value>PNG, JPEG, TIFF, BMP, GIF, WebP, HEIC · Ctrl+O · Ctrl+V, aby wkleić</value>
+  </data>
+  <data name="Empty_Title" xml:space="preserve">
+    <value>Przeciągnij tutaj zdjęcia lub folder</value>
+  </data>
+  <data name="Error_NoModelSelected" xml:space="preserve">
+    <value>Nie wybrano modelu.</value>
+  </data>
+  <data name="Error_NoneUpscaled" xml:space="preserve">
+    <value>Nie udało się powiększyć żadnego z plików (łącznie: {0}). {1}</value>
+  </data>
+  <data name="Error_OutputFolder" xml:space="preserve">
+    <value>Nie można zapisać w folderze wyjściowym: {0} Wybierz inny folder lub zapisz obok oryginałów.</value>
+  </data>
+  <data name="Error_Title" xml:space="preserve">
+    <value>Nie udało się powiększyć</value>
+  </data>
+  <data name="File_Done" xml:space="preserve">
+    <value>Gotowe: {0}</value>
+  </data>
+  <data name="File_Processing" xml:space="preserve">
+    <value>Przetwarzanie…</value>
+  </data>
+  <data name="Files" xml:space="preserve">
+    <value>{0} plik|{0} pliki|{0} plików</value>
+  </data>
+  <data name="Friendly_AccessDenied" xml:space="preserve">
+    <value>Odmowa dostępu do pliku lub folderu. Wybierz inny folder wyjściowy.</value>
+  </data>
+  <data name="Friendly_FileNotFound" xml:space="preserve">
+    <value>Nie znaleziono pliku. Mógł zostać przeniesiony lub usunięty.</value>
+  </data>
+  <data name="Friendly_Gpu" xml:space="preserve">
+    <value>GPU nie poradził sobie z tym modelem. Wybierz inne urządzenie lub rozmiar kafelka w sekcji „Zaawansowane” albo lżejszy model.</value>
+  </data>
+  <data name="Friendly_IO" xml:space="preserve">
+    <value>Nie można odczytać lub zapisać pliku. {0}</value>
+  </data>
+  <data name="Hint_CopyResult" xml:space="preserve">
+    <value>Ctrl+C — kopiuj wynik</value>
+  </data>
+  <data name="Hint_OpenPaste" xml:space="preserve">
+    <value>Ctrl+O · Ctrl+V, aby wkleić</value>
+  </data>
+  <data name="Hint_Start" xml:space="preserve">
+    <value>Ctrl+Enter</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Język</value>
+  </data>
+  <data name="Language_Restart" xml:space="preserve">
+    <value>Nowy język zacznie obowiązywać po ponownym uruchomieniu programu Krupno.</value>
+  </data>
+  <data name="Language_Windows" xml:space="preserve">
+    <value>Język systemu Windows</value>
+  </data>
+  <data name="Model_Classic" xml:space="preserve">
+    <value>Klasyczny</value>
+  </data>
+  <data name="Model_Custom" xml:space="preserve">
+    <value>Model własny</value>
+  </data>
+  <data name="Model_Draft" xml:space="preserve">
+    <value>Wersja robocza</value>
+  </data>
+  <data name="Model_General" xml:space="preserve">
+    <value>Uniwersalny</value>
+  </data>
+  <data name="Model_PhotoDetail" xml:space="preserve">
+    <value>Zdjęcia, maksimum szczegółów</value>
+  </data>
+  <data name="Model_PhotoFast" xml:space="preserve">
+    <value>Zdjęcia, szybko</value>
+  </data>
+  <data name="ModelDetails_CantRead" xml:space="preserve">
+    <value>Nie można odczytać modelu: {0}</value>
+  </data>
+  <data name="ModelDetails_FixedTile" xml:space="preserve">
+    <value>Kafelek {0} px (ustalony przez model)</value>
+  </data>
+  <data name="ModelDetails_License" xml:space="preserve">
+    <value>Licencja: {0}</value>
+  </data>
+  <data name="ModelDetails_MaxWindow" xml:space="preserve">
+    <value>Okno do {0} px</value>
+  </data>
+  <data name="ModelDetails_NoLicense" xml:space="preserve">
+    <value>Nie podano licencji</value>
+  </data>
+  <data name="Models_All" xml:space="preserve">
+    <value>Wszystkie modele ({0})</value>
+  </data>
+  <data name="Models_ShowFewer" xml:space="preserve">
+    <value>Pokaż mniej</value>
+  </data>
+  <data name="NoModels" xml:space="preserve">
+    <value>Brak modeli. Umieść pliki .onnx w folderze modeli i odśwież listę.</value>
+  </data>
+  <data name="NonCommercial_ToolTip" xml:space="preserve">
+    <value>Licencja CC BY-NC-SA: tylko do użytku niekomercyjnego</value>
+  </data>
+  <data name="Note_DirectMLUnavailable" xml:space="preserve">
+    <value>DirectML jest niedostępny, obliczenia na CPU</value>
+  </data>
+  <data name="Notice_Canceled" xml:space="preserve">
+    <value>Przetwarzanie anulowane</value>
+  </data>
+  <data name="Open" xml:space="preserve">
+    <value>Otwórz</value>
+  </data>
+  <data name="OpenModelsFolder" xml:space="preserve">
+    <value>Otwórz folder modeli</value>
+  </data>
+  <data name="OutputFolder_NextToOriginal" xml:space="preserve">
+    <value>Obok oryginału</value>
+  </data>
+  <data name="Pasted_FileName" xml:space="preserve">
+    <value>Wklejony {0}</value>
+  </data>
+  <data name="Percent" xml:space="preserve">
+    <value>{0}%</value>
+  </data>
+  <data name="Pixels" xml:space="preserve">
+    <value>{0} px</value>
+  </data>
+  <data name="PreviewError_Title" xml:space="preserve">
+    <value>Nie można otworzyć tego pliku</value>
+  </data>
+  <data name="Progress_File" xml:space="preserve">
+    <value>Plik {0} z {1}</value>
+  </data>
+  <data name="Progress_Orientation" xml:space="preserve">
+    <value>orientacja {0} z {1}</value>
+  </data>
+  <data name="Progress_Pass" xml:space="preserve">
+    <value>przebieg {0} z {1}</value>
+  </data>
+  <data name="Progress_Percent" xml:space="preserve">
+    <value>Przetwarzanie… {0}%</value>
+  </data>
+  <data name="Progress_PreparingModel" xml:space="preserve">
+    <value>Przygotowywanie modelu…</value>
+  </data>
+  <data name="Progress_Tile" xml:space="preserve">
+    <value>kafelek {0} z {1}</value>
+  </data>
+  <data name="Quality" xml:space="preserve">
+    <value>Jakość</value>
+  </data>
+  <data name="RefreshModels" xml:space="preserve">
+    <value>Odśwież listę modeli</value>
+  </data>
+  <data name="Remaining_AlmostDone" xml:space="preserve">
+    <value>prawie gotowe</value>
+  </data>
+  <data name="Remaining_Minutes" xml:space="preserve">
+    <value>≈ {0} min</value>
+  </data>
+  <data name="Remaining_Seconds" xml:space="preserve">
+    <value>≈ {0} s</value>
+  </data>
+  <data name="SaveNextToOriginal" xml:space="preserve">
+    <value>Zapisz obok oryginału</value>
+  </data>
+  <data name="Scale_Other" xml:space="preserve">
+    <value>Inna</value>
+  </data>
+  <data name="SeamlessTiles" xml:space="preserve">
+    <value>Kafelki bez szwów</value>
+  </data>
+  <data name="SeamlessTiles_Description" xml:space="preserve">
+    <value>Dwukrotnie większe nakładanie się kafelków (64 px): brak widocznych szwów nawet przy głębokich modelach, ale więcej kafelków do przetworzenia — ok. 1,5 raza więcej dla zdjęcia 1920 × 1200 z kafelkami automatycznymi.</value>
+  </data>
+  <data name="Section_Advanced" xml:space="preserve">
+    <value>Zaawansowane</value>
+  </data>
+  <data name="Section_Model" xml:space="preserve">
+    <value>Model</value>
+  </data>
+  <data name="Section_SaveAs" xml:space="preserve">
+    <value>Zapisz jako</value>
+  </data>
+  <data name="Section_Scale" xml:space="preserve">
+    <value>Skala</value>
+  </data>
+  <data name="Section_Strength" xml:space="preserve">
+    <value>Siła</value>
+  </data>
+  <data name="SelectAnotherFile" xml:space="preserve">
+    <value>Wybierz inny plik</value>
+  </data>
+  <data name="SelectFiles" xml:space="preserve">
+    <value>Wybierz pliki</value>
+  </data>
+  <data name="ShowInFolder" xml:space="preserve">
+    <value>Pokaż w folderze</value>
+  </data>
+  <data name="SizePreview_EnterScale" xml:space="preserve">
+    <value>Wprowadź skalę większą od 0, maksymalnie {0}</value>
+  </data>
+  <data name="SizePreview_EnterSize" xml:space="preserve">
+    <value>Wprowadź rozmiar w pikselach</value>
+  </data>
+  <data name="SizePreview_SelectFile" xml:space="preserve">
+    <value>Wybierz plik, aby zobaczyć rozmiar wyniku</value>
+  </data>
+  <data name="Speed_Fast" xml:space="preserve">
+    <value>szybki</value>
+  </data>
+  <data name="Speed_Slow" xml:space="preserve">
+    <value>wolny</value>
+  </data>
+  <data name="Speed_VeryFast" xml:space="preserve">
+    <value>bardzo szybki</value>
+  </data>
+  <data name="Speed_VerySlow" xml:space="preserve">
+    <value>bardzo wolny</value>
+  </data>
+  <data name="Strength_Description" xml:space="preserve">
+    <value>Poniżej 100% domieszywane jest zwykłe przeskalowanie oryginału: mniej wymyślonych tekstur, łagodniejsze wyostrzenie.</value>
+  </data>
+  <data name="Summary_AutoTiles" xml:space="preserve">
+    <value>kafelki automatyczne</value>
+  </data>
+  <data name="Summary_NoTiling" xml:space="preserve">
+    <value>bez kafelków</value>
+  </data>
+  <data name="Summary_Seamless" xml:space="preserve">
+    <value>bez szwów</value>
+  </data>
+  <data name="Summary_Tiles" xml:space="preserve">
+    <value>kafelki {0} px</value>
+  </data>
+  <data name="Target_Height" xml:space="preserve">
+    <value>do {0} px wysokości</value>
+  </data>
+  <data name="Target_LongSide" xml:space="preserve">
+    <value>do {0} px dłuższego boku</value>
+  </data>
+  <data name="Target_Width" xml:space="preserve">
+    <value>do {0} px szerokości</value>
+  </data>
+  <data name="Tile_None" xml:space="preserve">
+    <value>Bez kafelków</value>
+  </data>
+  <data name="TileSize" xml:space="preserve">
+    <value>Rozmiar kafelka</value>
+  </data>
+  <data name="TileSize_Description" xml:space="preserve">
+    <value>Mniejsze kafelki zużywają mniej pamięci wideo. Gdy pamięci zabraknie, rozmiar kafelka zostanie zmniejszony automatycznie.</value>
+  </data>
+  <data name="Time_MinutesSeconds" xml:space="preserve">
+    <value>{0} min {1} s</value>
+  </data>
+  <data name="Time_Seconds" xml:space="preserve">
+    <value>{0} s</value>
+  </data>
+  <data name="Toast_BusyNotOpened" xml:space="preserve">
+    <value>Trwa przetwarzanie: tych plików nie otwarto. Otwórz je po jego zakończeniu.</value>
+  </data>
+  <data name="Toast_CantPaste" xml:space="preserve">
+    <value>Nie można wkleić: {0}</value>
+  </data>
+  <data name="Toast_CantReadSelection" xml:space="preserve">
+    <value>Nie można odczytać zaznaczenia: {0}</value>
+  </data>
+  <data name="Toast_CantSavePasted" xml:space="preserve">
+    <value>Nie można zapisać wklejonego obrazu: {0}</value>
+  </data>
+  <data name="Toast_CantShowResult" xml:space="preserve">
+    <value>Nie można wyświetlić wyniku: {0}</value>
+  </data>
+  <data name="Toast_ClipboardBusy" xml:space="preserve">
+    <value>Schowek jest używany przez inną aplikację — spróbuj ponownie</value>
+  </data>
+  <data name="Toast_ClipboardEmpty" xml:space="preserve">
+    <value>Schowek nie zawiera obrazu ani plików</value>
+  </data>
+  <data name="Toast_ErrorDetailsCopied" xml:space="preserve">
+    <value>Skopiowano szczegóły błędu — wklej je do zgłoszenia błędu</value>
+  </data>
+  <data name="Toast_NoImagesInSelection" xml:space="preserve">
+    <value>Zaznaczenie nie zawiera obsługiwanych obrazów</value>
+  </data>
+  <data name="Toast_PastedSaved" xml:space="preserve">
+    <value>Zapisano wklejony obraz: {0}</value>
+  </data>
+  <data name="Toast_ResultCopied" xml:space="preserve">
+    <value>Skopiowano wynik do schowka</value>
+  </data>
+  <data name="TryAgain" xml:space="preserve">
+    <value>Spróbuj ponownie</value>
+  </data>
+  <data name="Tta" xml:space="preserve">
+    <value>Augmentacja w czasie testu (TTA)</value>
+  </data>
+  <data name="Tta_Description" xml:space="preserve">
+    <value>Obraz jest przetwarzany we wszystkich 8 obrotach i odbiciach, a wyniki są uśredniane: nieco mniej szumu i mniej kierunkowych artefaktów, ale 8 razy wolniej.</value>
+  </data>
+  <data name="Unhandled_LogDetails" xml:space="preserve">
+    <value>Szczegóły znajdują się w dzienniku:
+{0}</value>
+  </data>
+  <data name="Unhandled_Title" xml:space="preserve">
+    <value>Krupno — błąd</value>
+  </data>
+  <data name="Unit_GB" xml:space="preserve">
+    <value>{0} GB</value>
+  </data>
+  <data name="Unit_KB" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Unit_MB" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="Upscale" xml:space="preserve">
+    <value>Powiększ</value>
+  </data>
+  <data name="Upscale_Files" xml:space="preserve">
+    <value>Powiększ {0}</value>
+  </data>
+  <data name="Upscale_FilesScale" xml:space="preserve">
+    <value>Powiększ {0} {1}</value>
+  </data>
+  <data name="Upscale_Scale" xml:space="preserve">
+    <value>Powiększ {0}</value>
+  </data>
+  <data name="Zoom_Actual" xml:space="preserve">
+    <value>Rzeczywiste piksele (Ctrl + 1)</value>
+  </data>
+  <data name="Zoom_ActualName" xml:space="preserve">
+    <value>Rzeczywisty rozmiar</value>
+  </data>
+  <data name="Zoom_Fit" xml:space="preserve">
+    <value>Dopasuj do okna (Ctrl + 0)</value>
+  </data>
+  <data name="Zoom_FitName" xml:space="preserve">
+    <value>Dopasuj do okna</value>
+  </data>
+  <data name="Zoom_In" xml:space="preserve">
+    <value>Powiększ (Ctrl + +)</value>
+  </data>
+  <data name="Zoom_InName" xml:space="preserve">
+    <value>Powiększ</value>
+  </data>
+  <data name="Zoom_Out" xml:space="preserve">
+    <value>Pomniejsz (Ctrl + −)</value>
+  </data>
+  <data name="Zoom_OutName" xml:space="preserve">
+    <value>Pomniejsz</value>
+  </data>
+</root>

@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Threading;
 using Krupno.App.Infrastructure;
+using Krupno.App.Properties;
 
 namespace Krupno.App;
 
@@ -39,8 +40,8 @@ public partial class App : Application
     private static void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         Log.Error("Unhandled exception", e.Exception);
-        string details = Log.FilePath is { } path ? $"\n\nDetails are in the log:\n{path}" : "";
-        MessageBox.Show(e.Exception.Message + details, "Krupno — Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        string details = Log.FilePath is { } path ? "\n\n" + string.Format(Strings.Unhandled_LogDetails, path) : "";
+        MessageBox.Show(e.Exception.Message + details, Strings.Unhandled_Title, MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
     }
 }

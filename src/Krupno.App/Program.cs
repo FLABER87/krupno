@@ -10,6 +10,7 @@ public static class Program
     {
         if (!args.Contains(SingleInstance.NewWindowSwitch) && SingleInstance.TryHandOver(args))
             return;
+        UiLanguage.Apply(AppSettings.Load().Language);
         App.Main();
     }
 }

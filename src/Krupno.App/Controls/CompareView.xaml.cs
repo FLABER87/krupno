@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Krupno.App.Properties;
 
 namespace Krupno.App.Controls;
 
@@ -139,10 +140,10 @@ public partial class CompareView : UserControl
         Toolbar.Visibility = HasBefore ? Visibility.Visible : Visibility.Collapsed;
         ModeButtons.IsEnabled = HasAfter;
         ModeButtons.Opacity = HasAfter ? 1 : 0.4;
-        ModeButtons.ToolTip = HasAfter ? null : "Comparison becomes available after processing";
+        ModeButtons.ToolTip = HasAfter ? null : Strings.Compare_Unavailable;
 
-        BeforeChipText.Text = BeforeSource is { } before ? $"Original · {before.PixelWidth} × {before.PixelHeight}" : "";
-        AfterChipText.Text = AfterSource is { } after ? $"Result · {after.PixelWidth} × {after.PixelHeight}" : "";
+        BeforeChipText.Text = BeforeSource is { } before ? string.Format(Strings.Chip_Original, before.PixelWidth, before.PixelHeight) : "";
+        AfterChipText.Text = AfterSource is { } after ? string.Format(Strings.Chip_Result, after.PixelWidth, after.PixelHeight) : "";
         BeforeChip.Visibility = HasBefore ? Visibility.Visible : Visibility.Collapsed;
         AfterChip.Visibility = HasAfter ? Visibility.Visible : Visibility.Collapsed;
 

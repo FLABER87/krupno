@@ -1,6 +1,7 @@
 using Microsoft.ML.OnnxRuntime;
 using Krupno.Core.Imaging;
 using Krupno.Core.Inference;
+using Krupno.Core.Properties;
 
 namespace Krupno.Core.Processing;
 
@@ -84,7 +85,7 @@ public sealed class Upscaler(UpscaleModel model)
 
         var (targetWidth, targetHeight) = OutputSize(input.Width, input.Height, options);
         if (!ImageBuffer.CanAllocate(targetWidth, targetHeight))
-            throw new InvalidOperationException($"The result {targetWidth}×{targetHeight} is too large to process in memory.");
+            throw new InvalidOperationException(string.Format(Strings.Error_ResultTooLarge, targetWidth, targetHeight));
 
         // The network doesn't see alpha: it is resized separately, which is cheap. The colors under fully transparent pixels
         // are filled from the visible ones first, otherwise the (usually black) color stored there bleeds into the edges.
@@ -102,7 +103,7 @@ public sealed class Upscaler(UpscaleModel model)
         cancellationToken.ThrowIfCancellationRequested();
         if (current.Width != targetWidth || current.Height != targetHeight)
         {
-            progress?.Report(new UpscaleProgress(passes, passes, 1, 1, $"Resizing to {targetWidth}×{targetHeight}"));
+            progress?.Report(new UpscaleProgress(passes, passes, 1, 1, string.Format(Strings.Progress_Resizing, targetWidth, targetHeight)));
             if (alpha is null)
             {
                 current = Resampler.Resize(current, (int)targetWidth, (int)targetHeight, cancellationToken);
@@ -125,7 +126,7 @@ public sealed class Upscaler(UpscaleModel model)
             // The plain resize starts from the pixels the network saw, with the colors under transparency filled in the same way.
             // The alpha computed above stays.
             progress?.Report(new UpscaleProgress(passes, passes, 1, 1,
-                $"Blending with a plain resize, strength {(int)Math.Round(options.Strength * 100)}%"));
+                string.Format(Strings.Progress_Blending, (int)Math.Round(options.Strength * 100))));
             Resampler.BlendResized(source, current, (float)options.Strength, cancellationToken);
         }
 
@@ -168,7 +169,7 @@ public sealed class Upscaler(UpscaleModel model)
             height = (int)Math.Max(1, targetHeight / scale);
         }
         progress?.Report(new UpscaleProgress(pass, passCount, 0, 1,
-            $"Pass {pass} does not fit in memory at full size, reducing its input to {width}×{height}", IsWarning: true));
+            string.Format(Strings.Progress_PassReduced, pass, width, height), IsWarning: true));
         if (alpha is null)
             return Resampler.Resize(source, width, height, cancellationToken);
 
@@ -265,7 +266,7 @@ public sealed class Upscaler(UpscaleModel model)
     {
         int scale = model.Info.Scale;
         if (!ImageBuffer.CanAllocate((long)source.Width * scale, (long)source.Height * scale))
-            throw new InvalidOperationException("The intermediate result is too large to process in memory.");
+            throw new InvalidOperationException(Strings.Error_IntermediateTooLarge);
 
         int tileSize = StartTile(source, options.TileSize, pass, passCount, progress);
         while (true)
@@ -297,7 +298,7 @@ public sealed class Upscaler(UpscaleModel model)
                 model.ReleaseSessions();
                 _tileLimitReported = true;
                 progress?.Report(new UpscaleProgress(pass, passCount, 0, 1,
-                    $"Window {width}×{height} did not fit on the device, reducing the tile to {tileSize} px", IsWarning: true));
+                    string.Format(Strings.Progress_TileReduced, width, height, tileSize), IsWarning: true));
             }
         }
     }
@@ -315,7 +316,7 @@ public sealed class Upscaler(UpscaleModel model)
             model.ChooseWindow(source.Width, source.Height, limit) != model.ChooseWindow(source.Width, source.Height, requested))
         {
             _tileLimitReported = true;
-            progress?.Report(new UpscaleProgress(pass, passCount, 0, 1, $"Tile {limit} px (chosen after running out of memory)",
+            progress?.Report(new UpscaleProgress(pass, passCount, 0, 1, string.Format(Strings.Progress_TileFromLimit, limit),
                 IsWarning: true));
         }
         return limit;

@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddFiles" xml:space="preserve">
+    <value>파일 추가</value>
+  </data>
+  <data name="Auto" xml:space="preserve">
+    <value>자동</value>
+  </data>
+  <data name="Badge_NonCommercial" xml:space="preserve">
+    <value>비상업용</value>
+  </data>
+  <data name="Badge_Recommended" xml:space="preserve">
+    <value>권장</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>취소</value>
+  </data>
+  <data name="Cancel_ToolTip" xml:space="preserve">
+    <value>중지(Esc)</value>
+  </data>
+  <data name="Change" xml:space="preserve">
+    <value>변경</value>
+  </data>
+  <data name="Chip_Original" xml:space="preserve">
+    <value>원본 · {0} × {1}</value>
+  </data>
+  <data name="Chip_Result" xml:space="preserve">
+    <value>결과 · {0} × {1}</value>
+  </data>
+  <data name="ClearList" xml:space="preserve">
+    <value>목록 지우기</value>
+  </data>
+  <data name="Compare_SideBySide" xml:space="preserve">
+    <value>나란히</value>
+  </data>
+  <data name="Compare_SideBySideToolTip" xml:space="preserve">
+    <value>원본과 결과를 나란히 보기</value>
+  </data>
+  <data name="Compare_Split" xml:space="preserve">
+    <value>분할</value>
+  </data>
+  <data name="Compare_SplitToolTip" xml:space="preserve">
+    <value>분할 보기: 구분선을 끌어 보세요</value>
+  </data>
+  <data name="Compare_Unavailable" xml:space="preserve">
+    <value>처리가 끝나면 비교할 수 있습니다</value>
+  </data>
+  <data name="CopyErrorDetails" xml:space="preserve">
+    <value>오류 세부 정보 복사</value>
+  </data>
+  <data name="CopyErrorDetails_ToolTip" xml:space="preserve">
+    <value>버그 신고용: 버전, GPU, 모델, 설정 및 오류</value>
+  </data>
+  <data name="CustomMode_Height" xml:space="preserve">
+    <value>세로, px</value>
+  </data>
+  <data name="CustomMode_LongSide" xml:space="preserve">
+    <value>긴 변, px</value>
+  </data>
+  <data name="CustomMode_Name" xml:space="preserve">
+    <value>숫자로 지정할 항목</value>
+  </data>
+  <data name="CustomMode_Scale" xml:space="preserve">
+    <value>배율 ×</value>
+  </data>
+  <data name="CustomMode_Width" xml:space="preserve">
+    <value>가로, px</value>
+  </data>
+  <data name="CustomValue_Name" xml:space="preserve">
+    <value>배율 또는 크기</value>
+  </data>
+  <data name="Device" xml:space="preserve">
+    <value>장치</value>
+  </data>
+  <data name="Device_AutoWith" xml:space="preserve">
+    <value>자동({0})</value>
+  </data>
+  <data name="Device_CpuSlow" xml:space="preserve">
+    <value>CPU(느림)</value>
+  </data>
+  <data name="Dialog_AddImages" xml:space="preserve">
+    <value>이미지 추가</value>
+  </data>
+  <data name="Dialog_Filter" xml:space="preserve">
+    <value>이미지|{0}|모든 파일|*.*</value>
+  </data>
+  <data name="Dialog_OutputFolder" xml:space="preserve">
+    <value>출력 폴더</value>
+  </data>
+  <data name="Dialog_SelectImages" xml:space="preserve">
+    <value>이미지 선택</value>
+  </data>
+  <data name="Done_Files" xml:space="preserve">
+    <value>완료: {0} · {1} 소요</value>
+  </data>
+  <data name="Done_InTime" xml:space="preserve">
+    <value>완료 · {0} 소요 · {1}</value>
+  </data>
+  <data name="Done_Partial" xml:space="preserve">
+    <value>완료: {1}개 중 {0}개, 실패 {2}개</value>
+  </data>
+  <data name="Done_SavedNextToOriginals" xml:space="preserve">
+    <value>원본과 같은 폴더에 저장했습니다</value>
+  </data>
+  <data name="DropToOpen" xml:space="preserve">
+    <value>놓아서 열기</value>
+  </data>
+  <data name="Empty_Description" xml:space="preserve">
+    <value>신경망이 이미지를 2~8배로 확대하고 세부 묘사를 채웁니다. 여러 파일을 한 번에 추가할 수 있으며, 파일은 순서대로 처리됩니다.</value>
+  </data>
+  <data name="Empty_Formats" xml:space="preserve">
+    <value>PNG, JPEG, TIFF, BMP, GIF, WebP, HEIC · Ctrl+O · Ctrl+V로 붙여넣기</value>
+  </data>
+  <data name="Empty_Title" xml:space="preserve">
+    <value>사진이나 폴더를 여기로 끌어 오세요</value>
+  </data>
+  <data name="Error_NoModelSelected" xml:space="preserve">
+    <value>선택된 모델이 없습니다.</value>
+  </data>
+  <data name="Error_NoneUpscaled" xml:space="preserve">
+    <value>파일 {0}개를 모두 업스케일하지 못했습니다. {1}</value>
+  </data>
+  <data name="Error_OutputFolder" xml:space="preserve">
+    <value>출력 폴더에 저장할 수 없습니다: {0} 다른 폴더를 선택하거나 원본과 같은 폴더에 저장하세요.</value>
+  </data>
+  <data name="Error_Title" xml:space="preserve">
+    <value>업스케일하지 못했습니다</value>
+  </data>
+  <data name="File_Done" xml:space="preserve">
+    <value>완료: {0}</value>
+  </data>
+  <data name="File_Processing" xml:space="preserve">
+    <value>처리 중…</value>
+  </data>
+  <data name="Files" xml:space="preserve">
+    <value>파일 {0}개</value>
+  </data>
+  <data name="Friendly_AccessDenied" xml:space="preserve">
+    <value>파일 또는 폴더에 대한 액세스가 거부되었습니다. 다른 출력 폴더를 선택하세요.</value>
+  </data>
+  <data name="Friendly_FileNotFound" xml:space="preserve">
+    <value>파일을 찾을 수 없습니다. 이동되었거나 삭제되었을 수 있습니다.</value>
+  </data>
+  <data name="Friendly_Gpu" xml:space="preserve">
+    <value>GPU가 이 모델을 처리하지 못했습니다. "고급"에서 다른 장치나 타일 크기를 선택하거나 더 가벼운 모델을 사용하세요.</value>
+  </data>
+  <data name="Friendly_IO" xml:space="preserve">
+    <value>파일을 읽거나 쓸 수 없습니다. {0}</value>
+  </data>
+  <data name="Hint_CopyResult" xml:space="preserve">
+    <value>Ctrl+C — 결과 복사</value>
+  </data>
+  <data name="Hint_OpenPaste" xml:space="preserve">
+    <value>Ctrl+O · Ctrl+V로 붙여넣기</value>
+  </data>
+  <data name="Hint_Start" xml:space="preserve">
+    <value>Ctrl+Enter</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>언어</value>
+  </data>
+  <data name="Language_Restart" xml:space="preserve">
+    <value>새 언어는 Krupno를 다시 시작한 후 적용됩니다.</value>
+  </data>
+  <data name="Language_Windows" xml:space="preserve">
+    <value>Windows 언어</value>
+  </data>
+  <data name="Model_Classic" xml:space="preserve">
+    <value>클래식</value>
+  </data>
+  <data name="Model_Custom" xml:space="preserve">
+    <value>사용자 지정 모델</value>
+  </data>
+  <data name="Model_Draft" xml:space="preserve">
+    <value>초안</value>
+  </data>
+  <data name="Model_General" xml:space="preserve">
+    <value>범용</value>
+  </data>
+  <data name="Model_PhotoDetail" xml:space="preserve">
+    <value>사진, 최대 디테일</value>
+  </data>
+  <data name="Model_PhotoFast" xml:space="preserve">
+    <value>사진, 빠름</value>
+  </data>
+  <data name="ModelDetails_CantRead" xml:space="preserve">
+    <value>모델을 읽을 수 없습니다: {0}</value>
+  </data>
+  <data name="ModelDetails_FixedTile" xml:space="preserve">
+    <value>타일 {0} px(모델에서 지정)</value>
+  </data>
+  <data name="ModelDetails_License" xml:space="preserve">
+    <value>라이선스: {0}</value>
+  </data>
+  <data name="ModelDetails_MaxWindow" xml:space="preserve">
+    <value>창 최대 {0} px</value>
+  </data>
+  <data name="ModelDetails_NoLicense" xml:space="preserve">
+    <value>라이선스 정보 없음</value>
+  </data>
+  <data name="Models_All" xml:space="preserve">
+    <value>모든 모델({0})</value>
+  </data>
+  <data name="Models_ShowFewer" xml:space="preserve">
+    <value>간단히 보기</value>
+  </data>
+  <data name="NoModels" xml:space="preserve">
+    <value>아직 모델이 없습니다. 모델 폴더에 .onnx 파일을 넣고 목록을 새로 고치세요.</value>
+  </data>
+  <data name="NonCommercial_ToolTip" xml:space="preserve">
+    <value>CC BY-NC-SA 라이선스: 비상업적 용도로만 사용 가능</value>
+  </data>
+  <data name="Note_DirectMLUnavailable" xml:space="preserve">
+    <value>DirectML을 사용할 수 없어 CPU에서 실행합니다</value>
+  </data>
+  <data name="Notice_Canceled" xml:space="preserve">
+    <value>처리가 취소되었습니다</value>
+  </data>
+  <data name="Open" xml:space="preserve">
+    <value>열기</value>
+  </data>
+  <data name="OpenModelsFolder" xml:space="preserve">
+    <value>모델 폴더 열기</value>
+  </data>
+  <data name="OutputFolder_NextToOriginal" xml:space="preserve">
+    <value>원본과 같은 폴더</value>
+  </data>
+  <data name="Pasted_FileName" xml:space="preserve">
+    <value>붙여넣은 이미지 {0}</value>
+  </data>
+  <data name="Percent" xml:space="preserve">
+    <value>{0}%</value>
+  </data>
+  <data name="Pixels" xml:space="preserve">
+    <value>{0} px</value>
+  </data>
+  <data name="PreviewError_Title" xml:space="preserve">
+    <value>이 파일을 열 수 없습니다</value>
+  </data>
+  <data name="Progress_File" xml:space="preserve">
+    <value>파일 {0}/{1}</value>
+  </data>
+  <data name="Progress_Orientation" xml:space="preserve">
+    <value>방향 {0}/{1}</value>
+  </data>
+  <data name="Progress_Pass" xml:space="preserve">
+    <value>패스 {0}/{1}</value>
+  </data>
+  <data name="Progress_Percent" xml:space="preserve">
+    <value>처리 중… {0}%</value>
+  </data>
+  <data name="Progress_PreparingModel" xml:space="preserve">
+    <value>모델 준비 중…</value>
+  </data>
+  <data name="Progress_Tile" xml:space="preserve">
+    <value>타일 {0}/{1}</value>
+  </data>
+  <data name="Quality" xml:space="preserve">
+    <value>품질</value>
+  </data>
+  <data name="RefreshModels" xml:space="preserve">
+    <value>모델 목록 새로 고침</value>
+  </data>
+  <data name="Remaining_AlmostDone" xml:space="preserve">
+    <value>거의 완료됨</value>
+  </data>
+  <data name="Remaining_Minutes" xml:space="preserve">
+    <value>≈ {0}분</value>
+  </data>
+  <data name="Remaining_Seconds" xml:space="preserve">
+    <value>≈ {0}초</value>
+  </data>
+  <data name="SaveNextToOriginal" xml:space="preserve">
+    <value>원본과 같은 폴더에 저장</value>
+  </data>
+  <data name="Scale_Other" xml:space="preserve">
+    <value>기타</value>
+  </data>
+  <data name="SeamlessTiles" xml:space="preserve">
+    <value>이음매 없는 타일</value>
+  </data>
+  <data name="SeamlessTiles_Description" xml:space="preserve">
+    <value>타일 간 겹침을 두 배(64 px)로 늘립니다. 깊은 모델에서도 이음매가 보이지 않지만 처리할 타일이 많아집니다. 자동 타일로 1920 × 1200 사진을 처리하면 약 1.5배가 됩니다.</value>
+  </data>
+  <data name="Section_Advanced" xml:space="preserve">
+    <value>고급</value>
+  </data>
+  <data name="Section_Model" xml:space="preserve">
+    <value>모델</value>
+  </data>
+  <data name="Section_SaveAs" xml:space="preserve">
+    <value>저장 형식</value>
+  </data>
+  <data name="Section_Scale" xml:space="preserve">
+    <value>배율</value>
+  </data>
+  <data name="Section_Strength" xml:space="preserve">
+    <value>강도</value>
+  </data>
+  <data name="SelectAnotherFile" xml:space="preserve">
+    <value>다른 파일 선택</value>
+  </data>
+  <data name="SelectFiles" xml:space="preserve">
+    <value>파일 선택</value>
+  </data>
+  <data name="ShowInFolder" xml:space="preserve">
+    <value>폴더에서 보기</value>
+  </data>
+  <data name="SizePreview_EnterScale" xml:space="preserve">
+    <value>0보다 크고 {0} 이하인 배율을 입력하세요</value>
+  </data>
+  <data name="SizePreview_EnterSize" xml:space="preserve">
+    <value>크기를 픽셀 단위로 입력하세요</value>
+  </data>
+  <data name="SizePreview_SelectFile" xml:space="preserve">
+    <value>출력 크기를 보려면 파일을 선택하세요</value>
+  </data>
+  <data name="Speed_Fast" xml:space="preserve">
+    <value>빠름</value>
+  </data>
+  <data name="Speed_Slow" xml:space="preserve">
+    <value>느림</value>
+  </data>
+  <data name="Speed_VeryFast" xml:space="preserve">
+    <value>매우 빠름</value>
+  </data>
+  <data name="Speed_VerySlow" xml:space="preserve">
+    <value>매우 느림</value>
+  </data>
+  <data name="Strength_Description" xml:space="preserve">
+    <value>100% 미만에서는 원본을 단순 크기 조정한 이미지가 섞입니다. 만들어 낸 질감이 줄고 선명도가 부드러워집니다.</value>
+  </data>
+  <data name="Summary_AutoTiles" xml:space="preserve">
+    <value>자동 타일</value>
+  </data>
+  <data name="Summary_NoTiling" xml:space="preserve">
+    <value>타일 없음</value>
+  </data>
+  <data name="Summary_Seamless" xml:space="preserve">
+    <value>이음매 없음</value>
+  </data>
+  <data name="Summary_Tiles" xml:space="preserve">
+    <value>{0} px 타일</value>
+  </data>
+  <data name="Target_Height" xml:space="preserve">
+    <value>세로 {0} px로</value>
+  </data>
+  <data name="Target_LongSide" xml:space="preserve">
+    <value>긴 변 {0} px로</value>
+  </data>
+  <data name="Target_Width" xml:space="preserve">
+    <value>가로 {0} px로</value>
+  </data>
+  <data name="Tile_None" xml:space="preserve">
+    <value>타일 없음</value>
+  </data>
+  <data name="TileSize" xml:space="preserve">
+    <value>타일 크기</value>
+  </data>
+  <data name="TileSize_Description" xml:space="preserve">
+    <value>타일이 작을수록 비디오 메모리를 적게 사용합니다. 메모리가 부족하면 타일 크기가 자동으로 줄어듭니다.</value>
+  </data>
+  <data name="Time_MinutesSeconds" xml:space="preserve">
+    <value>{0}분 {1}초</value>
+  </data>
+  <data name="Time_Seconds" xml:space="preserve">
+    <value>{0}초</value>
+  </data>
+  <data name="Toast_BusyNotOpened" xml:space="preserve">
+    <value>처리 중이어서 이 파일들을 열지 않았습니다. 처리가 끝난 후 여세요.</value>
+  </data>
+  <data name="Toast_CantPaste" xml:space="preserve">
+    <value>붙여넣을 수 없습니다: {0}</value>
+  </data>
+  <data name="Toast_CantReadSelection" xml:space="preserve">
+    <value>선택 항목을 읽을 수 없습니다: {0}</value>
+  </data>
+  <data name="Toast_CantSavePasted" xml:space="preserve">
+    <value>붙여넣은 이미지를 저장할 수 없습니다: {0}</value>
+  </data>
+  <data name="Toast_CantShowResult" xml:space="preserve">
+    <value>결과를 표시할 수 없습니다: {0}</value>
+  </data>
+  <data name="Toast_ClipboardBusy" xml:space="preserve">
+    <value>다른 앱이 클립보드를 사용 중입니다. 다시 시도하세요</value>
+  </data>
+  <data name="Toast_ClipboardEmpty" xml:space="preserve">
+    <value>클립보드에 이미지나 파일이 없습니다</value>
+  </data>
+  <data name="Toast_ErrorDetailsCopied" xml:space="preserve">
+    <value>오류 세부 정보를 복사했습니다. 버그 신고에 붙여넣으세요</value>
+  </data>
+  <data name="Toast_NoImagesInSelection" xml:space="preserve">
+    <value>선택 항목에 지원되는 이미지가 없습니다</value>
+  </data>
+  <data name="Toast_PastedSaved" xml:space="preserve">
+    <value>붙여넣은 이미지 저장 위치: {0}</value>
+  </data>
+  <data name="Toast_ResultCopied" xml:space="preserve">
+    <value>결과를 클립보드에 복사했습니다</value>
+  </data>
+  <data name="TryAgain" xml:space="preserve">
+    <value>다시 시도</value>
+  </data>
+  <data name="Tta" xml:space="preserve">
+    <value>테스트 시간 증강(TTA)</value>
+  </data>
+  <data name="Tta_Description" xml:space="preserve">
+    <value>이미지를 8가지 회전 및 대칭 상태로 모두 처리한 뒤 결과를 평균합니다. 노이즈와 한쪽으로 치우친 아티팩트가 조금 줄지만 8배 느려집니다.</value>
+  </data>
+  <data name="Unhandled_LogDetails" xml:space="preserve">
+    <value>자세한 내용은 로그에 있습니다:
+{0}</value>
+  </data>
+  <data name="Unhandled_Title" xml:space="preserve">
+    <value>Krupno — 오류</value>
+  </data>
+  <data name="Unit_GB" xml:space="preserve">
+    <value>{0} GB</value>
+  </data>
+  <data name="Unit_KB" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Unit_MB" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="Upscale" xml:space="preserve">
+    <value>업스케일</value>
+  </data>
+  <data name="Upscale_Files" xml:space="preserve">
+    <value>{0} 업스케일</value>
+  </data>
+  <data name="Upscale_FilesScale" xml:space="preserve">
+    <value>{0} {1} 업스케일</value>
+  </data>
+  <data name="Upscale_Scale" xml:space="preserve">
+    <value>{0} 업스케일</value>
+  </data>
+  <data name="Zoom_Actual" xml:space="preserve">
+    <value>실제 픽셀(Ctrl + 1)</value>
+  </data>
+  <data name="Zoom_ActualName" xml:space="preserve">
+    <value>실제 크기</value>
+  </data>
+  <data name="Zoom_Fit" xml:space="preserve">
+    <value>창에 맞추기(Ctrl + 0)</value>
+  </data>
+  <data name="Zoom_FitName" xml:space="preserve">
+    <value>창에 맞추기</value>
+  </data>
+  <data name="Zoom_In" xml:space="preserve">
+    <value>확대(Ctrl + +)</value>
+  </data>
+  <data name="Zoom_InName" xml:space="preserve">
+    <value>확대</value>
+  </data>
+  <data name="Zoom_Out" xml:space="preserve">
+    <value>축소(Ctrl + −)</value>
+  </data>
+  <data name="Zoom_OutName" xml:space="preserve">
+    <value>축소</value>
+  </data>
+</root>

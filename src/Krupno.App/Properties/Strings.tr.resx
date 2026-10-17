@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddFiles" xml:space="preserve">
+    <value>Dosya ekle</value>
+  </data>
+  <data name="Auto" xml:space="preserve">
+    <value>Otomatik</value>
+  </data>
+  <data name="Badge_NonCommercial" xml:space="preserve">
+    <value>Ticari olmayan</value>
+  </data>
+  <data name="Badge_Recommended" xml:space="preserve">
+    <value>Önerilen</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="Cancel_ToolTip" xml:space="preserve">
+    <value>Durdur (Esc)</value>
+  </data>
+  <data name="Change" xml:space="preserve">
+    <value>Değiştir</value>
+  </data>
+  <data name="Chip_Original" xml:space="preserve">
+    <value>Orijinal · {0} × {1}</value>
+  </data>
+  <data name="Chip_Result" xml:space="preserve">
+    <value>Sonuç · {0} × {1}</value>
+  </data>
+  <data name="ClearList" xml:space="preserve">
+    <value>Listeyi temizle</value>
+  </data>
+  <data name="Compare_SideBySide" xml:space="preserve">
+    <value>Yan yana</value>
+  </data>
+  <data name="Compare_SideBySideToolTip" xml:space="preserve">
+    <value>Orijinal ve sonuç yan yana</value>
+  </data>
+  <data name="Compare_Split" xml:space="preserve">
+    <value>Bölünmüş</value>
+  </data>
+  <data name="Compare_SplitToolTip" xml:space="preserve">
+    <value>Bölünmüş görünüm: ayırıcıyı sürükleyin</value>
+  </data>
+  <data name="Compare_Unavailable" xml:space="preserve">
+    <value>Karşılaştırma, işlemden sonra kullanılabilir</value>
+  </data>
+  <data name="CopyErrorDetails" xml:space="preserve">
+    <value>Hata ayrıntılarını kopyala</value>
+  </data>
+  <data name="CopyErrorDetails_ToolTip" xml:space="preserve">
+    <value>Hata raporu için: sürümler, GPU, model, ayarlar ve hata</value>
+  </data>
+  <data name="CustomMode_Height" xml:space="preserve">
+    <value>Yükseklik, px</value>
+  </data>
+  <data name="CustomMode_LongSide" xml:space="preserve">
+    <value>Uzun kenar, px</value>
+  </data>
+  <data name="CustomMode_Name" xml:space="preserve">
+    <value>Sayının belirlediği değer</value>
+  </data>
+  <data name="CustomMode_Scale" xml:space="preserve">
+    <value>Ölçek ×</value>
+  </data>
+  <data name="CustomMode_Width" xml:space="preserve">
+    <value>Genişlik, px</value>
+  </data>
+  <data name="CustomValue_Name" xml:space="preserve">
+    <value>Ölçek veya boyut</value>
+  </data>
+  <data name="Device" xml:space="preserve">
+    <value>Cihaz</value>
+  </data>
+  <data name="Device_AutoWith" xml:space="preserve">
+    <value>Otomatik ({0})</value>
+  </data>
+  <data name="Device_CpuSlow" xml:space="preserve">
+    <value>CPU (yavaş)</value>
+  </data>
+  <data name="Dialog_AddImages" xml:space="preserve">
+    <value>Görüntü ekle</value>
+  </data>
+  <data name="Dialog_Filter" xml:space="preserve">
+    <value>Görüntüler|{0}|Tüm dosyalar|*.*</value>
+  </data>
+  <data name="Dialog_OutputFolder" xml:space="preserve">
+    <value>Çıktı klasörü</value>
+  </data>
+  <data name="Dialog_SelectImages" xml:space="preserve">
+    <value>Görüntü seç</value>
+  </data>
+  <data name="Done_Files" xml:space="preserve">
+    <value>Tamamlandı: {0}, süre: {1}</value>
+  </data>
+  <data name="Done_InTime" xml:space="preserve">
+    <value>Tamamlandı: {0} · {1}</value>
+  </data>
+  <data name="Done_Partial" xml:space="preserve">
+    <value>Tamamlandı: {0}/{1}, başarısız: {2}</value>
+  </data>
+  <data name="Done_SavedNextToOriginals" xml:space="preserve">
+    <value>Orijinallerin yanına kaydedildi</value>
+  </data>
+  <data name="DropToOpen" xml:space="preserve">
+    <value>Açmak için bırakın</value>
+  </data>
+  <data name="Empty_Description" xml:space="preserve">
+    <value>Sinir ağı görüntüyü 2–8 kat büyütür ve ayrıntıları tamamlar. Aynı anda birden çok dosya ekleyebilirsiniz; dosyalar sırayla işlenir.</value>
+  </data>
+  <data name="Empty_Formats" xml:space="preserve">
+    <value>PNG, JPEG, TIFF, BMP, GIF, WebP, HEIC · Ctrl+O · Yapıştırmak için Ctrl+V</value>
+  </data>
+  <data name="Empty_Title" xml:space="preserve">
+    <value>Fotoğrafları veya bir klasörü buraya sürükleyin</value>
+  </data>
+  <data name="Error_NoModelSelected" xml:space="preserve">
+    <value>Model seçilmedi.</value>
+  </data>
+  <data name="Error_NoneUpscaled" xml:space="preserve">
+    <value>Dosyaların hiçbiri büyütülemedi (toplam: {0}). {1}</value>
+  </data>
+  <data name="Error_OutputFolder" xml:space="preserve">
+    <value>Çıktı klasörüne kaydedilemiyor: {0} Başka bir klasör seçin veya orijinallerin yanına kaydedin.</value>
+  </data>
+  <data name="Error_Title" xml:space="preserve">
+    <value>Büyütme başarısız oldu</value>
+  </data>
+  <data name="File_Done" xml:space="preserve">
+    <value>Tamamlandı: {0}</value>
+  </data>
+  <data name="File_Processing" xml:space="preserve">
+    <value>İşleniyor…</value>
+  </data>
+  <data name="Files" xml:space="preserve">
+    <value>{0} dosya|{0} dosya</value>
+  </data>
+  <data name="Friendly_AccessDenied" xml:space="preserve">
+    <value>Dosyaya veya klasöre erişim reddedildi. Başka bir çıktı klasörü seçin.</value>
+  </data>
+  <data name="Friendly_FileNotFound" xml:space="preserve">
+    <value>Dosya bulunamadı. Taşınmış veya silinmiş olabilir.</value>
+  </data>
+  <data name="Friendly_Gpu" xml:space="preserve">
+    <value>GPU bu modeli çalıştıramadı. "Gelişmiş" bölümünden başka bir cihaz veya parça boyutu ya da daha hafif bir model seçin.</value>
+  </data>
+  <data name="Friendly_IO" xml:space="preserve">
+    <value>Dosya okunamadı veya yazılamadı. {0}</value>
+  </data>
+  <data name="Hint_CopyResult" xml:space="preserve">
+    <value>Ctrl+C — sonucu kopyala</value>
+  </data>
+  <data name="Hint_OpenPaste" xml:space="preserve">
+    <value>Ctrl+O · Yapıştırmak için Ctrl+V</value>
+  </data>
+  <data name="Hint_Start" xml:space="preserve">
+    <value>Ctrl+Enter</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Dil</value>
+  </data>
+  <data name="Language_Restart" xml:space="preserve">
+    <value>Yeni dil, Krupno yeniden başlatıldıktan sonra etkinleşir.</value>
+  </data>
+  <data name="Language_Windows" xml:space="preserve">
+    <value>Windows dili</value>
+  </data>
+  <data name="Model_Classic" xml:space="preserve">
+    <value>Klasik</value>
+  </data>
+  <data name="Model_Custom" xml:space="preserve">
+    <value>Özel model</value>
+  </data>
+  <data name="Model_Draft" xml:space="preserve">
+    <value>Taslak</value>
+  </data>
+  <data name="Model_General" xml:space="preserve">
+    <value>Genel amaçlı</value>
+  </data>
+  <data name="Model_PhotoDetail" xml:space="preserve">
+    <value>Fotoğraf, en fazla ayrıntı</value>
+  </data>
+  <data name="Model_PhotoFast" xml:space="preserve">
+    <value>Fotoğraf, hızlı</value>
+  </data>
+  <data name="ModelDetails_CantRead" xml:space="preserve">
+    <value>Model okunamıyor: {0}</value>
+  </data>
+  <data name="ModelDetails_FixedTile" xml:space="preserve">
+    <value>Parça: {0} px (model tarafından belirlenir)</value>
+  </data>
+  <data name="ModelDetails_License" xml:space="preserve">
+    <value>Lisans: {0}</value>
+  </data>
+  <data name="ModelDetails_MaxWindow" xml:space="preserve">
+    <value>Pencere: en fazla {0} px</value>
+  </data>
+  <data name="ModelDetails_NoLicense" xml:space="preserve">
+    <value>Lisans belirtilmemiş</value>
+  </data>
+  <data name="Models_All" xml:space="preserve">
+    <value>Tüm modeller ({0})</value>
+  </data>
+  <data name="Models_ShowFewer" xml:space="preserve">
+    <value>Daha az göster</value>
+  </data>
+  <data name="NoModels" xml:space="preserve">
+    <value>Henüz model yok. .onnx dosyalarını model klasörüne koyun ve listeyi yenileyin.</value>
+  </data>
+  <data name="NonCommercial_ToolTip" xml:space="preserve">
+    <value>CC BY-NC-SA lisansı: yalnızca ticari olmayan kullanım</value>
+  </data>
+  <data name="Note_DirectMLUnavailable" xml:space="preserve">
+    <value>DirectML kullanılamıyor, CPU üzerinde çalışılıyor</value>
+  </data>
+  <data name="Notice_Canceled" xml:space="preserve">
+    <value>İşlem iptal edildi</value>
+  </data>
+  <data name="Open" xml:space="preserve">
+    <value>Aç</value>
+  </data>
+  <data name="OpenModelsFolder" xml:space="preserve">
+    <value>Model klasörünü aç</value>
+  </data>
+  <data name="OutputFolder_NextToOriginal" xml:space="preserve">
+    <value>Orijinalin yanına</value>
+  </data>
+  <data name="Pasted_FileName" xml:space="preserve">
+    <value>Yapıştırılan {0}</value>
+  </data>
+  <data name="Percent" xml:space="preserve">
+    <value>%{0}</value>
+  </data>
+  <data name="Pixels" xml:space="preserve">
+    <value>{0} px</value>
+  </data>
+  <data name="PreviewError_Title" xml:space="preserve">
+    <value>Bu dosya açılamıyor</value>
+  </data>
+  <data name="Progress_File" xml:space="preserve">
+    <value>Dosya {0}/{1}</value>
+  </data>
+  <data name="Progress_Orientation" xml:space="preserve">
+    <value>yön {0}/{1}</value>
+  </data>
+  <data name="Progress_Pass" xml:space="preserve">
+    <value>geçiş {0}/{1}</value>
+  </data>
+  <data name="Progress_Percent" xml:space="preserve">
+    <value>İşleniyor… %{0}</value>
+  </data>
+  <data name="Progress_PreparingModel" xml:space="preserve">
+    <value>Model hazırlanıyor…</value>
+  </data>
+  <data name="Progress_Tile" xml:space="preserve">
+    <value>parça {0}/{1}</value>
+  </data>
+  <data name="Quality" xml:space="preserve">
+    <value>Kalite</value>
+  </data>
+  <data name="RefreshModels" xml:space="preserve">
+    <value>Model listesini yenile</value>
+  </data>
+  <data name="Remaining_AlmostDone" xml:space="preserve">
+    <value>neredeyse bitti</value>
+  </data>
+  <data name="Remaining_Minutes" xml:space="preserve">
+    <value>≈ {0} dk</value>
+  </data>
+  <data name="Remaining_Seconds" xml:space="preserve">
+    <value>≈ {0} sn</value>
+  </data>
+  <data name="SaveNextToOriginal" xml:space="preserve">
+    <value>Orijinalin yanına kaydet</value>
+  </data>
+  <data name="Scale_Other" xml:space="preserve">
+    <value>Diğer</value>
+  </data>
+  <data name="SeamlessTiles" xml:space="preserve">
+    <value>Dikişsiz parçalar</value>
+  </data>
+  <data name="SeamlessTiles_Description" xml:space="preserve">
+    <value>Parçalar arasında iki kat örtüşme (64 px): derin modellerde bile görünür dikiş olmaz, ancak işlenecek parça sayısı artar: otomatik parçalarla 1920 × 1200 bir fotoğrafta yaklaşık 1,5 kat.</value>
+  </data>
+  <data name="Section_Advanced" xml:space="preserve">
+    <value>Gelişmiş</value>
+  </data>
+  <data name="Section_Model" xml:space="preserve">
+    <value>Model</value>
+  </data>
+  <data name="Section_SaveAs" xml:space="preserve">
+    <value>Farklı kaydet</value>
+  </data>
+  <data name="Section_Scale" xml:space="preserve">
+    <value>Ölçek</value>
+  </data>
+  <data name="Section_Strength" xml:space="preserve">
+    <value>Güç</value>
+  </data>
+  <data name="SelectAnotherFile" xml:space="preserve">
+    <value>Başka dosya seç</value>
+  </data>
+  <data name="SelectFiles" xml:space="preserve">
+    <value>Dosya seç</value>
+  </data>
+  <data name="ShowInFolder" xml:space="preserve">
+    <value>Klasörde göster</value>
+  </data>
+  <data name="SizePreview_EnterScale" xml:space="preserve">
+    <value>0'dan büyük, en fazla {0} olan bir ölçek girin</value>
+  </data>
+  <data name="SizePreview_EnterSize" xml:space="preserve">
+    <value>Piksel cinsinden bir boyut girin</value>
+  </data>
+  <data name="SizePreview_SelectFile" xml:space="preserve">
+    <value>Çıktı boyutunu görmek için bir dosya seçin</value>
+  </data>
+  <data name="Speed_Fast" xml:space="preserve">
+    <value>hızlı</value>
+  </data>
+  <data name="Speed_Slow" xml:space="preserve">
+    <value>yavaş</value>
+  </data>
+  <data name="Speed_VeryFast" xml:space="preserve">
+    <value>çok hızlı</value>
+  </data>
+  <data name="Speed_VerySlow" xml:space="preserve">
+    <value>çok yavaş</value>
+  </data>
+  <data name="Strength_Description" xml:space="preserve">
+    <value>%100'ün altında, orijinalin basit yeniden boyutlandırması karıştırılır: daha az uydurma doku, daha yumuşak keskinleştirme.</value>
+  </data>
+  <data name="Summary_AutoTiles" xml:space="preserve">
+    <value>otomatik parçalar</value>
+  </data>
+  <data name="Summary_NoTiling" xml:space="preserve">
+    <value>parçalama yok</value>
+  </data>
+  <data name="Summary_Seamless" xml:space="preserve">
+    <value>dikişsiz</value>
+  </data>
+  <data name="Summary_Tiles" xml:space="preserve">
+    <value>{0} px parçalar</value>
+  </data>
+  <data name="Target_Height" xml:space="preserve">
+    <value>yükseklik: {0} px</value>
+  </data>
+  <data name="Target_LongSide" xml:space="preserve">
+    <value>uzun kenar: {0} px</value>
+  </data>
+  <data name="Target_Width" xml:space="preserve">
+    <value>genişlik: {0} px</value>
+  </data>
+  <data name="Tile_None" xml:space="preserve">
+    <value>Parçalama yok</value>
+  </data>
+  <data name="TileSize" xml:space="preserve">
+    <value>Parça boyutu</value>
+  </data>
+  <data name="TileSize_Description" xml:space="preserve">
+    <value>Küçük parçalar daha az video belleği kullanır. Bellek yetmezse parça boyutu otomatik olarak küçültülür.</value>
+  </data>
+  <data name="Time_MinutesSeconds" xml:space="preserve">
+    <value>{0} dk {1} sn</value>
+  </data>
+  <data name="Time_Seconds" xml:space="preserve">
+    <value>{0} sn</value>
+  </data>
+  <data name="Toast_BusyNotOpened" xml:space="preserve">
+    <value>İşlem sürüyor: bu dosyalar açılmadı. İşlem bitince açın.</value>
+  </data>
+  <data name="Toast_CantPaste" xml:space="preserve">
+    <value>Yapıştırılamıyor: {0}</value>
+  </data>
+  <data name="Toast_CantReadSelection" xml:space="preserve">
+    <value>Seçim okunamıyor: {0}</value>
+  </data>
+  <data name="Toast_CantSavePasted" xml:space="preserve">
+    <value>Yapıştırılan görüntü kaydedilemiyor: {0}</value>
+  </data>
+  <data name="Toast_CantShowResult" xml:space="preserve">
+    <value>Sonuç gösterilemiyor: {0}</value>
+  </data>
+  <data name="Toast_ClipboardBusy" xml:space="preserve">
+    <value>Pano başka bir uygulama tarafından kullanılıyor — yeniden deneyin</value>
+  </data>
+  <data name="Toast_ClipboardEmpty" xml:space="preserve">
+    <value>Panoda görüntü veya dosya yok</value>
+  </data>
+  <data name="Toast_ErrorDetailsCopied" xml:space="preserve">
+    <value>Hata ayrıntıları kopyalandı — bunları bir hata raporuna yapıştırın</value>
+  </data>
+  <data name="Toast_NoImagesInSelection" xml:space="preserve">
+    <value>Seçimde desteklenen görüntü yok</value>
+  </data>
+  <data name="Toast_PastedSaved" xml:space="preserve">
+    <value>Yapıştırılan görüntü kaydedildi: {0}</value>
+  </data>
+  <data name="Toast_ResultCopied" xml:space="preserve">
+    <value>Sonuç panoya kopyalandı</value>
+  </data>
+  <data name="TryAgain" xml:space="preserve">
+    <value>Yeniden dene</value>
+  </data>
+  <data name="Tta" xml:space="preserve">
+    <value>Test zamanı artırma (TTA)</value>
+  </data>
+  <data name="Tta_Description" xml:space="preserve">
+    <value>Görüntü 8 döndürme ve aynalama durumunun hepsinde işlenir ve sonuçların ortalaması alınır: biraz daha az gürültü ve tek yöne eğilimli daha az bozulma, ancak 8 kat daha yavaş.</value>
+  </data>
+  <data name="Unhandled_LogDetails" xml:space="preserve">
+    <value>Ayrıntılar günlükte:
+{0}</value>
+  </data>
+  <data name="Unhandled_Title" xml:space="preserve">
+    <value>Krupno — Hata</value>
+  </data>
+  <data name="Unit_GB" xml:space="preserve">
+    <value>{0} GB</value>
+  </data>
+  <data name="Unit_KB" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Unit_MB" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="Upscale" xml:space="preserve">
+    <value>Büyüt</value>
+  </data>
+  <data name="Upscale_Files" xml:space="preserve">
+    <value>{0} büyüt</value>
+  </data>
+  <data name="Upscale_FilesScale" xml:space="preserve">
+    <value>{0} büyüt: {1}</value>
+  </data>
+  <data name="Upscale_Scale" xml:space="preserve">
+    <value>Büyüt: {0}</value>
+  </data>
+  <data name="Zoom_Actual" xml:space="preserve">
+    <value>Gerçek pikseller (Ctrl + 1)</value>
+  </data>
+  <data name="Zoom_ActualName" xml:space="preserve">
+    <value>Gerçek boyut</value>
+  </data>
+  <data name="Zoom_Fit" xml:space="preserve">
+    <value>Pencereye sığdır (Ctrl + 0)</value>
+  </data>
+  <data name="Zoom_FitName" xml:space="preserve">
+    <value>Pencereye sığdır</value>
+  </data>
+  <data name="Zoom_In" xml:space="preserve">
+    <value>Yakınlaştır (Ctrl + +)</value>
+  </data>
+  <data name="Zoom_InName" xml:space="preserve">
+    <value>Yakınlaştır</value>
+  </data>
+  <data name="Zoom_Out" xml:space="preserve">
+    <value>Uzaklaştır (Ctrl + −)</value>
+  </data>
+  <data name="Zoom_OutName" xml:space="preserve">
+    <value>Uzaklaştır</value>
+  </data>
+</root>

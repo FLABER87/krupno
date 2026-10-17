@@ -65,6 +65,9 @@ public sealed class AppSettings
     /// <summary>"Test-time augmentation" in "Advanced": every pass in all 8 orientations, averaged.</summary>
     public bool? TestTimeAugmentation { get; set; }
 
+    /// <summary>The window's language (a culture name from <see cref="UiLanguage.All"/>); null follows Windows.</summary>
+    public string? Language { get; set; }
+
     public WindowBounds? Window { get; set; }
 
     public static AppSettings Load()

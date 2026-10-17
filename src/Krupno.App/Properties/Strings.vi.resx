@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddFiles" xml:space="preserve">
+    <value>Thêm tệp</value>
+  </data>
+  <data name="Auto" xml:space="preserve">
+    <value>Tự động</value>
+  </data>
+  <data name="Badge_NonCommercial" xml:space="preserve">
+    <value>Phi thương mại</value>
+  </data>
+  <data name="Badge_Recommended" xml:space="preserve">
+    <value>Khuyên dùng</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Hủy</value>
+  </data>
+  <data name="Cancel_ToolTip" xml:space="preserve">
+    <value>Dừng (Esc)</value>
+  </data>
+  <data name="Change" xml:space="preserve">
+    <value>Thay đổi</value>
+  </data>
+  <data name="Chip_Original" xml:space="preserve">
+    <value>Ảnh gốc · {0} × {1}</value>
+  </data>
+  <data name="Chip_Result" xml:space="preserve">
+    <value>Kết quả · {0} × {1}</value>
+  </data>
+  <data name="ClearList" xml:space="preserve">
+    <value>Xóa danh sách</value>
+  </data>
+  <data name="Compare_SideBySide" xml:space="preserve">
+    <value>Cạnh nhau</value>
+  </data>
+  <data name="Compare_SideBySideToolTip" xml:space="preserve">
+    <value>Ảnh gốc và kết quả đặt cạnh nhau</value>
+  </data>
+  <data name="Compare_Split" xml:space="preserve">
+    <value>Chia đôi</value>
+  </data>
+  <data name="Compare_SplitToolTip" xml:space="preserve">
+    <value>Chế độ chia đôi: kéo đường phân cách</value>
+  </data>
+  <data name="Compare_Unavailable" xml:space="preserve">
+    <value>Có thể so sánh sau khi xử lý xong</value>
+  </data>
+  <data name="CopyErrorDetails" xml:space="preserve">
+    <value>Sao chép chi tiết lỗi</value>
+  </data>
+  <data name="CopyErrorDetails_ToolTip" xml:space="preserve">
+    <value>Dành cho báo cáo lỗi: phiên bản, GPU, mô hình, cài đặt và lỗi</value>
+  </data>
+  <data name="CustomMode_Height" xml:space="preserve">
+    <value>Chiều cao, px</value>
+  </data>
+  <data name="CustomMode_LongSide" xml:space="preserve">
+    <value>Cạnh dài, px</value>
+  </data>
+  <data name="CustomMode_Name" xml:space="preserve">
+    <value>Con số quy định gì</value>
+  </data>
+  <data name="CustomMode_Scale" xml:space="preserve">
+    <value>Tỷ lệ ×</value>
+  </data>
+  <data name="CustomMode_Width" xml:space="preserve">
+    <value>Chiều rộng, px</value>
+  </data>
+  <data name="CustomValue_Name" xml:space="preserve">
+    <value>Tỷ lệ hoặc kích thước</value>
+  </data>
+  <data name="Device" xml:space="preserve">
+    <value>Thiết bị</value>
+  </data>
+  <data name="Device_AutoWith" xml:space="preserve">
+    <value>Tự động ({0})</value>
+  </data>
+  <data name="Device_CpuSlow" xml:space="preserve">
+    <value>CPU (chậm)</value>
+  </data>
+  <data name="Dialog_AddImages" xml:space="preserve">
+    <value>Thêm ảnh</value>
+  </data>
+  <data name="Dialog_Filter" xml:space="preserve">
+    <value>Ảnh|{0}|Tất cả tệp|*.*</value>
+  </data>
+  <data name="Dialog_OutputFolder" xml:space="preserve">
+    <value>Thư mục đầu ra</value>
+  </data>
+  <data name="Dialog_SelectImages" xml:space="preserve">
+    <value>Chọn ảnh</value>
+  </data>
+  <data name="Done_Files" xml:space="preserve">
+    <value>Xong: {0} trong {1}</value>
+  </data>
+  <data name="Done_InTime" xml:space="preserve">
+    <value>Xong trong {0} · {1}</value>
+  </data>
+  <data name="Done_Partial" xml:space="preserve">
+    <value>Xong: {0}/{1}, {2} lỗi</value>
+  </data>
+  <data name="Done_SavedNextToOriginals" xml:space="preserve">
+    <value>Đã lưu cạnh các tệp gốc</value>
+  </data>
+  <data name="DropToOpen" xml:space="preserve">
+    <value>Thả để mở</value>
+  </data>
+  <data name="Empty_Description" xml:space="preserve">
+    <value>Mạng nơ-ron phóng to ảnh 2–8 lần và bổ sung chi tiết. Bạn có thể thêm nhiều tệp cùng lúc; chúng sẽ được xử lý lần lượt.</value>
+  </data>
+  <data name="Empty_Formats" xml:space="preserve">
+    <value>PNG, JPEG, TIFF, BMP, GIF, WebP, HEIC · Ctrl+O · Ctrl+V để dán</value>
+  </data>
+  <data name="Empty_Title" xml:space="preserve">
+    <value>Kéo ảnh hoặc thư mục vào đây</value>
+  </data>
+  <data name="Error_NoModelSelected" xml:space="preserve">
+    <value>Chưa chọn mô hình.</value>
+  </data>
+  <data name="Error_NoneUpscaled" xml:space="preserve">
+    <value>Không phóng to được tệp nào trong số {0} tệp. {1}</value>
+  </data>
+  <data name="Error_OutputFolder" xml:space="preserve">
+    <value>Không thể lưu vào thư mục đầu ra: {0} Hãy chọn thư mục khác hoặc lưu cạnh các tệp gốc.</value>
+  </data>
+  <data name="Error_Title" xml:space="preserve">
+    <value>Phóng to không thành công</value>
+  </data>
+  <data name="File_Done" xml:space="preserve">
+    <value>Xong: {0}</value>
+  </data>
+  <data name="File_Processing" xml:space="preserve">
+    <value>Đang xử lý…</value>
+  </data>
+  <data name="Files" xml:space="preserve">
+    <value>{0} tệp</value>
+  </data>
+  <data name="Friendly_AccessDenied" xml:space="preserve">
+    <value>Bị từ chối quyền truy cập tệp hoặc thư mục. Hãy chọn thư mục đầu ra khác.</value>
+  </data>
+  <data name="Friendly_FileNotFound" xml:space="preserve">
+    <value>Không tìm thấy tệp. Có thể tệp đã bị di chuyển hoặc xóa.</value>
+  </data>
+  <data name="Friendly_Gpu" xml:space="preserve">
+    <value>GPU không chạy được mô hình này. Hãy chọn thiết bị hoặc kích thước ô khác trong “Nâng cao”, hoặc một mô hình nhẹ hơn.</value>
+  </data>
+  <data name="Friendly_IO" xml:space="preserve">
+    <value>Không thể đọc hoặc ghi tệp. {0}</value>
+  </data>
+  <data name="Hint_CopyResult" xml:space="preserve">
+    <value>Ctrl+C — sao chép kết quả</value>
+  </data>
+  <data name="Hint_OpenPaste" xml:space="preserve">
+    <value>Ctrl+O · Ctrl+V để dán</value>
+  </data>
+  <data name="Hint_Start" xml:space="preserve">
+    <value>Ctrl+Enter</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Ngôn ngữ</value>
+  </data>
+  <data name="Language_Restart" xml:space="preserve">
+    <value>Ngôn ngữ mới sẽ có hiệu lực sau khi khởi động lại Krupno.</value>
+  </data>
+  <data name="Language_Windows" xml:space="preserve">
+    <value>Ngôn ngữ của Windows</value>
+  </data>
+  <data name="Model_Classic" xml:space="preserve">
+    <value>Cổ điển</value>
+  </data>
+  <data name="Model_Custom" xml:space="preserve">
+    <value>Mô hình tùy chỉnh</value>
+  </data>
+  <data name="Model_Draft" xml:space="preserve">
+    <value>Bản nháp</value>
+  </data>
+  <data name="Model_General" xml:space="preserve">
+    <value>Đa năng</value>
+  </data>
+  <data name="Model_PhotoDetail" xml:space="preserve">
+    <value>Ảnh chụp, chi tiết tối đa</value>
+  </data>
+  <data name="Model_PhotoFast" xml:space="preserve">
+    <value>Ảnh chụp, nhanh</value>
+  </data>
+  <data name="ModelDetails_CantRead" xml:space="preserve">
+    <value>Không thể đọc mô hình: {0}</value>
+  </data>
+  <data name="ModelDetails_FixedTile" xml:space="preserve">
+    <value>Ô {0} px (do mô hình quy định)</value>
+  </data>
+  <data name="ModelDetails_License" xml:space="preserve">
+    <value>Giấy phép: {0}</value>
+  </data>
+  <data name="ModelDetails_MaxWindow" xml:space="preserve">
+    <value>Cửa sổ tối đa {0} px</value>
+  </data>
+  <data name="ModelDetails_NoLicense" xml:space="preserve">
+    <value>Không ghi giấy phép</value>
+  </data>
+  <data name="Models_All" xml:space="preserve">
+    <value>Tất cả mô hình ({0})</value>
+  </data>
+  <data name="Models_ShowFewer" xml:space="preserve">
+    <value>Ẩn bớt</value>
+  </data>
+  <data name="NoModels" xml:space="preserve">
+    <value>Chưa có mô hình nào. Hãy đặt tệp .onnx vào thư mục mô hình rồi làm mới danh sách.</value>
+  </data>
+  <data name="NonCommercial_ToolTip" xml:space="preserve">
+    <value>Giấy phép CC BY-NC-SA: chỉ dùng phi thương mại</value>
+  </data>
+  <data name="Note_DirectMLUnavailable" xml:space="preserve">
+    <value>DirectML không khả dụng, đang chạy trên CPU</value>
+  </data>
+  <data name="Notice_Canceled" xml:space="preserve">
+    <value>Đã hủy xử lý</value>
+  </data>
+  <data name="Open" xml:space="preserve">
+    <value>Mở</value>
+  </data>
+  <data name="OpenModelsFolder" xml:space="preserve">
+    <value>Mở thư mục mô hình</value>
+  </data>
+  <data name="OutputFolder_NextToOriginal" xml:space="preserve">
+    <value>Cạnh tệp gốc</value>
+  </data>
+  <data name="Pasted_FileName" xml:space="preserve">
+    <value>Ảnh dán {0}</value>
+  </data>
+  <data name="Percent" xml:space="preserve">
+    <value>{0}%</value>
+  </data>
+  <data name="Pixels" xml:space="preserve">
+    <value>{0} px</value>
+  </data>
+  <data name="PreviewError_Title" xml:space="preserve">
+    <value>Không thể mở tệp này</value>
+  </data>
+  <data name="Progress_File" xml:space="preserve">
+    <value>Tệp {0}/{1}</value>
+  </data>
+  <data name="Progress_Orientation" xml:space="preserve">
+    <value>hướng {0}/{1}</value>
+  </data>
+  <data name="Progress_Pass" xml:space="preserve">
+    <value>lượt {0}/{1}</value>
+  </data>
+  <data name="Progress_Percent" xml:space="preserve">
+    <value>Đang xử lý… {0}%</value>
+  </data>
+  <data name="Progress_PreparingModel" xml:space="preserve">
+    <value>Đang chuẩn bị mô hình…</value>
+  </data>
+  <data name="Progress_Tile" xml:space="preserve">
+    <value>ô {0}/{1}</value>
+  </data>
+  <data name="Quality" xml:space="preserve">
+    <value>Chất lượng</value>
+  </data>
+  <data name="RefreshModels" xml:space="preserve">
+    <value>Làm mới danh sách mô hình</value>
+  </data>
+  <data name="Remaining_AlmostDone" xml:space="preserve">
+    <value>sắp xong</value>
+  </data>
+  <data name="Remaining_Minutes" xml:space="preserve">
+    <value>≈ {0} phút</value>
+  </data>
+  <data name="Remaining_Seconds" xml:space="preserve">
+    <value>≈ {0} giây</value>
+  </data>
+  <data name="SaveNextToOriginal" xml:space="preserve">
+    <value>Lưu cạnh tệp gốc</value>
+  </data>
+  <data name="Scale_Other" xml:space="preserve">
+    <value>Khác</value>
+  </data>
+  <data name="SeamlessTiles" xml:space="preserve">
+    <value>Ô liền mạch</value>
+  </data>
+  <data name="SeamlessTiles_Description" xml:space="preserve">
+    <value>Vùng chồng lấn giữa các ô gấp đôi (64 px): không thấy đường nối kể cả với mô hình sâu, nhưng phải xử lý nhiều ô hơn: khoảng 1,5 lần với ảnh 1920 × 1200 khi dùng ô tự động.</value>
+  </data>
+  <data name="Section_Advanced" xml:space="preserve">
+    <value>Nâng cao</value>
+  </data>
+  <data name="Section_Model" xml:space="preserve">
+    <value>Mô hình</value>
+  </data>
+  <data name="Section_SaveAs" xml:space="preserve">
+    <value>Lưu dưới dạng</value>
+  </data>
+  <data name="Section_Scale" xml:space="preserve">
+    <value>Tỷ lệ</value>
+  </data>
+  <data name="Section_Strength" xml:space="preserve">
+    <value>Cường độ</value>
+  </data>
+  <data name="SelectAnotherFile" xml:space="preserve">
+    <value>Chọn tệp khác</value>
+  </data>
+  <data name="SelectFiles" xml:space="preserve">
+    <value>Chọn tệp</value>
+  </data>
+  <data name="ShowInFolder" xml:space="preserve">
+    <value>Hiện trong thư mục</value>
+  </data>
+  <data name="SizePreview_EnterScale" xml:space="preserve">
+    <value>Nhập tỷ lệ lớn hơn 0, tối đa {0}</value>
+  </data>
+  <data name="SizePreview_EnterSize" xml:space="preserve">
+    <value>Nhập kích thước bằng pixel</value>
+  </data>
+  <data name="SizePreview_SelectFile" xml:space="preserve">
+    <value>Chọn tệp để xem kích thước đầu ra</value>
+  </data>
+  <data name="Speed_Fast" xml:space="preserve">
+    <value>nhanh</value>
+  </data>
+  <data name="Speed_Slow" xml:space="preserve">
+    <value>chậm</value>
+  </data>
+  <data name="Speed_VeryFast" xml:space="preserve">
+    <value>rất nhanh</value>
+  </data>
+  <data name="Speed_VerySlow" xml:space="preserve">
+    <value>rất chậm</value>
+  </data>
+  <data name="Strength_Description" xml:space="preserve">
+    <value>Dưới 100%, ảnh gốc được đổi kích thước thông thường sẽ được trộn vào: ít chi tiết bịa hơn, độ sắc nét dịu hơn.</value>
+  </data>
+  <data name="Summary_AutoTiles" xml:space="preserve">
+    <value>ô tự động</value>
+  </data>
+  <data name="Summary_NoTiling" xml:space="preserve">
+    <value>không chia ô</value>
+  </data>
+  <data name="Summary_Seamless" xml:space="preserve">
+    <value>liền mạch</value>
+  </data>
+  <data name="Summary_Tiles" xml:space="preserve">
+    <value>ô {0} px</value>
+  </data>
+  <data name="Target_Height" xml:space="preserve">
+    <value>đến cao {0} px</value>
+  </data>
+  <data name="Target_LongSide" xml:space="preserve">
+    <value>đến cạnh dài {0} px</value>
+  </data>
+  <data name="Target_Width" xml:space="preserve">
+    <value>đến rộng {0} px</value>
+  </data>
+  <data name="Tile_None" xml:space="preserve">
+    <value>Không chia ô</value>
+  </data>
+  <data name="TileSize" xml:space="preserve">
+    <value>Kích thước ô</value>
+  </data>
+  <data name="TileSize_Description" xml:space="preserve">
+    <value>Ô nhỏ hơn dùng ít bộ nhớ video hơn. Nếu hết bộ nhớ, kích thước ô sẽ tự động giảm.</value>
+  </data>
+  <data name="Time_MinutesSeconds" xml:space="preserve">
+    <value>{0} phút {1} giây</value>
+  </data>
+  <data name="Time_Seconds" xml:space="preserve">
+    <value>{0} giây</value>
+  </data>
+  <data name="Toast_BusyNotOpened" xml:space="preserve">
+    <value>Đang xử lý: các tệp này chưa được mở. Hãy mở chúng khi xử lý xong.</value>
+  </data>
+  <data name="Toast_CantPaste" xml:space="preserve">
+    <value>Không thể dán: {0}</value>
+  </data>
+  <data name="Toast_CantReadSelection" xml:space="preserve">
+    <value>Không thể đọc mục đã chọn: {0}</value>
+  </data>
+  <data name="Toast_CantSavePasted" xml:space="preserve">
+    <value>Không thể lưu ảnh đã dán: {0}</value>
+  </data>
+  <data name="Toast_CantShowResult" xml:space="preserve">
+    <value>Không thể hiển thị kết quả: {0}</value>
+  </data>
+  <data name="Toast_ClipboardBusy" xml:space="preserve">
+    <value>Bảng tạm đang được ứng dụng khác sử dụng — hãy thử lại</value>
+  </data>
+  <data name="Toast_ClipboardEmpty" xml:space="preserve">
+    <value>Bảng tạm không chứa ảnh hoặc tệp</value>
+  </data>
+  <data name="Toast_ErrorDetailsCopied" xml:space="preserve">
+    <value>Đã sao chép chi tiết lỗi — hãy dán vào báo cáo lỗi</value>
+  </data>
+  <data name="Toast_NoImagesInSelection" xml:space="preserve">
+    <value>Mục đã chọn không có ảnh nào được hỗ trợ</value>
+  </data>
+  <data name="Toast_PastedSaved" xml:space="preserve">
+    <value>Đã lưu ảnh đã dán vào {0}</value>
+  </data>
+  <data name="Toast_ResultCopied" xml:space="preserve">
+    <value>Đã sao chép kết quả vào bảng tạm</value>
+  </data>
+  <data name="TryAgain" xml:space="preserve">
+    <value>Thử lại</value>
+  </data>
+  <data name="Tta" xml:space="preserve">
+    <value>Tăng cường khi suy luận (TTA)</value>
+  </data>
+  <data name="Tta_Description" xml:space="preserve">
+    <value>Ảnh được xử lý ở cả 8 hướng xoay và lật, rồi lấy trung bình kết quả: bớt nhiễu một chút và ít lỗi ảnh lệch về một phía hơn, nhưng chậm hơn 8 lần.</value>
+  </data>
+  <data name="Unhandled_LogDetails" xml:space="preserve">
+    <value>Chi tiết có trong nhật ký:
+{0}</value>
+  </data>
+  <data name="Unhandled_Title" xml:space="preserve">
+    <value>Krupno — Lỗi</value>
+  </data>
+  <data name="Unit_GB" xml:space="preserve">
+    <value>{0} GB</value>
+  </data>
+  <data name="Unit_KB" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Unit_MB" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="Upscale" xml:space="preserve">
+    <value>Phóng to</value>
+  </data>
+  <data name="Upscale_Files" xml:space="preserve">
+    <value>Phóng to {0}</value>
+  </data>
+  <data name="Upscale_FilesScale" xml:space="preserve">
+    <value>Phóng to {0} {1}</value>
+  </data>
+  <data name="Upscale_Scale" xml:space="preserve">
+    <value>Phóng to {0}</value>
+  </data>
+  <data name="Zoom_Actual" xml:space="preserve">
+    <value>Kích thước thực (Ctrl + 1)</value>
+  </data>
+  <data name="Zoom_ActualName" xml:space="preserve">
+    <value>Kích thước thực</value>
+  </data>
+  <data name="Zoom_Fit" xml:space="preserve">
+    <value>Vừa cửa sổ (Ctrl + 0)</value>
+  </data>
+  <data name="Zoom_FitName" xml:space="preserve">
+    <value>Vừa cửa sổ</value>
+  </data>
+  <data name="Zoom_In" xml:space="preserve">
+    <value>Phóng to (Ctrl + +)</value>
+  </data>
+  <data name="Zoom_InName" xml:space="preserve">
+    <value>Phóng to</value>
+  </data>
+  <data name="Zoom_Out" xml:space="preserve">
+    <value>Thu nhỏ (Ctrl + −)</value>
+  </data>
+  <data name="Zoom_OutName" xml:space="preserve">
+    <value>Thu nhỏ</value>
+  </data>
+</root>

@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddFiles" xml:space="preserve">
+    <value>ファイルを追加</value>
+  </data>
+  <data name="Auto" xml:space="preserve">
+    <value>自動</value>
+  </data>
+  <data name="Badge_NonCommercial" xml:space="preserve">
+    <value>非営利</value>
+  </data>
+  <data name="Badge_Recommended" xml:space="preserve">
+    <value>推奨</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="Cancel_ToolTip" xml:space="preserve">
+    <value>停止 (Esc)</value>
+  </data>
+  <data name="Change" xml:space="preserve">
+    <value>変更</value>
+  </data>
+  <data name="Chip_Original" xml:space="preserve">
+    <value>元画像 · {0} × {1}</value>
+  </data>
+  <data name="Chip_Result" xml:space="preserve">
+    <value>結果 · {0} × {1}</value>
+  </data>
+  <data name="ClearList" xml:space="preserve">
+    <value>リストをクリア</value>
+  </data>
+  <data name="Compare_SideBySide" xml:space="preserve">
+    <value>左右に並べる</value>
+  </data>
+  <data name="Compare_SideBySideToolTip" xml:space="preserve">
+    <value>元画像と結果を左右に並べて表示</value>
+  </data>
+  <data name="Compare_Split" xml:space="preserve">
+    <value>分割</value>
+  </data>
+  <data name="Compare_SplitToolTip" xml:space="preserve">
+    <value>分割表示：境界線をドラッグします</value>
+  </data>
+  <data name="Compare_Unavailable" xml:space="preserve">
+    <value>比較は処理後に利用できます</value>
+  </data>
+  <data name="CopyErrorDetails" xml:space="preserve">
+    <value>エラーの詳細をコピー</value>
+  </data>
+  <data name="CopyErrorDetails_ToolTip" xml:space="preserve">
+    <value>バグ報告用：バージョン、GPU、モデル、設定、エラー内容</value>
+  </data>
+  <data name="CustomMode_Height" xml:space="preserve">
+    <value>高さ、px</value>
+  </data>
+  <data name="CustomMode_LongSide" xml:space="preserve">
+    <value>長辺、px</value>
+  </data>
+  <data name="CustomMode_Name" xml:space="preserve">
+    <value>数値の指定対象</value>
+  </data>
+  <data name="CustomMode_Scale" xml:space="preserve">
+    <value>倍率 ×</value>
+  </data>
+  <data name="CustomMode_Width" xml:space="preserve">
+    <value>幅、px</value>
+  </data>
+  <data name="CustomValue_Name" xml:space="preserve">
+    <value>倍率またはサイズ</value>
+  </data>
+  <data name="Device" xml:space="preserve">
+    <value>デバイス</value>
+  </data>
+  <data name="Device_AutoWith" xml:space="preserve">
+    <value>自動（{0}）</value>
+  </data>
+  <data name="Device_CpuSlow" xml:space="preserve">
+    <value>CPU（低速）</value>
+  </data>
+  <data name="Dialog_AddImages" xml:space="preserve">
+    <value>画像を追加</value>
+  </data>
+  <data name="Dialog_Filter" xml:space="preserve">
+    <value>画像|{0}|すべてのファイル|*.*</value>
+  </data>
+  <data name="Dialog_OutputFolder" xml:space="preserve">
+    <value>出力フォルダー</value>
+  </data>
+  <data name="Dialog_SelectImages" xml:space="preserve">
+    <value>画像を選択</value>
+  </data>
+  <data name="Done_Files" xml:space="preserve">
+    <value>完了：{0}（{1}）</value>
+  </data>
+  <data name="Done_InTime" xml:space="preserve">
+    <value>{0} で完了 · {1}</value>
+  </data>
+  <data name="Done_Partial" xml:space="preserve">
+    <value>完了：{1} 個中 {0} 個、{2} 個失敗</value>
+  </data>
+  <data name="Done_SavedNextToOriginals" xml:space="preserve">
+    <value>元のファイルと同じ場所に保存しました</value>
+  </data>
+  <data name="DropToOpen" xml:space="preserve">
+    <value>ドロップして開く</value>
+  </data>
+  <data name="Empty_Description" xml:space="preserve">
+    <value>ニューラル ネットワークが画像を 2～8 倍に拡大し、細部を補います。複数のファイルを一度に追加でき、順番に処理されます。</value>
+  </data>
+  <data name="Empty_Formats" xml:space="preserve">
+    <value>PNG、JPEG、TIFF、BMP、GIF、WebP、HEIC · Ctrl+O · Ctrl+V で貼り付け</value>
+  </data>
+  <data name="Empty_Title" xml:space="preserve">
+    <value>写真またはフォルダーをここにドラッグ</value>
+  </data>
+  <data name="Error_NoModelSelected" xml:space="preserve">
+    <value>モデルが選択されていません。</value>
+  </data>
+  <data name="Error_NoneUpscaled" xml:space="preserve">
+    <value>{0} 個のファイルをどれも拡大できませんでした。{1}</value>
+  </data>
+  <data name="Error_OutputFolder" xml:space="preserve">
+    <value>出力フォルダーに保存できません：{0} 別のフォルダーを選ぶか、元のファイルと同じ場所に保存してください。</value>
+  </data>
+  <data name="Error_Title" xml:space="preserve">
+    <value>拡大に失敗しました</value>
+  </data>
+  <data name="File_Done" xml:space="preserve">
+    <value>完了：{0}</value>
+  </data>
+  <data name="File_Processing" xml:space="preserve">
+    <value>処理中…</value>
+  </data>
+  <data name="Files" xml:space="preserve">
+    <value>{0} 個のファイル</value>
+  </data>
+  <data name="Friendly_AccessDenied" xml:space="preserve">
+    <value>ファイルまたはフォルダーへのアクセスが拒否されました。別の出力フォルダーを選んでください。</value>
+  </data>
+  <data name="Friendly_FileNotFound" xml:space="preserve">
+    <value>ファイルが見つかりません。移動または削除された可能性があります。</value>
+  </data>
+  <data name="Friendly_Gpu" xml:space="preserve">
+    <value>GPU でこのモデルを処理できませんでした。「詳細設定」で別のデバイスまたはタイル サイズを選ぶか、より軽いモデルを選んでください。</value>
+  </data>
+  <data name="Friendly_IO" xml:space="preserve">
+    <value>ファイルの読み書きができませんでした。{0}</value>
+  </data>
+  <data name="Hint_CopyResult" xml:space="preserve">
+    <value>Ctrl+C — 結果をコピー</value>
+  </data>
+  <data name="Hint_OpenPaste" xml:space="preserve">
+    <value>Ctrl+O · Ctrl+V で貼り付け</value>
+  </data>
+  <data name="Hint_Start" xml:space="preserve">
+    <value>Ctrl+Enter</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>言語</value>
+  </data>
+  <data name="Language_Restart" xml:space="preserve">
+    <value>新しい言語は Krupno の再起動後に適用されます。</value>
+  </data>
+  <data name="Language_Windows" xml:space="preserve">
+    <value>Windows の言語</value>
+  </data>
+  <data name="Model_Classic" xml:space="preserve">
+    <value>クラシック</value>
+  </data>
+  <data name="Model_Custom" xml:space="preserve">
+    <value>カスタム モデル</value>
+  </data>
+  <data name="Model_Draft" xml:space="preserve">
+    <value>下書き</value>
+  </data>
+  <data name="Model_General" xml:space="preserve">
+    <value>汎用</value>
+  </data>
+  <data name="Model_PhotoDetail" xml:space="preserve">
+    <value>写真、最大限の精細さ</value>
+  </data>
+  <data name="Model_PhotoFast" xml:space="preserve">
+    <value>写真、高速</value>
+  </data>
+  <data name="ModelDetails_CantRead" xml:space="preserve">
+    <value>モデルを読み込めません：{0}</value>
+  </data>
+  <data name="ModelDetails_FixedTile" xml:space="preserve">
+    <value>タイル {0} px（モデルで固定）</value>
+  </data>
+  <data name="ModelDetails_License" xml:space="preserve">
+    <value>ライセンス：{0}</value>
+  </data>
+  <data name="ModelDetails_MaxWindow" xml:space="preserve">
+    <value>ウィンドウ最大 {0} px</value>
+  </data>
+  <data name="ModelDetails_NoLicense" xml:space="preserve">
+    <value>ライセンス未指定</value>
+  </data>
+  <data name="Models_All" xml:space="preserve">
+    <value>すべてのモデル（{0}）</value>
+  </data>
+  <data name="Models_ShowFewer" xml:space="preserve">
+    <value>表示を減らす</value>
+  </data>
+  <data name="NoModels" xml:space="preserve">
+    <value>モデルがまだありません。.onnx ファイルをモデル フォルダーに入れて、一覧を更新してください。</value>
+  </data>
+  <data name="NonCommercial_ToolTip" xml:space="preserve">
+    <value>CC BY-NC-SA ライセンス：非営利目的でのみ使用できます</value>
+  </data>
+  <data name="Note_DirectMLUnavailable" xml:space="preserve">
+    <value>DirectML を利用できないため、CPU で実行しています</value>
+  </data>
+  <data name="Notice_Canceled" xml:space="preserve">
+    <value>処理を取り消しました</value>
+  </data>
+  <data name="Open" xml:space="preserve">
+    <value>開く</value>
+  </data>
+  <data name="OpenModelsFolder" xml:space="preserve">
+    <value>モデル フォルダーを開く</value>
+  </data>
+  <data name="OutputFolder_NextToOriginal" xml:space="preserve">
+    <value>元のファイルと同じ場所</value>
+  </data>
+  <data name="Pasted_FileName" xml:space="preserve">
+    <value>貼り付け {0}</value>
+  </data>
+  <data name="Percent" xml:space="preserve">
+    <value>{0}%</value>
+  </data>
+  <data name="Pixels" xml:space="preserve">
+    <value>{0} px</value>
+  </data>
+  <data name="PreviewError_Title" xml:space="preserve">
+    <value>このファイルを開けません</value>
+  </data>
+  <data name="Progress_File" xml:space="preserve">
+    <value>ファイル {0}/{1}</value>
+  </data>
+  <data name="Progress_Orientation" xml:space="preserve">
+    <value>向き {0}/{1}</value>
+  </data>
+  <data name="Progress_Pass" xml:space="preserve">
+    <value>パス {0}/{1}</value>
+  </data>
+  <data name="Progress_Percent" xml:space="preserve">
+    <value>処理中… {0}%</value>
+  </data>
+  <data name="Progress_PreparingModel" xml:space="preserve">
+    <value>モデルを準備しています…</value>
+  </data>
+  <data name="Progress_Tile" xml:space="preserve">
+    <value>タイル {0}/{1}</value>
+  </data>
+  <data name="Quality" xml:space="preserve">
+    <value>品質</value>
+  </data>
+  <data name="RefreshModels" xml:space="preserve">
+    <value>モデルの一覧を更新</value>
+  </data>
+  <data name="Remaining_AlmostDone" xml:space="preserve">
+    <value>まもなく完了</value>
+  </data>
+  <data name="Remaining_Minutes" xml:space="preserve">
+    <value>≈ {0} 分</value>
+  </data>
+  <data name="Remaining_Seconds" xml:space="preserve">
+    <value>≈ {0} 秒</value>
+  </data>
+  <data name="SaveNextToOriginal" xml:space="preserve">
+    <value>元のファイルと同じ場所に保存</value>
+  </data>
+  <data name="Scale_Other" xml:space="preserve">
+    <value>その他</value>
+  </data>
+  <data name="SeamlessTiles" xml:space="preserve">
+    <value>継ぎ目のないタイル</value>
+  </data>
+  <data name="SeamlessTiles_Description" xml:space="preserve">
+    <value>タイル間の重なりを 2 倍 (64 px) にします。深いモデルでも継ぎ目が見えなくなりますが、処理するタイルが増えます（自動タイルで 1920 × 1200 の写真なら約 1.5 倍）。</value>
+  </data>
+  <data name="Section_Advanced" xml:space="preserve">
+    <value>詳細設定</value>
+  </data>
+  <data name="Section_Model" xml:space="preserve">
+    <value>モデル</value>
+  </data>
+  <data name="Section_SaveAs" xml:space="preserve">
+    <value>保存形式</value>
+  </data>
+  <data name="Section_Scale" xml:space="preserve">
+    <value>倍率</value>
+  </data>
+  <data name="Section_Strength" xml:space="preserve">
+    <value>強度</value>
+  </data>
+  <data name="SelectAnotherFile" xml:space="preserve">
+    <value>別のファイルを選択</value>
+  </data>
+  <data name="SelectFiles" xml:space="preserve">
+    <value>ファイルを選択</value>
+  </data>
+  <data name="ShowInFolder" xml:space="preserve">
+    <value>フォルダーに表示</value>
+  </data>
+  <data name="SizePreview_EnterScale" xml:space="preserve">
+    <value>0 より大きく {0} 以下の倍率を入力してください</value>
+  </data>
+  <data name="SizePreview_EnterSize" xml:space="preserve">
+    <value>サイズをピクセルで入力してください</value>
+  </data>
+  <data name="SizePreview_SelectFile" xml:space="preserve">
+    <value>ファイルを選択すると出力サイズが表示されます</value>
+  </data>
+  <data name="Speed_Fast" xml:space="preserve">
+    <value>高速</value>
+  </data>
+  <data name="Speed_Slow" xml:space="preserve">
+    <value>低速</value>
+  </data>
+  <data name="Speed_VeryFast" xml:space="preserve">
+    <value>非常に高速</value>
+  </data>
+  <data name="Speed_VerySlow" xml:space="preserve">
+    <value>非常に低速</value>
+  </data>
+  <data name="Strength_Description" xml:space="preserve">
+    <value>100% 未満では、元画像を単純にリサイズしたものが混ぜられます。作り出されるテクスチャが減り、シャープさが穏やかになります。</value>
+  </data>
+  <data name="Summary_AutoTiles" xml:space="preserve">
+    <value>自動タイル</value>
+  </data>
+  <data name="Summary_NoTiling" xml:space="preserve">
+    <value>タイル分割なし</value>
+  </data>
+  <data name="Summary_Seamless" xml:space="preserve">
+    <value>継ぎ目なし</value>
+  </data>
+  <data name="Summary_Tiles" xml:space="preserve">
+    <value>{0} px タイル</value>
+  </data>
+  <data name="Target_Height" xml:space="preserve">
+    <value>高さ {0} px に</value>
+  </data>
+  <data name="Target_LongSide" xml:space="preserve">
+    <value>長辺 {0} px に</value>
+  </data>
+  <data name="Target_Width" xml:space="preserve">
+    <value>幅 {0} px に</value>
+  </data>
+  <data name="Tile_None" xml:space="preserve">
+    <value>タイル分割なし</value>
+  </data>
+  <data name="TileSize" xml:space="preserve">
+    <value>タイル サイズ</value>
+  </data>
+  <data name="TileSize_Description" xml:space="preserve">
+    <value>タイルが小さいほどビデオ メモリの使用量が減ります。メモリが不足すると、タイル サイズは自動的に小さくなります。</value>
+  </data>
+  <data name="Time_MinutesSeconds" xml:space="preserve">
+    <value>{0} 分 {1} 秒</value>
+  </data>
+  <data name="Time_Seconds" xml:space="preserve">
+    <value>{0} 秒</value>
+  </data>
+  <data name="Toast_BusyNotOpened" xml:space="preserve">
+    <value>処理中のため、これらのファイルは開かれませんでした。処理の終了後に開いてください。</value>
+  </data>
+  <data name="Toast_CantPaste" xml:space="preserve">
+    <value>貼り付けできません：{0}</value>
+  </data>
+  <data name="Toast_CantReadSelection" xml:space="preserve">
+    <value>選択項目を読み込めません：{0}</value>
+  </data>
+  <data name="Toast_CantSavePasted" xml:space="preserve">
+    <value>貼り付けた画像を保存できません：{0}</value>
+  </data>
+  <data name="Toast_CantShowResult" xml:space="preserve">
+    <value>結果を表示できません：{0}</value>
+  </data>
+  <data name="Toast_ClipboardBusy" xml:space="preserve">
+    <value>クリップボードが別のアプリで使用中です。もう一度お試しください</value>
+  </data>
+  <data name="Toast_ClipboardEmpty" xml:space="preserve">
+    <value>クリップボードに画像もファイルもありません</value>
+  </data>
+  <data name="Toast_ErrorDetailsCopied" xml:space="preserve">
+    <value>エラーの詳細をコピーしました。バグ報告に貼り付けてください</value>
+  </data>
+  <data name="Toast_NoImagesInSelection" xml:space="preserve">
+    <value>選択項目に対応する画像がありません</value>
+  </data>
+  <data name="Toast_PastedSaved" xml:space="preserve">
+    <value>貼り付けた画像を {0} に保存しました</value>
+  </data>
+  <data name="Toast_ResultCopied" xml:space="preserve">
+    <value>結果をクリップボードにコピーしました</value>
+  </data>
+  <data name="TryAgain" xml:space="preserve">
+    <value>再試行</value>
+  </data>
+  <data name="Tta" xml:space="preserve">
+    <value>テスト時拡張 (TTA)</value>
+  </data>
+  <data name="Tta_Description" xml:space="preserve">
+    <value>画像を 8 通りの回転と反転すべてで処理し、結果を平均します。ノイズと一方向に偏ったアーティファクトがやや減りますが、処理時間は 8 倍になります。</value>
+  </data>
+  <data name="Unhandled_LogDetails" xml:space="preserve">
+    <value>詳細はログに記録されています：
+{0}</value>
+  </data>
+  <data name="Unhandled_Title" xml:space="preserve">
+    <value>Krupno — エラー</value>
+  </data>
+  <data name="Unit_GB" xml:space="preserve">
+    <value>{0} GB</value>
+  </data>
+  <data name="Unit_KB" xml:space="preserve">
+    <value>{0} KB</value>
+  </data>
+  <data name="Unit_MB" xml:space="preserve">
+    <value>{0} MB</value>
+  </data>
+  <data name="Upscale" xml:space="preserve">
+    <value>拡大</value>
+  </data>
+  <data name="Upscale_Files" xml:space="preserve">
+    <value>{0}を拡大</value>
+  </data>
+  <data name="Upscale_FilesScale" xml:space="preserve">
+    <value>{0}を{1}拡大</value>
+  </data>
+  <data name="Upscale_Scale" xml:space="preserve">
+    <value>{0}拡大</value>
+  </data>
+  <data name="Zoom_Actual" xml:space="preserve">
+    <value>実際のピクセル (Ctrl + 1)</value>
+  </data>
+  <data name="Zoom_ActualName" xml:space="preserve">
+    <value>実際のサイズ</value>
+  </data>
+  <data name="Zoom_Fit" xml:space="preserve">
+    <value>ウィンドウに合わせる (Ctrl + 0)</value>
+  </data>
+  <data name="Zoom_FitName" xml:space="preserve">
+    <value>ウィンドウに合わせる</value>
+  </data>
+  <data name="Zoom_In" xml:space="preserve">
+    <value>拡大表示 (Ctrl + +)</value>
+  </data>
+  <data name="Zoom_InName" xml:space="preserve">
+    <value>拡大表示</value>
+  </data>
+  <data name="Zoom_Out" xml:space="preserve">
+    <value>縮小 (Ctrl + −)</value>
+  </data>
+  <data name="Zoom_OutName" xml:space="preserve">
+    <value>縮小</value>
+  </data>
+</root>

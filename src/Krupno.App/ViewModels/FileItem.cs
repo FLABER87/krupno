@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows.Media.Imaging;
 using Krupno.App.Infrastructure;
+using Krupno.App.Properties;
 
 namespace Krupno.App.ViewModels;
 
@@ -66,9 +67,9 @@ public sealed class FileItem(string path) : ObservableObject
 
     public string ToolTip => State switch
     {
-        FileState.Done => $"{Name}\nDone: {System.IO.Path.GetFileName(OutputPath)}",
+        FileState.Done => $"{Name}\n{string.Format(Strings.File_Done, System.IO.Path.GetFileName(OutputPath))}",
         FileState.Error => $"{Name}\n{Error}",
-        FileState.Processing => $"{Name}\nProcessing…",
+        FileState.Processing => $"{Name}\n{Strings.File_Processing}",
         _ => Name,
     };
 

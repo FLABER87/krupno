@@ -44,9 +44,11 @@ function Restore-Settings {
     if (Test-Path -LiteralPath $SettingsBackup) { Move-Item -LiteralPath $SettingsBackup $SettingsPath -Force }
     else { Remove-Item -LiteralPath $SettingsPath -ErrorAction SilentlyContinue }
 }
+# The window is set to English whatever the Windows language: the scripts find buttons and texts by their English names.
 function Settings([string]$Model) {
     New-Item -ItemType Directory -Force (Split-Path $SettingsPath) | Out-Null
-    [IO.File]::WriteAllText($SettingsPath, "{ `"Model`": `"$Model`", `"DeviceKind`": `"Auto`" }", (New-Object Text.UTF8Encoding $false))
+    [IO.File]::WriteAllText($SettingsPath, "{ `"Model`": `"$Model`", `"DeviceKind`": `"Auto`", `"Language`": `"en`" }",
+        (New-Object Text.UTF8Encoding $false))
 }
 
 # --new-window: a window of its own even if Krupno is already open (otherwise the files would go to that window).

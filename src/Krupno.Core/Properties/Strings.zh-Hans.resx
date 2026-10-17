@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Error_CannotOpen" xml:space="preserve">
+    <value>无法打开“{0}”：文件已损坏或不是图像。</value>
+  </data>
+  <data name="Error_FormatSizeLimit" xml:space="preserve">
+    <value>{0} 无法保存任一边超过 {1} px 的图像，而结果为 {2}×{3}。请保存为 TIFF 或选择更小的倍数。</value>
+  </data>
+  <data name="Error_ImageTooLarge" xml:space="preserve">
+    <value>图像 {0}×{1} 太大，无法在内存中处理。</value>
+  </data>
+  <data name="Error_IntermediateTooLarge" xml:space="preserve">
+    <value>中间结果太大，无法在内存中处理。</value>
+  </data>
+  <data name="Error_NeedsStoreExtension" xml:space="preserve">
+    <value>Windows 无法打开“{0}”：{1} 格式需要从 Microsoft Store 安装扩展。</value>
+  </data>
+  <data name="Error_ResultTooLarge" xml:space="preserve">
+    <value>结果 {0}×{1} 太大，无法在内存中处理。</value>
+  </data>
+  <data name="Model_ContradictoryMetadata" xml:space="preserve">
+    <value>模型元数据相互矛盾：窗口必须不大于 {0} px，又不小于 {1} px。</value>
+  </data>
+  <data name="Model_FileNotFound" xml:space="preserve">
+    <value>未找到模型文件：{0}</value>
+  </data>
+  <data name="Model_NoScale" xml:space="preserve">
+    <value>无法根据模型输出 [{0}] 确定其倍数。</value>
+  </data>
+  <data name="Model_OneFixedSide" xml:space="preserve">
+    <value>不支持仅有一边输入尺寸固定的模型。</value>
+  </data>
+  <data name="Model_RgbOnly" xml:space="preserve">
+    <value>仅支持 RGB 模型，但此模型的输入有 {0} 个通道。</value>
+  </data>
+  <data name="Model_Shape" xml:space="preserve">
+    <value>输入和输出的形状应为 [1, 3, H, W]。</value>
+  </data>
+  <data name="Model_SingleInput" xml:space="preserve">
+    <value>模型应只有一个图像输入。</value>
+  </data>
+  <data name="Model_TensorType" xml:space="preserve">
+    <value>不支持张量类型 {0}；需要 float32 或 float16。</value>
+  </data>
+  <data name="Progress_Blending" xml:space="preserve">
+    <value>正在与普通缩放混合，强度 {0}%</value>
+  </data>
+  <data name="Progress_PassReduced" xml:space="preserve">
+    <value>第 {0} 遍在全尺寸下内存不足，输入缩小至 {1}×{2}</value>
+  </data>
+  <data name="Progress_Resizing" xml:space="preserve">
+    <value>正在缩放至 {0}×{1}</value>
+  </data>
+  <data name="Progress_TileFromLimit" xml:space="preserve">
+    <value>分块 {0} px（内存不足后选定）</value>
+  </data>
+  <data name="Progress_TileReduced" xml:space="preserve">
+    <value>窗口 {0}×{1} 在设备上内存不足，分块缩小至 {2} px</value>
+  </data>
+</root>

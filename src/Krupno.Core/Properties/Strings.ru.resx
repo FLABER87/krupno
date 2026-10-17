@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Error_CannotOpen" xml:space="preserve">
+    <value>Не удается открыть «{0}»: файл поврежден или не является изображением.</value>
+  </data>
+  <data name="Error_FormatSizeLimit" xml:space="preserve">
+    <value>{0} не поддерживает изображения больше {1} px по стороне, а результат — {2}×{3}. Сохраните в TIFF или выберите меньший масштаб.</value>
+  </data>
+  <data name="Error_ImageTooLarge" xml:space="preserve">
+    <value>Изображение {0}×{1} слишком велико для обработки в памяти.</value>
+  </data>
+  <data name="Error_IntermediateTooLarge" xml:space="preserve">
+    <value>Промежуточный результат слишком велик для обработки в памяти.</value>
+  </data>
+  <data name="Error_NeedsStoreExtension" xml:space="preserve">
+    <value>Windows не может открыть «{0}»: для формата {1} нужно расширение из Microsoft Store.</value>
+  </data>
+  <data name="Error_ResultTooLarge" xml:space="preserve">
+    <value>Результат {0}×{1} слишком велик для обработки в памяти.</value>
+  </data>
+  <data name="Model_ContradictoryMetadata" xml:space="preserve">
+    <value>Метаданные модели противоречивы: окно должно быть не больше {0} px, но не меньше {1} px.</value>
+  </data>
+  <data name="Model_FileNotFound" xml:space="preserve">
+    <value>Файл модели не найден: {0}</value>
+  </data>
+  <data name="Model_NoScale" xml:space="preserve">
+    <value>Не удалось определить масштаб модели по ее выходу [{0}].</value>
+  </data>
+  <data name="Model_OneFixedSide" xml:space="preserve">
+    <value>Модели только с одной фиксированной стороной входа не поддерживаются.</value>
+  </data>
+  <data name="Model_RgbOnly" xml:space="preserve">
+    <value>Поддерживаются только RGB-модели, а у входа этой модели {0} канал.|Поддерживаются только RGB-модели, а у входа этой модели {0} канала.|Поддерживаются только RGB-модели, а у входа этой модели {0} каналов.</value>
+  </data>
+  <data name="Model_Shape" xml:space="preserve">
+    <value>Ожидались вход и выход формы [1, 3, H, W].</value>
+  </data>
+  <data name="Model_SingleInput" xml:space="preserve">
+    <value>Ожидалась модель с одним входом для изображения.</value>
+  </data>
+  <data name="Model_TensorType" xml:space="preserve">
+    <value>Тип тензора {0} не поддерживается; требуется float32 или float16.</value>
+  </data>
+  <data name="Progress_Blending" xml:space="preserve">
+    <value>Смешивание с обычным масштабированием, сила {0}%</value>
+  </data>
+  <data name="Progress_PassReduced" xml:space="preserve">
+    <value>Проход {0} не помещается в память в полном размере, его вход уменьшен до {1}×{2}</value>
+  </data>
+  <data name="Progress_Resizing" xml:space="preserve">
+    <value>Изменение размера до {0}×{1}</value>
+  </data>
+  <data name="Progress_TileFromLimit" xml:space="preserve">
+    <value>Плитка {0} px (выбрана после нехватки памяти)</value>
+  </data>
+  <data name="Progress_TileReduced" xml:space="preserve">
+    <value>Окно {0}×{1} не поместилось на устройстве, плитка уменьшена до {2} px</value>
+  </data>
+</root>

@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Krupno.Core.Properties;
 
 namespace Krupno.Core.Imaging;
 
@@ -186,7 +187,7 @@ public sealed class ImageBuffer
     private static byte[] AllocatePixels(int width, int height)
     {
         if (!CanAllocate(width, height))
-            throw new InvalidOperationException($"The image {width}×{height} is too large to process in memory.");
+            throw new InvalidOperationException(string.Format(Strings.Error_ImageTooLarge, width, height));
         return GC.AllocateUninitializedArray<byte>(width * height * BytesPerPixel);
     }
 }

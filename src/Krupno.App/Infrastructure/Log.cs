@@ -17,6 +17,9 @@ public static class Log
     private static readonly Lock Gate = new();
     private static StreamWriter? _writer;
 
+    /// <summary>The log is in English whatever the window's language: it is read by whoever fixes the bug.</summary>
+    public static CultureInfo Culture => CultureInfo.InvariantCulture;
+
     public static string Folder { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Krupno", "logs");
 

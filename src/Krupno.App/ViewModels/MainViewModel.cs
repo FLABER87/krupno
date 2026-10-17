@@ -13,6 +13,7 @@ using Microsoft.ML.OnnxRuntime;
 using Microsoft.Win32;
 using Krupno.App.Controls;
 using Krupno.App.Infrastructure;
+using Krupno.App.Properties;
 using Krupno.Core.Imaging;
 using Krupno.Core.Inference;
 using Krupno.Core.Processing;
@@ -77,7 +78,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool _showAllModels;
     private int _strength = MaxStrength;
     private Option<double> _selectedScale;
-    private readonly Option<double> _customScale = new(0, "Other");
+    private readonly Option<double> _customScale = new(0, Strings.Scale_Other);
     private Option<CustomScaleMode> _selectedCustomMode;
     private string _customValueText;
     private Option<ImageFileFormat> _selectedFormat;
@@ -87,6 +88,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private Option<int> _selectedTile;
     private bool _seamlessTiles;
     private bool _testTimeAugmentation;
+    private Option<string?> _selectedLanguage;
+    /// <summary>The language the window was started in: a different choice takes effect after a restart.</summary>
+    private readonly string? _startupLanguage;
     private PanelState _state = PanelState.Empty;
     private bool _isBusy;
     private bool _isDragOver;
@@ -116,9 +120,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var autoDevice = ExecutionDevice.Auto.Resolve();
         Devices =
         [
-            new(ExecutionDevice.Auto, $"Auto ({Text.Device(autoDevice)})"),
+            new(ExecutionDevice.Auto, string.Format(Strings.Device_AutoWith, Text.Device(autoDevice))),
             .. GpuAdapters.Enumerate().Select(a => new Option<ExecutionDevice>(ExecutionDevice.Gpu(a), a.Name.Replace("(R)", "").Replace("(TM)", ""))),
-            new(ExecutionDevice.Cpu, "CPU (slow)"),
+            new(ExecutionDevice.Cpu, Strings.Device_CpuSlow),
         ];
         var savedDevice = FindSavedDevice();
         _selectedDevice = Devices.FirstOrDefault(d => d.Value == savedDevice) ?? Devices[0];
@@ -131,8 +135,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _selectedScale = Scales.FirstOrDefault(s => s.Value == _settings.Scale) ?? Scales[2];
         CustomModes =
         [
-            new(CustomScaleMode.Scale, "Scale ×"), new(CustomScaleMode.Width, "Width, px"),
-            new(CustomScaleMode.Height, "Height, px"), new(CustomScaleMode.LongSide, "Long side, px"),
+            new(CustomScaleMode.Scale, Strings.CustomMode_Scale), new(CustomScaleMode.Width, Strings.CustomMode_Width),
+            new(CustomScaleMode.Height, Strings.CustomMode_Height), new(CustomScaleMode.LongSide, Strings.CustomMode_LongSide),
         ];
         _selectedCustomMode = CustomModes.FirstOrDefault(m => m.Value == _settings.CustomScaleMode) ?? CustomModes[3];
         _customValueText = _settings.CustomScaleValue ?? DefaultCustomValue(_selectedCustomMode.Value);
@@ -143,10 +147,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _jpegQuality = Math.Clamp(quality, MinJpegQuality, MaxJpegQuality);
         _outputFolder = _settings.OutputFolder;
 
-        TileSizes = [new(384, "Auto"), new(256, "256 px"), new(512, "512 px"), new(768, "768 px"), new(1024, "1024 px"), new(0, "No tiling")];
+        TileSizes =
+        [
+            new(384, Strings.Auto), .. new[] { 256, 512, 768, 1024 }.Select(size => new Option<int>(size, string.Format(Strings.Pixels, size))),
+            new(0, Strings.Tile_None),
+        ];
         _selectedTile = TileSizes.FirstOrDefault(t => t.Value == _settings.TileSize) ?? TileSizes[0];
         _seamlessTiles = _settings.SeamlessTiles == true;
         _testTimeAugmentation = _settings.TestTimeAugmentation == true;
+        Languages = [new(null, Strings.Language_Windows), .. UiLanguage.All.Select(l => new Option<string?>(l.Culture, l.Name))];
+        _selectedLanguage = Languages.FirstOrDefault(l => l.Value == _settings.Language) ?? Languages[0];
+        _startupLanguage = _selectedLanguage.Value;
 
         PrimaryCommand = new RelayCommand(() =>
         {
@@ -251,7 +262,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<ModelItem> VisibleModels { get; } = [];
     public bool HasNoModels => _allModels.Count == 0;
     public bool HasMoreModels => _allModels.Count > CompactModelCount;
-    public string AllModelsToggleText => ShowAllModels ? "Show fewer" : $"All models ({_allModels.Count})";
+    public string AllModelsToggleText => ShowAllModels ? Strings.Models_ShowFewer : string.Format(Strings.Models_All, _allModels.Count);
 
     public ModelItem? SelectedModel
     {
@@ -293,7 +304,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    public string StrengthText => $"{Strength}%";
+    public string StrengthText => string.Format(Strings.Percent, Strength);
 
     // ── Scale and saving ────────────────────────────────────────────
 
@@ -383,11 +394,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (ScaleChoice is not { } choice)
             {
                 return SelectedCustomMode.Value == CustomScaleMode.Scale
-                    ? $"Enter a scale above 0, up to {MaxCustomScale}"
-                    : "Enter a size in pixels";
+                    ? string.Format(Strings.SizePreview_EnterScale, MaxCustomScale)
+                    : Strings.SizePreview_EnterSize;
             }
             if (_sourceSize is not { } size)
-                return "Select a file to see the output size";
+                return Strings.SizePreview_SelectFile;
 
             double scale = choice.Target?.ScaleFor(size.Width, size.Height) ?? choice.Scale;
             var (width, height) = Upscaler.OutputSize(size.Width, size.Height, scale);
@@ -438,7 +449,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    public string OutputFolderDisplay => OutputFolder ?? "Next to the original";
+    public string OutputFolderDisplay => OutputFolder ?? Strings.OutputFolder_NextToOriginal;
     public bool HasCustomOutputFolder => OutputFolder is not null;
 
     // ── Advanced ────────────────────────────────────────────────────
@@ -501,6 +512,24 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    public IReadOnlyList<Option<string?>> Languages { get; }
+
+    public Option<string?> SelectedLanguage
+    {
+        get => _selectedLanguage;
+        set
+        {
+            if (value is not null && SetProperty(ref _selectedLanguage, value))
+            {
+                OnPropertyChanged(nameof(LanguageNeedsRestart));
+                SaveSettings();
+            }
+        }
+    }
+
+    /// <summary>The window's text is set when it is created, so another language shows only after a restart.</summary>
+    public bool LanguageNeedsRestart => SelectedLanguage.Value != _startupLanguage;
+
     public string AdvancedSummary
     {
         get
@@ -508,11 +537,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             var device = SelectedDevice.Value.Resolve();
             string tile = SelectedTile.Value switch
             {
-                0 => "no tiling",
-                384 when SelectedTile == TileSizes[0] => "auto tiles",
-                var size => $"{size} px tiles",
+                0 => Strings.Summary_NoTiling,
+                384 when SelectedTile == TileSizes[0] => Strings.Summary_AutoTiles,
+                var size => string.Format(Strings.Summary_Tiles, size),
             };
-            return $"{Text.Device(device)} · {tile}{(SeamlessTiles ? ", seamless" : "")}{(TestTimeAugmentation ? ", TTA" : "")}";
+            return $"{Text.Device(device)} · {tile}{(SeamlessTiles ? ", " + Strings.Summary_Seamless : "")}{(TestTimeAugmentation ? ", TTA" : "")}";
         }
     }
 
@@ -559,8 +588,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         get
         {
-            string choice = ScaleChoice is { } c ? " " + Text.ScaleChoice(c.Scale, c.Target) : "";
-            return Files.Count > 1 ? $"Upscale {Text.Files(Files.Count)}{choice}" : $"Upscale{choice}";
+            string? choice = ScaleChoice is { } c ? Text.ScaleChoice(c.Scale, c.Target) : null;
+            return (Files.Count > 1, choice) switch
+            {
+                (true, null) => string.Format(Strings.Upscale_Files, Text.Files(Files.Count)),
+                (true, _) => string.Format(Strings.Upscale_FilesScale, Text.Files(Files.Count), choice),
+                (false, null) => Strings.Upscale,
+                _ => string.Format(Strings.Upscale_Scale, choice),
+            };
         }
     }
 
@@ -688,7 +723,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (IsBusy)
         {
             Log.Warning($"Processing is running, files not opened: {string.Join(", ", paths)}");
-            ShowToast("Processing is running: these files weren't opened. Open them when it ends.");
+            ShowToast(Strings.Toast_BusyNotOpened);
             return;
         }
         await SetFilesAsync(paths, append);
@@ -726,7 +761,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
             {
                 if (selection == _selectionGeneration)
-                    ShowToast($"Can't read the selection: {ex.Message}");
+                    ShowToast(string.Format(Strings.Toast_CantReadSelection, ex.Message));
                 return;
             }
             // Processing may have started, or the list may have been cleared, while the folder was being read.
@@ -734,7 +769,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 return;
             if (found.Count == 0)
             {
-                ShowToast("The selection contains no supported images");
+                ShowToast(Strings.Toast_NoImagesInSelection);
                 return;
             }
 
@@ -866,7 +901,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (afterError is not null)
             {
                 Log.Warning($"Can't show the result {file.OutputPath}: {afterError}");
-                ShowToast($"Can't show the result: {afterError}");
+                ShowToast(string.Format(Strings.Toast_CantShowResult, afterError));
             }
         }
         catch (OperationCanceledException)
@@ -933,7 +968,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         State = PanelState.Busy;
         Notice = null;
         ProgressNote = null;
-        ProgressTitle = "Preparing the model…";
+        ProgressTitle = Strings.Progress_PreparingModel;
         ProgressDetail = SelectedModel.Title;
         ProgressValue = 0;
         EtaText = "";
@@ -971,7 +1006,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
                     throw new InvalidOperationException(
-                        $"Can't save to the output folder: {ex.Message} Choose another folder or save next to the originals.", ex);
+                        string.Format(Strings.Error_OutputFolder, ex.Message), ex);
                 }
             }
 
@@ -1054,11 +1089,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 await pendingSave;
 
             string elapsed = Text.Seconds(total.Elapsed);
-            Log.Info($"Run finished in {elapsed}: {succeeded} of {Text.Files(files.Count)} done");
+            Log.Info($"Run finished in {Text.Seconds(total.Elapsed, Log.Culture)}: {succeeded} of {Text.Files(files.Count, Log.Culture)} done");
             if (succeeded == 0)
             {
                 // Every file of the batch failed: that is not a success, whatever the count.
-                ErrorDetail = $"None of the {files.Count} files could be upscaled. {firstError}";
+                ErrorDetail = string.Format(Strings.Error_NoneUpscaled, files.Count, firstError);
                 ErrorTechnical = firstError;
                 State = PanelState.Error;
                 TaskbarState = TaskbarItemProgressState.Error;
@@ -1067,7 +1102,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             {
                 if (files.Count == 1)
                 {
-                    DoneTitle = $"Done in {elapsed} · {Text.Bytes(lastBytes)}";
+                    DoneTitle = string.Format(Strings.Done_InTime, elapsed, Text.Bytes(lastBytes));
                     DoneSubtitle = After is { } after
                         ? $"{Path.GetFileName(_lastDone!.OutputPath)} · {Text.Size(after.PixelWidth, after.PixelHeight)}"
                         : Path.GetFileName(_lastDone!.OutputPath)!;
@@ -1075,9 +1110,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 else
                 {
                     DoneTitle = failed == 0
-                        ? $"Done: {Text.Files(succeeded)} in {elapsed}"
-                        : $"Done: {succeeded} of {files.Count}, {failed} failed";
-                    DoneSubtitle = settings.Folder ?? "Saved next to the originals";
+                        ? string.Format(Strings.Done_Files, Text.Files(succeeded), elapsed)
+                        : string.Format(Strings.Done_Partial, succeeded, files.Count, failed);
+                    DoneSubtitle = settings.Folder ?? Strings.Done_SavedNextToOriginals;
                 }
                 State = PanelState.Done;
                 TaskbarState = failed > 0 ? TaskbarItemProgressState.Error : TaskbarItemProgressState.None;
@@ -1094,7 +1129,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 file.State = FileState.Pending;
             Tiles = null;
             State = PanelState.Ready;
-            Notice = "Processing canceled";
+            Notice = Strings.Notice_Canceled;
             TaskbarState = TaskbarItemProgressState.None;
         }
         catch (Exception ex)
@@ -1137,7 +1172,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                           (settings.Tta ? ", TTA" : "");
             string format = settings.Format == ImageFileFormat.Jpeg ? $"JPEG {settings.Quality}" : settings.Format.ToString().ToUpperInvariant();
             return $"{modelLine}\nDevice: {device} (selected: {deviceOption.Label}{fallback}) · {tile} · strength {settings.Strength}% · " +
-                   $"{Text.ScaleChoice(settings.Scale, settings.Target)} · {format} · {Text.Files(files.Count)} → {settings.Folder ?? "next to the originals"}";
+                   $"{Text.ScaleChoice(settings.Scale, settings.Target, Log.Culture)} · {format} · {Text.Files(files.Count, Log.Culture)} → " +
+                   (settings.Folder ?? "next to the originals");
         }
 
         // The file is written: record it, and show the result if its file is the one on the canvas.
@@ -1148,7 +1184,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _lastDone = file;
             lastBytes = new FileInfo(output).Length;
             succeeded++;
-            Log.Info($"Saved {output} ({Text.Bytes(lastBytes)})");
+            Log.Info($"Saved {output} ({Text.Bytes(lastBytes, Log.Culture)})");
 
             if (CurrentFile == file)
             {
@@ -1211,7 +1247,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         string device = Text.Device(model.Device);
         if (model.FallbackReason is { } reason)
         {
-            ProgressNote ??= "DirectML is unavailable, running on the CPU";
+            ProgressNote ??= Strings.Note_DirectMLUnavailable;
             if (!_fallbackReported)
                 Log.Warning($"DirectML is unavailable, running on the CPU: {reason}");
             _fallbackReported = true;
@@ -1226,7 +1262,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 Log.Warning(message);
             }
             else
-                ProgressDetail = count > 1 ? $"File {index + 1} of {count} · {message}" : message;
+                ProgressDetail = count > 1 ? $"{string.Format(Strings.Progress_File, index + 1, count)} · {message}" : message;
             return;
         }
 
@@ -1247,20 +1283,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         IsProgressIndeterminate = false;
         TaskbarState = TaskbarItemProgressState.Normal;
         ProgressValue = fraction;
-        ProgressTitle = $"Processing… {fraction * 100:0}%";
+        ProgressTitle = string.Format(Strings.Progress_Percent, Math.Round(fraction * 100));
 
         var elapsed = work.Elapsed;
         EtaText = fraction > 0.02 && elapsed.TotalSeconds > 1.5
             ? Text.Remaining(elapsed * ((1 - fraction) / fraction))
             : "";
 
-        string tileText = p.TileCount > 0 ? $"tile {p.Tile} of {p.TileCount}" : "";
+        string tileText = p.TileCount > 0 ? string.Format(Strings.Progress_Tile, p.Tile, p.TileCount) : "";
         if (p.RoundCount > 1)
-            tileText += $" · orientation {p.Round} of {p.RoundCount}";
-        string pass = p.PassCount > 1 ? $" · pass {p.Pass} of {p.PassCount}" : "";
+            tileText += " · " + string.Format(Strings.Progress_Orientation, p.Round, p.RoundCount);
+        string pass = p.PassCount > 1 ? " · " + string.Format(Strings.Progress_Pass, p.Pass, p.PassCount) : "";
         ProgressDetail = count > 1
-            ? $"File {index + 1} of {count} · {tileText}{pass}"
-            : $"{(tileText.Length > 0 ? char.ToUpper(tileText[0]) + tileText[1..] : "")}{pass} · {device}";
+            ? $"{string.Format(Strings.Progress_File, index + 1, count)} · {tileText}{pass}"
+            : $"{(tileText.Length > 0 ? char.ToUpper(tileText[0], CultureInfo.CurrentCulture) + tileText[1..] : "")}{pass} · {device}";
     }
 
     /// <summary>
@@ -1305,7 +1341,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private async Task<UpscaleModel> GetModelAsync()
     {
-        var entry = SelectedModel?.Entry ?? throw new InvalidOperationException("No model is selected.");
+        var entry = SelectedModel?.Entry ?? throw new InvalidOperationException(Strings.Error_NoModelSelected);
         var device = SelectedDevice.Value;
         if (_model is not null && _modelKey != (entry.Path, device))
         {
@@ -1323,11 +1359,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private static string Friendly(Exception ex) => ex switch
     {
-        OnnxRuntimeException => "The GPU couldn't handle this model. Choose a different device or tile size under \"Advanced\", or a lighter model.",
-        FileNotFoundException => "File not found. It may have been moved or deleted.",
-        UnauthorizedAccessException => "Access to the file or folder was denied. Choose a different output folder.",
+        OnnxRuntimeException => Strings.Friendly_Gpu,
+        FileNotFoundException => Strings.Friendly_FileNotFound,
+        UnauthorizedAccessException => Strings.Friendly_AccessDenied,
         NotSupportedException => ex.Message,
-        IOException => $"Couldn't read or write the file. {ex.Message}",
+        IOException => string.Format(Strings.Friendly_IO, ex.Message),
         _ => ex.Message,
     };
 
@@ -1426,16 +1462,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 string.Join(" · ", new[] { info.Architecture, $"×{info.Scale}", info.IsHalfPrecision ? "fp16" : "fp32" }.OfType<string>()),
             };
             if (info.FixedWidth is int fixedTile)
-                lines.Add($"Tile {fixedTile} px (set by the model)");
+                lines.Add(string.Format(Strings.ModelDetails_FixedTile, fixedTile));
             else if (info.MaximumSize is int maximum)
-                lines.Add($"Window up to {maximum} px");
-            lines.Add(info.License is { } license ? $"License: {license}" : "License not specified");
+                lines.Add(string.Format(Strings.ModelDetails_MaxWindow, maximum));
+            lines.Add(info.License is { } license ? string.Format(Strings.ModelDetails_License, license) : Strings.ModelDetails_NoLicense);
             item.Details = string.Join("\n", lines);
         }
         catch (Exception ex)
         {
             Log.Error($"Can't read the model {item.Entry.Path}", ex);
-            item.Details = $"{Path.GetFileName(item.Entry.Path)}\nCan't read the model: {ex.Message}";
+            item.Details = $"{Path.GetFileName(item.Entry.Path)}\n{string.Format(Strings.ModelDetails_CantRead, ex.Message)}";
         }
     }
 
@@ -1460,6 +1496,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _settings.TileSize = SelectedTile.Value;
         _settings.SeamlessTiles = SeamlessTiles;
         _settings.TestTimeAugmentation = TestTimeAugmentation;
+        _settings.Language = SelectedLanguage.Value;
         _settings.Save();
     }
 
@@ -1484,9 +1521,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var extensions = string.Join(";", ImageCodec.InputExtensions.Select(e => "*" + e));
         var dialog = new OpenFileDialog
         {
-            Title = append ? "Add images" : "Select images",
+            Title = append ? Strings.Dialog_AddImages : Strings.Dialog_SelectImages,
             Multiselect = true,
-            Filter = $"Images|{extensions}|All files|*.*",
+            Filter = string.Format(Strings.Dialog_Filter, extensions),
         };
         if (dialog.ShowDialog() == true)
             _ = SetFilesAsync(dialog.FileNames, append);
@@ -1494,7 +1531,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private void BrowseOutput()
     {
-        var dialog = new OpenFolderDialog { Title = "Output folder" };
+        var dialog = new OpenFolderDialog { Title = Strings.Dialog_OutputFolder };
         if (dialog.ShowDialog() == true)
             OutputFolder = dialog.FolderName;
     }
@@ -1529,11 +1566,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         try
         {
             Clipboard.SetImage(After);
-            ShowToast("Result copied to the clipboard");
+            ShowToast(Strings.Toast_ResultCopied);
         }
         catch (Exception)
         {
-            ShowToast("The clipboard is in use by another app — try again");
+            ShowToast(Strings.Toast_ClipboardBusy);
         }
     }
 
@@ -1559,7 +1596,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             // Nobody awaits this task, so every failure ends up here rather than vanishing.
             Log.Error("Can't paste", ex);
-            ShowToast(ex is ExternalException ? "The clipboard is in use by another app — try again" : $"Can't paste: {ex.Message}");
+            ShowToast(ex is ExternalException ? Strings.Toast_ClipboardBusy : string.Format(Strings.Toast_CantPaste, ex.Message));
             return;
         }
 
@@ -1570,7 +1607,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         if (image is null)
         {
-            ShowToast("The clipboard holds no image or files");
+            ShowToast(Strings.Toast_ClipboardEmpty);
             return;
         }
 
@@ -1582,12 +1619,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         catch (Exception ex)
         {
             Log.Error("Can't save the pasted image", ex);
-            ShowToast($"Can't save the pasted image: {ex.Message}");
+            ShowToast(string.Format(Strings.Toast_CantSavePasted, ex.Message));
             return;
         }
         Log.Info($"Pasted image saved to {path}");
         await SetFilesAsync([path]);
-        ShowToast($"Pasted image saved to {path}");
+        ShowToast(string.Format(Strings.Toast_PastedSaved, path));
     }
 
     private void CopyErrorDetails()
@@ -1597,11 +1634,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         try
         {
             Clipboard.SetText(report);
-            ShowToast("Error details copied — paste them into a bug report");
+            ShowToast(Strings.Toast_ErrorDetailsCopied);
         }
         catch (Exception)
         {
-            ShowToast("The clipboard is in use by another app — try again");
+            ShowToast(Strings.Toast_ClipboardBusy);
         }
     }
 

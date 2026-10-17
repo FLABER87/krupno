@@ -2,7 +2,9 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
+using Krupno.Core.Localization;
 using Krupno.Core.Processing;
+using Krupno.Core.Properties;
 
 namespace Krupno.Core.Inference;
 
@@ -95,7 +97,7 @@ public sealed class UpscaleModel : IDisposable
     {
         var file = new FileInfo(path);
         if (!file.Exists)
-            throw new FileNotFoundException($"Model file not found: {path}", path);
+            throw new FileNotFoundException(string.Format(Strings.Model_FileNotFound, path), path);
 
         // Lazy shares an inspection that is already running; a failure isn't cached, so the next call tries again.
         var key = (file.FullName.ToUpperInvariant(), file.Length, file.LastWriteTimeUtc);
@@ -123,14 +125,14 @@ public sealed class UpscaleModel : IDisposable
         using var session = new InferenceSession(path, options);
 
         if (session.InputMetadata.Count != 1 || session.OutputMetadata.Count < 1)
-            throw new NotSupportedException("Expected a model with a single image input.");
+            throw new NotSupportedException(Strings.Model_SingleInput);
 
         var (inputName, input) = session.InputMetadata.First();
         var (outputName, output) = session.OutputMetadata.First();
         if (!input.IsTensor || input.Dimensions.Length != 4 || !output.IsTensor || output.Dimensions.Length != 4)
-            throw new NotSupportedException("Expected an input and an output of shape [1, 3, H, W].");
+            throw new NotSupportedException(Strings.Model_Shape);
         if (input.Dimensions[1] > 0 && input.Dimensions[1] != 3)
-            throw new NotSupportedException($"Only RGB models are supported, but this model's input has {input.Dimensions[1]} channel{(input.Dimensions[1] == 1 ? "" : "s")}.");
+            throw new NotSupportedException(Plurals.Format(Strings.Model_RgbOnly, input.Dimensions[1]));
 
         bool inputIsHalf = IsHalf(input.ElementDataType);
         bool outputIsHalf = IsHalf(output.ElementDataType);
@@ -139,13 +141,13 @@ public sealed class UpscaleModel : IDisposable
         int? fixedHeight = input.Dimensions[2] > 0 ? input.Dimensions[2] : null;
         int? fixedWidth = input.Dimensions[3] > 0 ? input.Dimensions[3] : null;
         if (fixedHeight.HasValue != fixedWidth.HasValue)
-            throw new NotSupportedException("Models with only one fixed input side are not supported.");
+            throw new NotSupportedException(Strings.Model_OneFixedSide);
 
         int multiple = ReadInt(meta, "size_multiple") ?? (fixedWidth.HasValue ? 1 : DefaultSizeMultiple);
         int minimum = ReadInt(meta, "size_minimum") ?? 1;
         int? maximum = ReadInt(meta, "size_maximum") is int limit ? TilePlanner.AlignDown(limit, multiple) : null;
         if (maximum < TilePlanner.AlignUp(minimum, multiple))
-            throw new NotSupportedException($"The model metadata is contradictory: the window must be at most {maximum} px but at least {minimum} px.");
+            throw new NotSupportedException(string.Format(Strings.Model_ContradictoryMetadata, maximum, minimum));
 
         int scale = ReadInt(meta, "scale")
             ?? StaticScale(input.Dimensions, output.Dimensions)
@@ -326,7 +328,7 @@ public sealed class UpscaleModel : IDisposable
     {
         TensorElementType.Float => false,
         TensorElementType.Float16 => true,
-        _ => throw new NotSupportedException($"Tensor type {type} is not supported; float32 or float16 is required."),
+        _ => throw new NotSupportedException(string.Format(Strings.Model_TensorType, type)),
     };
 
     private static string? SymbolicDim(NodeMetadata node, int axis) =>
@@ -368,7 +370,7 @@ public sealed class UpscaleModel : IDisposable
         if (outShape.Length != 4 || outShape[2] % height != 0 || outShape[3] % width != 0 ||
             outShape[2] / height != outShape[3] / width || outShape[2] < height)
         {
-            throw new NotSupportedException($"Could not determine the model's scale from its output [{string.Join(", ", outShape)}].");
+            throw new NotSupportedException(string.Format(Strings.Model_NoScale, string.Join(", ", outShape)));
         }
         return (int)(outShape[2] / height);
     }

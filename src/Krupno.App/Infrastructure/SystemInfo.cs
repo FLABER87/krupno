@@ -18,7 +18,7 @@ public static class SystemInfo
         };
         var gpus = GpuAdapters.Enumerate();
         foreach (var gpu in gpus)
-            lines.Add($"GPU {gpu.Index}: {gpu.Name}, {Text.Bytes((long)gpu.DedicatedMemory)}, driver {gpu.DriverVersion ?? "unknown"}");
+            lines.Add($"GPU {gpu.Index}: {gpu.Name}, {Text.Bytes((long)gpu.DedicatedMemory, Log.Culture)}, driver {gpu.DriverVersion ?? "unknown"}");
         if (gpus.Count == 0)
             lines.Add("No GPU: processing runs on the CPU");
         return string.Join(Environment.NewLine, lines);

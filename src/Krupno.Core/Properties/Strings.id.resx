@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Error_CannotOpen" xml:space="preserve">
+    <value>Tidak dapat membuka “{0}”: file rusak atau bukan gambar.</value>
+  </data>
+  <data name="Error_FormatSizeLimit" xml:space="preserve">
+    <value>{0} tidak dapat menyimpan gambar dengan sisi lebih dari {1} px, sedangkan hasilnya {2}×{3}. Simpan sebagai TIFF atau pilih skala yang lebih kecil.</value>
+  </data>
+  <data name="Error_ImageTooLarge" xml:space="preserve">
+    <value>Gambar {0}×{1} terlalu besar untuk diproses di memori.</value>
+  </data>
+  <data name="Error_IntermediateTooLarge" xml:space="preserve">
+    <value>Hasil antara terlalu besar untuk diproses di memori.</value>
+  </data>
+  <data name="Error_NeedsStoreExtension" xml:space="preserve">
+    <value>Windows tidak dapat membuka “{0}”: format {1} memerlukan ekstensi dari Microsoft Store.</value>
+  </data>
+  <data name="Error_ResultTooLarge" xml:space="preserve">
+    <value>Hasil {0}×{1} terlalu besar untuk diproses di memori.</value>
+  </data>
+  <data name="Model_ContradictoryMetadata" xml:space="preserve">
+    <value>Metadata model saling bertentangan: jendela harus paling besar {0} px tetapi paling kecil {1} px.</value>
+  </data>
+  <data name="Model_FileNotFound" xml:space="preserve">
+    <value>File model tidak ditemukan: {0}</value>
+  </data>
+  <data name="Model_NoScale" xml:space="preserve">
+    <value>Tidak dapat menentukan skala model dari outputnya [{0}].</value>
+  </data>
+  <data name="Model_OneFixedSide" xml:space="preserve">
+    <value>Model dengan hanya satu sisi input tetap tidak didukung.</value>
+  </data>
+  <data name="Model_RgbOnly" xml:space="preserve">
+    <value>Hanya model RGB yang didukung, tetapi input model ini memiliki {0} saluran.</value>
+  </data>
+  <data name="Model_Shape" xml:space="preserve">
+    <value>Diharapkan input dan output berbentuk [1, 3, H, W].</value>
+  </data>
+  <data name="Model_SingleInput" xml:space="preserve">
+    <value>Diharapkan model dengan satu input gambar.</value>
+  </data>
+  <data name="Model_TensorType" xml:space="preserve">
+    <value>Tipe tensor {0} tidak didukung; diperlukan float32 atau float16.</value>
+  </data>
+  <data name="Progress_Blending" xml:space="preserve">
+    <value>Mencampur dengan pengubahan ukuran biasa, kekuatan {0}%</value>
+  </data>
+  <data name="Progress_PassReduced" xml:space="preserve">
+    <value>Tahap {0} tidak muat di memori dalam ukuran penuh, inputnya dikurangi ke {1}×{2}</value>
+  </data>
+  <data name="Progress_Resizing" xml:space="preserve">
+    <value>Mengubah ukuran ke {0}×{1}</value>
+  </data>
+  <data name="Progress_TileFromLimit" xml:space="preserve">
+    <value>Ubin {0} px (dipilih setelah memori habis)</value>
+  </data>
+  <data name="Progress_TileReduced" xml:space="preserve">
+    <value>Jendela {0}×{1} tidak muat di perangkat, ubin dikurangi ke {2} px</value>
+  </data>
+</root>

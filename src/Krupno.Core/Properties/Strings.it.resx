@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Error_CannotOpen" xml:space="preserve">
+    <value>Impossibile aprire «{0}»: il file è danneggiato o non è un'immagine.</value>
+  </data>
+  <data name="Error_FormatSizeLimit" xml:space="preserve">
+    <value>{0} non può contenere un'immagine con un lato superiore a {1} px, e il risultato è {2}×{3}. Salva in TIFF o scegli una scala più piccola.</value>
+  </data>
+  <data name="Error_ImageTooLarge" xml:space="preserve">
+    <value>L'immagine {0}×{1} è troppo grande per essere elaborata in memoria.</value>
+  </data>
+  <data name="Error_IntermediateTooLarge" xml:space="preserve">
+    <value>Il risultato intermedio è troppo grande per essere elaborato in memoria.</value>
+  </data>
+  <data name="Error_NeedsStoreExtension" xml:space="preserve">
+    <value>Windows non può aprire «{0}»: il formato {1} richiede un'estensione dal Microsoft Store.</value>
+  </data>
+  <data name="Error_ResultTooLarge" xml:space="preserve">
+    <value>Il risultato {0}×{1} è troppo grande per essere elaborato in memoria.</value>
+  </data>
+  <data name="Model_ContradictoryMetadata" xml:space="preserve">
+    <value>I metadati del modello sono contraddittori: la finestra deve essere al massimo {0} px ma almeno {1} px.</value>
+  </data>
+  <data name="Model_FileNotFound" xml:space="preserve">
+    <value>File del modello non trovato: {0}</value>
+  </data>
+  <data name="Model_NoScale" xml:space="preserve">
+    <value>Impossibile determinare la scala del modello dal suo output [{0}].</value>
+  </data>
+  <data name="Model_OneFixedSide" xml:space="preserve">
+    <value>I modelli con un solo lato dell'input fisso non sono supportati.</value>
+  </data>
+  <data name="Model_RgbOnly" xml:space="preserve">
+    <value>Sono supportati solo modelli RGB, ma l'input di questo modello ha {0} canale.|Sono supportati solo modelli RGB, ma l'input di questo modello ha {0} canali.</value>
+  </data>
+  <data name="Model_Shape" xml:space="preserve">
+    <value>Sono previsti un input e un output di forma [1, 3, H, W].</value>
+  </data>
+  <data name="Model_SingleInput" xml:space="preserve">
+    <value>È previsto un modello con un solo input di immagine.</value>
+  </data>
+  <data name="Model_TensorType" xml:space="preserve">
+    <value>Il tipo di tensore {0} non è supportato; è richiesto float32 o float16.</value>
+  </data>
+  <data name="Progress_Blending" xml:space="preserve">
+    <value>Fusione con un ridimensionamento semplice, intensità {0}%</value>
+  </data>
+  <data name="Progress_PassReduced" xml:space="preserve">
+    <value>Il passaggio {0} non entra in memoria a piena dimensione, il suo input viene ridotto a {1}×{2}</value>
+  </data>
+  <data name="Progress_Resizing" xml:space="preserve">
+    <value>Ridimensionamento a {0}×{1}</value>
+  </data>
+  <data name="Progress_TileFromLimit" xml:space="preserve">
+    <value>Riquadro di {0} px (scelto dopo l'esaurimento della memoria)</value>
+  </data>
+  <data name="Progress_TileReduced" xml:space="preserve">
+    <value>La finestra {0}×{1} non entra nel dispositivo, il riquadro viene ridotto a {2} px</value>
+  </data>
+</root>

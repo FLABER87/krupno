@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Error_CannotOpen" xml:space="preserve">
+    <value>"{0}"을(를) 열 수 없습니다. 파일이 손상되었거나 이미지가 아닙니다.</value>
+  </data>
+  <data name="Error_FormatSizeLimit" xml:space="preserve">
+    <value>{0} 형식은 한 변이 {1} px를 넘는 이미지를 저장할 수 없는데, 결과는 {2}×{3}입니다. TIFF로 저장하거나 더 작은 배율을 선택하세요.</value>
+  </data>
+  <data name="Error_ImageTooLarge" xml:space="preserve">
+    <value>이미지 크기 {0}×{1}이(가) 너무 커서 메모리에서 처리할 수 없습니다.</value>
+  </data>
+  <data name="Error_IntermediateTooLarge" xml:space="preserve">
+    <value>중간 결과가 너무 커서 메모리에서 처리할 수 없습니다.</value>
+  </data>
+  <data name="Error_NeedsStoreExtension" xml:space="preserve">
+    <value>Windows에서 "{0}"을(를) 열 수 없습니다. {1} 형식에는 Microsoft Store의 확장이 필요합니다.</value>
+  </data>
+  <data name="Error_ResultTooLarge" xml:space="preserve">
+    <value>결과 크기 {0}×{1}이(가) 너무 커서 메모리에서 처리할 수 없습니다.</value>
+  </data>
+  <data name="Model_ContradictoryMetadata" xml:space="preserve">
+    <value>모델 메타데이터가 모순됩니다. 창은 최대 {0} px이면서 최소 {1} px여야 합니다.</value>
+  </data>
+  <data name="Model_FileNotFound" xml:space="preserve">
+    <value>모델 파일을 찾을 수 없습니다: {0}</value>
+  </data>
+  <data name="Model_NoScale" xml:space="preserve">
+    <value>모델 출력 [{0}]에서 배율을 확인할 수 없습니다.</value>
+  </data>
+  <data name="Model_OneFixedSide" xml:space="preserve">
+    <value>입력의 한 변만 고정된 모델은 지원되지 않습니다.</value>
+  </data>
+  <data name="Model_RgbOnly" xml:space="preserve">
+    <value>RGB 모델만 지원되지만 이 모델의 입력 채널은 {0}개입니다.</value>
+  </data>
+  <data name="Model_Shape" xml:space="preserve">
+    <value>입력과 출력의 형태가 [1, 3, H, W]여야 합니다.</value>
+  </data>
+  <data name="Model_SingleInput" xml:space="preserve">
+    <value>이미지 입력이 하나인 모델이어야 합니다.</value>
+  </data>
+  <data name="Model_TensorType" xml:space="preserve">
+    <value>텐서 형식 {0}은(는) 지원되지 않습니다. float32 또는 float16이어야 합니다.</value>
+  </data>
+  <data name="Progress_Blending" xml:space="preserve">
+    <value>단순 크기 조정과 혼합 중, 강도 {0}%</value>
+  </data>
+  <data name="Progress_PassReduced" xml:space="preserve">
+    <value>패스 {0}이(가) 원래 크기로는 메모리에 맞지 않아 입력을 {1}×{2}(으)로 줄입니다</value>
+  </data>
+  <data name="Progress_Resizing" xml:space="preserve">
+    <value>{0}×{1} 크기로 조정 중</value>
+  </data>
+  <data name="Progress_TileFromLimit" xml:space="preserve">
+    <value>타일 {0} px(메모리 부족 후 선택됨)</value>
+  </data>
+  <data name="Progress_TileReduced" xml:space="preserve">
+    <value>{0}×{1} 창이 장치에 맞지 않아 타일을 {2} px로 줄입니다</value>
+  </data>
+</root>
