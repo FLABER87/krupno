@@ -180,4 +180,44 @@ public partial class LocalizationTests
         // Fewer forms than the language has (a translation not done yet): the last one is used rather than nothing.
         Assert.Equal("5 x", Plurals.Format("{0} x", 5, uk));
     }
+
+    // ── The installer (installer/Krupno.iss and messages.iss) ──
+
+    /// <summary>The Inno Setup name of a culture: "pt-BR" → "ptbr".</summary>
+    private static string InnoName(string culture) => culture.Replace("-", "").ToLowerInvariant();
+
+    [Fact]
+    public void InstallerHasTheLanguagesOfTheWindow()
+    {
+        string script = File.ReadAllText(Path.Combine(Root, "installer", "Krupno.iss"));
+        var languages = Regex.Matches(script, @"^Name: ""(\w+)""; MessagesFile: ""([^""]+)""", RegexOptions.Multiline)
+            .ToDictionary(m => m.Groups[1].Value, m => m.Groups[2].Value);
+        Assert.Equal(UiLanguage.All.Select(l => InnoName(l.Culture)).Order(StringComparer.Ordinal),
+            languages.Keys.Order(StringComparer.Ordinal));
+        // The messages files that Inno Setup doesn't install are kept next to the script.
+        Assert.All(languages.Values.Where(f => !f.StartsWith("compiler:", StringComparison.Ordinal)),
+            f => Assert.True(File.Exists(Path.Combine(Root, "installer", f.Replace('\\', Path.DirectorySeparatorChar))), $"{f} is missing"));
+    }
+
+    [Fact]
+    public void InstallerMessagesExistInEveryLanguage()
+    {
+        var messages = File.ReadAllLines(Path.Combine(Root, "installer", "messages.iss"))
+            .Select(line => Regex.Match(line, @"^(\w+)\.(\w+)="))
+            .Where(m => m.Success)
+            .GroupBy(m => m.Groups[1].Value, m => m.Groups[2].Value)
+            .ToDictionary(g => g.Key, g => g.ToList());
+        Assert.Equal(UiLanguage.All.Select(l => InnoName(l.Culture)).Order(StringComparer.Ordinal),
+            messages.Keys.Order(StringComparer.Ordinal));
+        var english = messages["en"];
+        Assert.Equal(english.Count, english.Distinct().Count());
+        Assert.All(messages, m => Assert.Equal(english.Order(StringComparer.Ordinal), m.Value.Order(StringComparer.Ordinal)));
+
+        // Every {cm:...} of the script is ours or one of Inno Setup's own.
+        string script = File.ReadAllText(Path.Combine(Root, "installer", "Krupno.iss"));
+        string[] innoOwn = ["CreateDesktopIcon", "AdditionalIcons", "LaunchProgram"];
+        var used = Regex.Matches(script, @"\{cm:(\w+)").Select(m => m.Groups[1].Value).Distinct();
+        Assert.All(used.Except(innoOwn), name => Assert.Contains(name, english));
+        Assert.All(english, name => Assert.Contains($"{{cm:{name}}}", script));
+    }
 }
