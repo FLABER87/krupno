@@ -42,6 +42,46 @@ def expect_nearest(src_name, out_name, scale, keep):
     check(out_name, ok, f"max diff {int(np.abs(got - exp).max())}" if got.shape == exp.shape else f"shape {got.shape} != {exp.shape}")
 
 
+def lanczos_weights(src, dst):
+    """The weights of Resampler.Kernel.Create: Lanczos-3, stretched when downscaling, cut off at the edges and normalized."""
+    scale = dst / src
+    filter_scale = max(1.0, 1.0 / scale)
+    support = 3.0 * filter_scale
+    max_count = int(np.ceil(support * 2)) + 1
+    weights = np.zeros((dst, src))
+    for i in range(dst):
+        center = (i + 0.5) / scale
+        left = max(0, int(np.floor(center - support)))
+        right = min(src, int(np.ceil(center + support)))
+        n = min(right - left, max_count)
+        x = (np.arange(left, left + n) + 0.5 - center) / filter_scale
+        k = np.where(np.abs(x) < 3, np.sinc(x) * np.sinc(x / 3), 0.0)
+        weights[i, left:left + n] = k / k.sum() if k.sum() != 0 else 1.0 / n
+    return weights
+
+
+def lanczos(a, height, width):
+    """Resampler.Resize before rounding, per channel: the horizontal pass, then the vertical one."""
+    rows = np.einsum("xw,hwc->hxc", lanczos_weights(a.shape[1], width), a.astype(np.float64))
+    return np.einsum("yh,hxc->yxc", lanczos_weights(a.shape[0], height), rows)
+
+
+def expect_blend(out_name, network, src, strength, alpha=None):
+    """--strength: network + (1 - strength) × (plain - network), the plain resize clipped to 0..255 like a saved image.
+    Computed in float64 here, so a pixel may be off by 1 at a rounding boundary. alpha: the alpha it must keep exactly."""
+    if not (out / out_name).exists():
+        return check(out_name, False, "file missing")
+    plain = np.clip(lanczos(src, network.shape[0], network.shape[1]), 0, 255)
+    exp = np.clip(np.floor(plain + strength * (network - plain) + 0.5), 0, 255)
+    got = np.asarray(Image.open(out / out_name)).astype(np.int32)
+    if got.shape[:2] != exp.shape[:2]:
+        return check(out_name, False, f"shape {got.shape} != {exp.shape}")
+    diff = int(np.abs(got[..., :3] - exp).max())
+    alpha_ok = alpha is None or (got.shape[2] == 4 and bool((got[..., 3] == alpha).all()))
+    check(out_name, diff <= 1 and alpha_ok, f"max diff {diff} (≤1) from the blend with Lanczos"
+          + (f", alpha {'kept' if alpha_ok else 'changed'}" if alpha is not None else ""))
+
+
 def expect_model(label, text):
     """Model name and scale in the CLI output: shows that the metadata was read."""
     check(f"{label}.log", text in log(label), f'"Model: {text}"')
@@ -73,6 +113,14 @@ rgb_ok = got.shape[:2] == exp_rgb.shape[:2] and got.shape[2] == 4 and int(np.abs
 pil_alpha = np.asarray(Image.fromarray(src[..., 3].astype(np.uint8)).resize((257 * 4, 129 * 4), Image.LANCZOS)).astype(np.int32)
 alpha_err = float(np.abs(got[..., 3] - pil_alpha).mean()) if got.shape[2] == 4 else 999
 check("alpha_red.png", rgb_ok and alpha_err < 1.5, f"rgb exact={rgb_ok}, alpha mean diff vs Pillow Lanczos {alpha_err:.2f}")
+
+# Strength: the network's result mixed with a plain Lanczos resize of the pixels the network saw (with transparency, the
+# colors filled in under alpha 0); the alpha is the one of the full-strength result.
+noise = load(img / "noise_300x200.png")
+expect_blend("noise_red_s50.png", np.repeat(np.repeat(noise, 4, 0), 4, 1) * np.array([1, 0, 0]), noise, 0.5)
+expect_blend("alpha_red_s30.png", exp_rgb, bled, 0.3, alpha=got[..., 3] if got.shape[2] == 4 else None)
+check("strength_0.log", "--strength" in log("strength_0") and not (out / "strength_0.png").exists(),
+      " | ".join(line for line in log("strength_0").splitlines() if line.strip()) or "empty output")
 
 # Fractional scale: ×2.5 with a ×4 model means downscaling the ×4 result with a Lanczos filter.
 got = load(out / "noise_red_x2_5.png")

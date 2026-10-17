@@ -48,6 +48,10 @@ Run "big_red_notile"  @("$img\big_1500x1000.png", "-m", "$mod\nearest_red_x4.onn
 Run "alpha_red"       @("$img\alpha_257x129.png", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\alpha_red.png")
 Run "noise_red_x2_5"  @("$img\noise_300x200.png", "-m", "$mod\nearest_red_x4.onnx", "-s", "2.5", "-o", "$out\noise_red_x2_5.png")
 Run "noise_red_x8"    @("$img\noise_300x200.png", "-m", "$mod\nearest_red_x4.onnx", "-s", "8", "-o", "$out\noise_red_x8.png")
+# Strength: the network's result mixed with a plain Lanczos resize; with transparency the alpha must stay as at full strength.
+Run "noise_red_s50"   @("$img\noise_300x200.png", "-m", "$mod\nearest_red_x4.onnx", "--strength", "50", "-o", "$out\noise_red_s50.png")
+Run "alpha_red_s30"   @("$img\alpha_257x129.png", "-m", "$mod\nearest_red_x4.onnx", "--strength", "30", "-o", "$out\alpha_red_s30.png")
+Run "strength_0"      @("$img\noise_300x200.png", "-m", "$mod\nearest_red_x4.onnx", "--strength", "0", "-o", "$out\strength_0.png") -Expect 2
 Run "orient6_red"     @("$img\orient6.jpg", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\orient6_red.png")
 if (Test-Path -LiteralPath "$img\icc_60x40.png") {
     Run "icc_red"     @("$img\icc_60x40.png", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\icc_red.png")

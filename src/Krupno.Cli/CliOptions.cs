@@ -25,6 +25,8 @@ internal sealed class CliOptions
           -q, --quality <1-100>   JPEG quality (default: 95)
           -t, --tile <px>         tile size; 0 = no tiling (default: 384)
               --pad <px>          tile overlap (default: 32; 64 leaves no visible seams even with deep models)
+              --strength <1-100>  how much of the network's result to keep, in percent; the rest is a plain
+                                  Lanczos resize, which tones down invented textures (default: 100)
           -d, --device <dev>      auto | cpu | gpu0, gpu1, … (default: auto)
               --list-models       list the models found
               --list-devices      list the devices
@@ -41,6 +43,7 @@ internal sealed class CliOptions
     public int Quality { get; private set; } = 95;
     public int Tile { get; private set; } = 384;
     public int Padding { get; private set; } = 32;
+    public int Strength { get; private set; } = 100;
     public string Device { get; private set; } = "auto";
     public bool ListModels { get; private set; }
     public bool ListDevices { get; private set; }
@@ -79,6 +82,9 @@ internal sealed class CliOptions
                     break;
                 case "--pad":
                     options.Padding = ParseInt(arg, Value(), 0, 256);
+                    break;
+                case "--strength":
+                    options.Strength = ParseInt(arg, Value().TrimEnd('%'), 1, 100);
                     break;
                 case "-d" or "--device":
                     options.Device = Value();

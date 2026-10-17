@@ -36,8 +36,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 {
     private const int CompactModelCount = 3;
     private const int ThumbnailHeight = 128;
-    /// <summary>The range of the quality slider.</summary>
+    /// <summary>The ranges of the quality and strength sliders.</summary>
     private const int MinJpegQuality = 60, MaxJpegQuality = 100;
+    private const int MinStrength = 10, MaxStrength = 100;
 
     private readonly AppSettings _settings;
     private readonly List<ModelItem> _allModels = [];
@@ -65,6 +66,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private (int Width, int Height)? _sourceSize;
     private ModelItem? _selectedModel;
     private bool _showAllModels;
+    private int _strength = MaxStrength;
     private Option<double> _selectedScale;
     private Option<ImageFileFormat> _selectedFormat;
     private int _jpegQuality = 92;
@@ -103,6 +105,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _selectedDevice = Devices.FirstOrDefault(d => d.Value == savedDevice) ?? Devices[0];
 
         // The choices from the last session; a value the window doesn't offer (an edited settings file) falls back to the default.
+        if (_settings.Strength is int strength)
+            _strength = Math.Clamp(strength, MinStrength, MaxStrength);
         Scales = [new(2, "×2"), new(3, "×3"), new(4, "×4"), new(8, "×8")];
         _selectedScale = Scales.FirstOrDefault(s => s.Value == _settings.Scale) ?? Scales[2];
 
@@ -243,6 +247,22 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             }
         }
     }
+
+    /// <summary>How much of the network's result goes into the output, in percent; the rest is a plain resize of the original.</summary>
+    public int Strength
+    {
+        get => _strength;
+        set
+        {
+            if (SetProperty(ref _strength, value))
+            {
+                OnPropertyChanged(nameof(StrengthText));
+                OnOutputSettingsChanged();
+            }
+        }
+    }
+
+    public string StrengthText => $"{Strength}%";
 
     // ── Scale and saving ────────────────────────────────────────────
 
@@ -705,7 +725,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             return;
 
         var files = Files.ToList();
-        var settings = (Scale: SelectedScale.Value, Tile: SelectedTile.Value, Format: SelectedFormat.Value,
+        var settings = (Scale: SelectedScale.Value, Tile: SelectedTile.Value, Strength: Strength, Format: SelectedFormat.Value,
             Quality: JpegQuality, Folder: OutputFolder);
         // All names up front: a result must not overwrite a queued source ("photo.png" → "photo_x4.png" while
         // "photo_x4.png" waits in the queue) or another result ("photo.jpg" and "photo.png" → "photo_x4.png").
@@ -757,7 +777,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
             var model = await GetModelAsync();
             var upscaler = new Upscaler(model);
-            var options = new UpscaleOptions { Scale = settings.Scale, TileSize = settings.Tile };
+            var options = new UpscaleOptions { Scale = settings.Scale, TileSize = settings.Tile, Strength = settings.Strength / 100.0 };
 
             for (int i = 0; i < files.Count; i++)
             {
@@ -1130,6 +1150,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _settings.DeviceKind = device.Kind;
         _settings.DeviceName = device.AdapterName;
         _settings.DeviceIndex = device.Kind == DeviceKind.Gpu ? device.AdapterIndex : null;
+        _settings.Strength = Strength;
         _settings.Scale = SelectedScale.Value;
         _settings.Format = SelectedFormat.Value;
         _settings.JpegQuality = JpegQuality;

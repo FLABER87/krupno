@@ -28,6 +28,9 @@ public sealed class AppSettings
 
     public int? DeviceIndex { get; set; }
 
+    /// <summary>How much of the network's result goes into the output, in percent.</summary>
+    public int? Strength { get; set; }
+
     /// <summary>The final scale (×2, ×3, ×4, ×8).</summary>
     public double? Scale { get; set; }
 

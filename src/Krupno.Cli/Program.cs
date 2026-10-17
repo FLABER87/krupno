@@ -91,7 +91,10 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
     if (jobs.Count == 0)
         throw new CliException($"No supported images found in \"{options.Input}\".");
     var upscaler = new Upscaler(model);
-    var upscaleOptions = new UpscaleOptions { Scale = options.Scale, TileSize = options.Tile, TilePadding = options.Padding };
+    var upscaleOptions = new UpscaleOptions
+    {
+        Scale = options.Scale, TileSize = options.Tile, TilePadding = options.Padding, Strength = options.Strength / 100.0,
+    };
 
     Console.WriteLine($"Model:  {model.Info}{(model.Info.IsHalfPrecision ? ", fp16" : "")}");
     Console.WriteLine($"Device: {model.Device}");

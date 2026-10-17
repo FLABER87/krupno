@@ -18,6 +18,10 @@ public sealed record UpscaleOptions
     /// <summary>Context around each tile in source pixels; removes seams where tiles meet.
     /// For RealESRGAN_x4plus: 16 px leaves up to 30 levels at a seam, 32 px up to 9 on 0.01% of pixels, 64 px is indistinguishable from an untiled run.</summary>
     public int TilePadding { get; init; } = 32;
+
+    /// <summary>How much of the network's result goes into the output, above 0 and up to 1. The rest is a plain Lanczos resize of
+    /// the source: below 1 it tones down invented textures and oversharpening.</summary>
+    public double Strength { get; init; } = 1;
 }
 
 /// <summary>A finished tile as fractions of the current pass's image sides (0..1), for highlighting in the preview.</summary>
@@ -56,6 +60,8 @@ public sealed class Upscaler(UpscaleModel model)
         IProgress<UpscaleProgress>? progress = null, CancellationToken cancellationToken = default)
     {
         options ??= UpscaleOptions.Default;
+        if (!(options.Strength > 0 && options.Strength <= 1))
+            throw new ArgumentOutOfRangeException(nameof(options), options.Strength, "The strength must be above 0 and at most 1.");
         int modelScale = model.Info.Scale;
         double scale = options.Scale > 0 ? options.Scale : modelScale;
 
@@ -67,7 +73,8 @@ public sealed class Upscaler(UpscaleModel model)
         // are filled from the visible ones first, otherwise the (usually black) color stored there bleeds into the edges.
         byte[]? alpha = input.HasTransparency() ? input.ExtractAlpha() : null;
         int passes = PassCount(scale, modelScale);
-        var current = alpha is null ? input : input.BleedTransparentColors();
+        var source = alpha is null ? input : input.BleedTransparentColors();
+        var current = source;
         for (int pass = 1; pass <= passes; pass++)
         {
             if (pass == passes)
@@ -94,6 +101,15 @@ public sealed class Upscaler(UpscaleModel model)
         else if (alpha is not null)
         {
             current.SetAlpha(Resampler.ResizePlane(alpha, input.Width, input.Height, current.Width, current.Height, cancellationToken));
+        }
+
+        if (options.Strength < 1)
+        {
+            // The plain resize starts from the pixels the network saw, with the colors under transparency filled in the same way.
+            // The alpha computed above stays.
+            progress?.Report(new UpscaleProgress(passes, passes, 1, 1,
+                $"Blending with a plain resize, strength {(int)Math.Round(options.Strength * 100)}%"));
+            Resampler.BlendResized(source, current, (float)options.Strength, cancellationToken);
         }
 
         cancellationToken.ThrowIfCancellationRequested();
