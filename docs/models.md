@@ -45,6 +45,7 @@ But with `--no-verify` the dynamic size is not checked, so for DAT/HAT/DySample 
 
 - [Phhofm/models](https://github.com/Phhofm/models/releases): BHI/Nomos models for photos, CC-BY-4.0 license (can be bundled with attribution).
 - [Kim2091/UltraSharpV2](https://huggingface.co/Kim2091/UltraSharpV2): CC BY-NC-SA 4.0 license, non-commercial use only.
+- [Remacri](https://openmodeldb.info/models/4x-Remacri) by foolhardy: CC BY-NC-SA 4.0 license, non-commercial use only.
 - [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN/releases): BSD-3-Clause license.
 - [OpenModelDB](https://openmodeldb.info/): hundreds of community models. **Each has its own license**, many are for non-commercial use only.
 
@@ -60,10 +61,24 @@ Speed: on an RTX 3080, 1920×1200 → 7680×4800 frame, second run, including re
 | `4x-UltraSharpV2` | DAT2 | CC BY-NC-SA 4.0 | 42 s, fp32 only | best PSNR/SSIM, softer than DAT2; personal use only |
 | `RealESRGAN_x4plus` | ESRGAN | BSD-3 | 8.6 s (fp32), 4.6 s (fp16) | outdated: "oil painting" look, invents textures |
 | `realesr-general-x4v3` | Compact | BSD-3 | 1.6 s | fast but blurry |
+| `4x_foolhardy_Remacri_fp16` | ESRGAN | CC BY-NC-SA 4.0 | 5.8 s | for [text](#text); on photos it smears textures and draws streaks on rocks |
 
 All three modern models reproduce the structure of the rocks like the original, while Real-ESRGAN paints a forest in their place.
-The speeds in the table are for the models from the `models-v2` release: RealPLKSR and DAT2 fp16 have a dynamic input (`torch.export`), DAT2 fp32 and UltraSharpV2 a static 256×256 one.
+The speeds in the table are for the models from the `models-v2` release (`models-v3` has the same files and Remacri): RealPLKSR, DAT2 fp16 and Remacri have a dynamic input (`torch.export` for the first two), DAT2 fp32 and UltraSharpV2 a static 256×256 one.
 In `models-v1` all three modern models had a static input. The difference between the two is shown below.
+
+### Text
+
+Models make small text sharp, but they may also change it, digits included.
+Tested on a document rendered at 4 times its size, downscaled 4 times and recompressed as JPEG (q70), with English and Russian text, and on a sign in a photo, downscaled the same way:
+
+- Text 12 px high or larger (a sign, a menu, a clean screenshot): every model keeps it right.
+- Capitals about 9 px high: RealPLKSR, DAT2 and UltraSharpV2 already change some digits (17/245 becomes 17/246).
+- Capitals about 7 px high: every model changes some dates and digits (12/03/2026 becomes 12/08/2026 or 12/00/2026), Remacri the least: it keeps those dates and the 9 px text right. It also has the highest PSNR on the document: 23.0 dB, against 21.7 for RealPLKSR.
+
+Remacri keeps what the image has, JPEG artifacts and noise included, while the other models restore it and redraw letters on the way. That is why it is the "Text and documents" model, and also why it is worse than RealPLKSR on photos.
+Phhofm's siblings of the default model trained without restoration (`4xBHI_realplksr_dysample_multi` and `_multiblur`) keep text no better and break JPEG input into blocks; `_otf_nn` changes digits like the default model.
+No model makes unreadable text reliable: check important numbers against the original.
 
 ### Static or dynamic input
 

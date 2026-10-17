@@ -64,8 +64,8 @@ public sealed class ModelItem : ObservableObject
     private sealed record Preset(string Title, string Subtitle, ModelBadge Badge, int Order);
 
     /// <summary>
-    /// Known models: order and descriptions follow the photo comparison (docs/models.md, "Which model to use").
-    /// The first three are shown in the collapsed list.
+    /// Known models: order and descriptions follow the photo comparison (docs/models.md, "Which model to use"); Remacri
+    /// follows the text comparison ("Text"). The first three are shown in the collapsed list.
     /// </summary>
     private static readonly Dictionary<string, Preset> Known = new()
     {
@@ -73,9 +73,10 @@ public sealed class ModelItem : ObservableObject
             new(Strings.Model_PhotoFast, $"BHI RealPLKSR · {Strings.Speed_Fast}", ModelBadge.Recommended, 0),
         ["4xbhi_dat2_real_fp16"] = new(Strings.Model_PhotoDetail, $"BHI DAT2 · {Strings.Speed_Slow}", ModelBadge.None, 1),
         ["4x-ultrasharpv2"] = new(Strings.Model_General, $"UltraSharpV2 · {Strings.Speed_Slow}", ModelBadge.NonCommercial, 2),
-        ["4xbhi_dat2_real"] = new(Strings.Model_PhotoDetail, $"BHI DAT2 fp32 · {Strings.Speed_VerySlow}", ModelBadge.None, 3),
-        ["realesrgan_x4plus_fp16"] = new(Strings.Model_Classic, $"Real-ESRGAN x4plus · {Strings.Speed_Fast}", ModelBadge.None, 4),
-        ["realesrgan_x4plus"] = new(Strings.Model_Classic, "Real-ESRGAN x4plus fp32", ModelBadge.None, 5),
-        ["realesr-general-x4v3"] = new(Strings.Model_Draft, $"Real-ESRGAN general · {Strings.Speed_VeryFast}", ModelBadge.None, 6),
+        ["4x_foolhardy_remacri_fp16"] = new(Strings.Model_Text, $"Remacri · {Strings.Speed_Fast}", ModelBadge.NonCommercial, 3),
+        ["4xbhi_dat2_real"] = new(Strings.Model_PhotoDetail, $"BHI DAT2 fp32 · {Strings.Speed_VerySlow}", ModelBadge.None, 4),
+        ["realesrgan_x4plus_fp16"] = new(Strings.Model_Classic, $"Real-ESRGAN x4plus · {Strings.Speed_Fast}", ModelBadge.None, 5),
+        ["realesrgan_x4plus"] = new(Strings.Model_Classic, "Real-ESRGAN x4plus fp32", ModelBadge.None, 6),
+        ["realesr-general-x4v3"] = new(Strings.Model_Draft, $"Real-ESRGAN general · {Strings.Speed_VeryFast}", ModelBadge.None, 7),
     };
 }

@@ -222,6 +222,9 @@
   <data name="Model_PhotoFast" xml:space="preserve">
     <value>Фото, швидко</value>
   </data>
+  <data name="Model_Text" xml:space="preserve">
+    <value>Текст і документи</value>
+  </data>
   <data name="ModelDetails_CantRead" xml:space="preserve">
     <value>Не вдається прочитати модель: {0}</value>
   </data>

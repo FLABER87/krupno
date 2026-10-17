@@ -222,6 +222,9 @@
   <data name="Model_PhotoFast" xml:space="preserve">
     <value>Fotoğraf, hızlı</value>
   </data>
+  <data name="Model_Text" xml:space="preserve">
+    <value>Metin ve belgeler</value>
+  </data>
   <data name="ModelDetails_CantRead" xml:space="preserve">
     <value>Model okunamıyor: {0}</value>
   </data>

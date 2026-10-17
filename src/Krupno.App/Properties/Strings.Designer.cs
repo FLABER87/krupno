@@ -688,7 +688,16 @@ namespace Krupno.App.Properties {
                 return ResourceManager.GetString("Model_PhotoFast", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Looks up a localized string similar to Text and documents.
+        /// </summary>
+        public static string Model_Text {
+            get {
+                return ResourceManager.GetString("Model_Text", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Can't read the model: {0}.
         /// </summary>
