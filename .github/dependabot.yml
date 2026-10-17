@@ -1,5 +1,5 @@
 # Update PRs for ONNX Runtime (Directory.Packages.props) and the actions in the workflows; tests.yml checks each one.
-# Python is left out: tools/requirements.txt sets deliberate lower bounds (see the PyTorch notes in the README), which
+# Python is left out: tools/requirements.txt sets deliberate lower bounds (see the PyTorch notes in docs/models.md), which
 # Dependabot would raise, and tests/requirements.txt pins nothing.
 version: 2
 updates:
