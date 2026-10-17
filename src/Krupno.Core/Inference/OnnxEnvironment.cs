@@ -13,8 +13,8 @@ internal static class OnnxEnvironment
     {
         var env = OrtEnv.Instance();
         // Official ONNX Runtime builds for Windows write telemetry via TraceLogging by default, and Windows may send it to
-        // Microsoft. Krupno sends nothing over the network (see the code signing policy in the README), so turn it off before
-        // the first session or device list, not only when a model is loaded.
+        // Microsoft. Apart from the update check, Krupno sends nothing over the network (see "Privacy" in
+        // installer/signpath/README.md), so turn it off before the first session or device list, not only when a model is loaded.
         env.DisableTelemetryEvents();
         return env;
     });

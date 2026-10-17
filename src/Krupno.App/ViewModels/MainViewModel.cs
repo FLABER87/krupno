@@ -45,7 +45,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     /// <summary>The ranges of the quality and strength sliders.</summary>
     private const int MinJpegQuality = 60, MaxJpegQuality = 100;
     private const int MinStrength = 10, MaxStrength = 100;
-    /// <summary>The tile overlap of "Seamless tiles": 64 px leaves no visible seams even with deep models (README, "How it works").</summary>
+    /// <summary>The tile overlap of "Seamless tiles": 64 px leaves no visible seams even with deep models (docs/how-it-works.md).</summary>
     private const int SeamlessPadding = 64;
     /// <summary>The limits of "Other", the same as the command-line tool's.</summary>
     private const double MaxCustomScale = 64;

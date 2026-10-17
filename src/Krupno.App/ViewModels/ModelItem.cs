@@ -64,7 +64,7 @@ public sealed class ModelItem : ObservableObject
     private sealed record Preset(string Title, string Subtitle, ModelBadge Badge, int Order);
 
     /// <summary>
-    /// Known models: order and descriptions follow the photo comparison (README, "Which model to use").
+    /// Known models: order and descriptions follow the photo comparison (docs/models.md, "Which model to use").
     /// The first three are shown in the collapsed list.
     /// </summary>
     private static readonly Dictionary<string, Preset> Known = new()

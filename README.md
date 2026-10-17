@@ -2,29 +2,94 @@
 
 [![Tests](https://github.com/FLABER87/krupno/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/FLABER87/krupno/actions/workflows/tests.yml)
 
-**Krupno** is an AI image upscaler for Windows built on .NET 10, WPF and Windows ML (ONNX Runtime with DirectML).
-It runs on any DirectX 12 GPU (NVIDIA, AMD or Intel, integrated ones included) and falls back to the CPU. On Windows 11 24H2 and later it can also use the GPU and NPU vendors' own execution providers (NVIDIA TensorRT-RTX, Intel OpenVINO and others), which Windows downloads on request.
-It needs Windows 10 1903 or later.
-It comes as a desktop app (`Krupno.exe`) and a command-line tool (`krupno-cli.exe`).
-Get it from [Releases](https://github.com/FLABER87/krupno/releases): the installer downloads the models you pick during setup,
-and the portable ZIP comes without models (take them from [models-v2](https://github.com/FLABER87/krupno/releases/tag/models-v2)).
-See [Models](#models) for how to convert other PyTorch weights to ONNX.
-The code is MIT-licensed, and each model has its own license.
+**Krupno** is an AI image upscaler for Windows. It enlarges photos and other images ×2, ×4 or to any size with neural networks, in a window (`Krupno.exe`) or from the command line (`krupno-cli.exe`).
 
-The app's only third-party dependency is `Microsoft.Windows.AI.MachineLearning` (Windows ML: ONNX Runtime 1.27 with its .NET API, DirectML and the catalog of vendor execution providers). It replaced `Microsoft.ML.OnnxRuntime.DirectML`, which stopped at 1.24.4. Windows ML needs a Windows SDK version in the target framework (`net10.0-windows10.0.19041.0`), which brings the C#/WinRT projection (`Microsoft.Windows.SDK.NET.dll`, about 25 MB).
-Images are read and written with WIC (built into Windows), the UI is WPF, and GPUs are enumerated directly through DXGI.
+- Runs on any DirectX 12 GPU (NVIDIA, AMD or Intel, integrated ones included) and falls back to the CPU. On Windows 11 24H2 and later it can also use the GPU and NPU vendors' accelerators, such as NVIDIA TensorRT-RTX and Intel OpenVINO.
+- Large images are processed in tiles that fit in video memory, without visible seams.
+- Keeps transparency, EXIF rotation and color profiles. Reads PNG, JPEG, TIFF, BMP, GIF, WebP and HEIC; writes PNG, JPEG, TIFF and BMP.
+- Works offline: apart from an update check you can turn off, it sends nothing over the network.
+- The window speaks 16 languages.
+- Needs Windows 10 1903 or later, x64.
 
-## Layout
+## Download and install
 
+Get the latest version from [Releases](https://github.com/FLABER87/krupno/releases):
+
+- **Installer** (`Krupno-<version>-setup-x64.exe`, recommended). By default it installs Krupno for the current user, to `%LOCALAPPDATA%\Programs\Krupno`, without administrator rights; "for all users" installs it to Program Files. .NET comes with it, so nothing else needs to be installed. During setup you pick the [models](#models) to download, and optionally:
+  - a desktop shortcut;
+  - the install folder in PATH, so `krupno-cli` runs from any console;
+  - "Upscale with Krupno" in the Explorer context menu of images and folders;
+  - the check for new versions at startup (ticked by default, see [Updates](#updates)).
+- **Portable ZIP** (`Krupno-<version>-win-x64.zip`): unpack it and run `Krupno.exe`. It comes without models: download them from the [models-v2](https://github.com/FLABER87/krupno/releases/tag/models-v2) release into its `models` folder or into `%LOCALAPPDATA%\Krupno\models`.
+
+The files are not code-signed yet, so Windows SmartScreen may warn on the first launch ("More info" → "Run anyway"). Each release has a `SHA256SUMS.txt` to check the downloads against.
+Uninstalling keeps your settings, logs and own models in `%LOCALAPPDATA%\Krupno`.
+
+## Window
+
+Drop images or a folder into the window, click "Select files", paste with Ctrl+V or use "Upscale with Krupno" in Explorer. Then pick a model, a scale and a format, and click "Upscale".
+
+- **Strength** (10–100%) blends the network's result with a plain resize, to tone down the textures a model invents and its oversharpening.
+- **Scale:** ×2, ×4 and so on, or "Other" for a scale of your own or a width, height or long side in pixels.
+- **Comparison:** a slider or two frames side by side; the mouse wheel zooms, a double click toggles "Fit to window" and 1:1.
+- **A batch** is shown as a strip of thumbnails with each file's status.
+- **Settings** (the gear button, or Ctrl+,): the device and tile size ("Auto" by default), "Seamless tiles", "Test-time augmentation", the language and the update check.
+- **If something fails,** "Copy error details" puts what a bug report needs on the clipboard. The window's logs are in `%LOCALAPPDATA%\Krupno\logs`.
+
+| Keys | Action |
+|---|---|
+| Ctrl+O | open files |
+| Ctrl+V | paste files or an image |
+| Ctrl+Enter | upscale |
+| Esc | cancel processing |
+| Ctrl+0 / Ctrl+1 | fit to window / pixel for pixel |
+| Ctrl+Plus / Ctrl+Minus | zoom in / zoom out |
+| Ctrl+C | copy the result |
+| Ctrl+, | settings |
+
+## Command-line tool
+
+```bash
+krupno-cli photo.jpg                               # → photo_x4.png next to the source
+krupno-cli photo.jpg -s 2 -f jpg -q 92             # ×2 result as JPEG
+krupno-cli C:\photos -o C:\photos_x4               # a whole folder
+krupno-cli C:\photos -r -o D:\x4 --skip-existing   # subfolders too; only the images without a result
+krupno-cli photo.jpg --long-side 3840              # 3840 px on the longer side
+krupno-cli --list-models --list-devices
 ```
-src/Krupno.Core    library: model, tiling, inference, resampling, codecs
-src/Krupno.Cli     command-line tool krupno-cli.exe
-src/Krupno.App     WPF window (Krupno.exe)
-tests/             unit tests (Krupno.Core.Tests), synthetic tests through the CLI and UI scripts
-installer/         Inno Setup installer and release build
-tools/             PyTorch → ONNX model conversion (Python, development only)
-models/            put .onnx files here (not committed to git)
-```
+
+`krupno-cli --help` lists every option. A result never replaces a source image. Without `-m`, the default model is used (marked with an asterisk in `--list-models`).
+
+## Models
+
+Krupno runs ONNX upscaling models. The installer downloads the ones you tick from the [models-v2](https://github.com/FLABER87/krupno/releases/tag/models-v2) release; the ZIP comes without them.
+
+| Model | In the window | License | Time¹ |
+|---|---|---|---|
+| `4xBHI_realplksr_dysample_real` | Photo, fast (**default**) | CC BY 4.0 | 6.7 s |
+| `4xBHI_dat2_real` (fp16 and fp32) | Photo, maximum detail | CC BY 4.0 | 33 s (fp16) |
+| `4x-UltraSharpV2` | General purpose | CC BY-NC-SA 4.0, **non-commercial only** | 42 s |
+| `RealESRGAN_x4plus` (fp16 and fp32) | Classic | BSD-3-Clause | 4.6 s (fp16) |
+| `realesr-general-x4v3` | Draft | BSD-3-Clause | 1.6 s |
+
+¹ A 1920×1200 photo upscaled ×4 on an RTX 3080.
+
+**Each model has its own license**, which Krupno's MIT license does not cover:
+
+- The BHI models are by Philip Hofmann ([Phhofm/models](https://github.com/Phhofm/models)), under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/): commercial use is allowed, with attribution.
+- UltraSharpV2 is by [Kim2091](https://huggingface.co/Kim2091/UltraSharpV2), under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/): **non-commercial use only**. The window marks it as such.
+- The Real-ESRGAN models are by Xintao Wang ([Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)), under the BSD 3-Clause license.
+
+Other models work too: put `.onnx` files into `%LOCALAPPDATA%\Krupno\models` ("Open models folder" in the window). To convert PyTorch weights (`.pth`, `.safetensors`), use `tools/convert_to_onnx.py`; see [docs/models.md](docs/models.md) for how, where to get weights and how the models compare. Community models, for example from [OpenModelDB](https://openmodeldb.info/), each have their own license, and many are for non-commercial use only.
+
+## Updates
+
+At startup the window asks github.com which release of Krupno is the latest: one request that carries only the app's version. If there is a newer one, a line above the settings says so:
+
+- in an installed copy, "Update" downloads the new installer, checks it against the release's `SHA256SUMS.txt` and installs it in the same mode (for you or for all users), keeping your models and choices;
+- the portable ZIP links to the release page instead.
+
+Nothing is downloaded until you click "Update". To turn the check off, clear "Check for new versions" during installation or "Check for updates" in "Settings".
 
 ## Building
 
@@ -32,275 +97,16 @@ Requires the .NET SDK 10.
 
 ```bash
 dotnet build Krupno.slnx -c Release
-```
-
-The built programs end up here:
-- `src/Krupno.Cli/bin/Release/net10.0-windows10.0.19041.0/win-x64/krupno-cli.exe`
-- `src/Krupno.App/bin/Release/net10.0-windows10.0.19041.0/win-x64/Krupno.exe`
-
-## Installer
-
-The installer is built with Inno Setup. It installs the app together with .NET (self-contained publish), so .NET does not need to be installed separately.
-The models are not bundled with the installer. You can tick them in the component list, and the installer downloads them from the [models-v2](https://github.com/FLABER87/krupno/releases/tag/models-v2) release and verifies their SHA-256.
-When the app is updated, a model with the same SHA-256 is not downloaded again.
-Setup and the uninstaller don't replace or remove the files of a Krupno that is running: every window and `krupno-cli` holds a named mutex (`RunningMarker`, the installer's `AppMutex`; anyone may wait on it, so Setup sees it when run as an administrator or elevated), and while one does, Setup asks for Krupno to be closed instead of having the Restart Manager close it in the middle of processing. Closing the window during a run cancels it and finishes the result being written first. Once past that check, Setup holds a mutex of its own (`SetupMutex`) until it ends, and no processing starts meanwhile, in the window (a message says why) or in `krupno-cli` (it exits with an error).
-The names depend on the install mode. A copy installed for the current user (or not installed at all: the ZIP, a build) uses its Windows session's `Krupno-Running` and `Krupno-Setup`. A copy installed for all users (its folder is in the `HKLM` uninstall entry) uses the global `Global\Krupno-Running-AllUsers` and `Global\Krupno-Setup-AllUsers`, as it may also be running in another user's session (Fast User Switching, Remote Desktop), out of reach of a session's names; creating them needs no privilege, so a standard user's Krupno holds them too. Setup takes the names of the mode it installs in (`{code:}` constants, which it expands once the mode is known), and for all users it also checks and holds the session's names, which Krupno 0.2.2 and earlier hold whatever the mode (a copy that old running in another session goes unseen). Global names for every installation would have one user's Setup wait for another user's own copy. The uninstaller checks the names Setup checked when it installed (Inno Setup keeps them in the uninstall log). "Update" in a copy installed for all users doesn't start while another user's Krupno is running either, and says so.
-By default the app is installed for the current user, to `%LOCALAPPDATA%\Programs\Krupno`, without administrator rights. The "for all users" option installs it to Program Files.
-Optional checkboxes:
-- a desktop shortcut;
-- the install folder in PATH, so `krupno-cli` can be run from any console;
-- an "Upscale with Krupno" item in the Explorer context menu for images and folders, for a selection of up to 15 items (Explorer's limit for such items). Explorer starts Krupno.exe for each selected item; every one after the first hands its file to the window already open, so the whole selection lands in one queue;
-- checking for new versions at startup (ticked by default; see [Updates](#window)). The choice goes to `HKCU\Software\Krupno` (`HKLM` for all users) as the app's default. Clearing it in a later installation turns the check off even if it was turned on in the window; an update installed from the window keeps the earlier choice.
-
-Uninstalling removes all of the above and the accelerators' compiled models (`%LOCALAPPDATA%\Krupno\cache`), and leaves the rest of `%LOCALAPPDATA%\Krupno` (settings, logs and your own models) alone. That folder belongs to the account that runs the uninstaller: after a "for all users" installation, the other accounts' compiled models stay in their own `%LOCALAPPDATA%\Krupno\cache` (up to 2 GB each) until they delete it.
-The installer speaks the same languages as the window and picks the one Windows uses; with none of them, it asks. Hong Kong and Macau get Traditional Chinese (Setup matches them by their own language IDs; otherwise it would take the first Chinese one, Simplified). If the wizard runs in a language the app wouldn't pick by itself (one chosen in that dialog, or Brazilian Portuguese on a Portuguese Windows), a first installation writes it to the app's `settings.json`, so the app starts in it too; "Language" in "Settings" changes it later. The Explorer item is named in the language chosen during installation.
-The wizard's own text comes from Inno Setup's messages files: twelve come with Inno Setup, and the Indonesian, Vietnamese and both Chinese ones, which it doesn't install, are kept in `installer/languages` (taken from the `is-6_7_1` tag of [jrsoftware/issrc](https://github.com/jrsoftware/issrc), to match the Inno Setup version the release uses). Two of those lacked the download and verification messages of Inno Setup 6.5+ that the model download shows; Krupno adds them at the end of the file's `[Messages]`. A missing message would fall back to English with a compiler warning, and CI fails on any warning of the installer script.
-Krupno's own text (installation types, components, tasks, the Explorer item) is in `installer/messages.iss`; the model names there are the ones the window shows.
-CI compiles the script without output on every push (`ISCC /O-`), so a broken language or message shows up before a release, and `LocalizationTests` checks that the installer has the window's languages and every message in each of them.
-
-To build the installer and the portable ZIP, you also need Inno Setup 6.5+ (`winget install JRSoftware.InnoSetup`):
-
-```bash
-powershell -ExecutionPolicy Bypass -File installer\build.ps1
-```
-
-The output goes to `artifacts/`: `Krupno-<version>-setup-x64.exe`, `Krupno-<version>-win-x64.zip` and `SHA256SUMS.txt`. The version comes from `<Version>` in `Directory.Build.props`.
-The script publishes `Krupno.exe` and `krupno-cli.exe` into one folder. Models from `models/` are not copied there, the DirectML debug files and `*.pdb` are removed, and the .NET and Windows ML licenses go to `licenses/`.
-The installer lists the models in `installer/Krupno.iss` (file name, size, SHA-256). A new set of models is published as a separate release (`models-v3` and so on), and the link in `Krupno.iss` is updated. Old model releases are never overwritten: already built installers point to them. A model release is published without "Set as the latest release" (`gh release create models-v3 --latest=false`): the window finds a new version of Krupno through the latest release, and a model release in its place would hide one until the next release of the app.
-
-Releases are built by the `.github/workflows/release.yml` workflow. To release a version:
-1. Bump `<Version>` in `Directory.Build.props`.
-2. Push a `v<version>` tag.
-3. The workflow builds the installer and the ZIP and creates a draft release. Publish it manually on GitHub.
-
-Code signing through SignPath Foundation is already built into the workflow. It is turned on by the setup described in [installer/signpath/README.md](installer/signpath/README.md).
-
-## Models
-
-The app works with ONNX models of the shape `[1, 3, H, W] → [1, 3, H·s, W·s]` (RGB, 0..1, fp32 or fp16).
-To get such a model from PyTorch weights, use the conversion script:
-
-```bash
-pip install -r tools/requirements.txt
-python tools/convert_to_onnx.py RealESRGAN_x4plus.pth
-python tools/convert_to_onnx.py 4x-model.safetensors --fp16 --license "CC-BY-NC-SA-4.0"
-```
-
-The script detects the architecture with [spandrel](https://github.com/chaiNNer-org/spandrel): ESRGAN/Real-ESRGAN, Compact, SPAN, RealPLKSR, DAT, HAT, SwinIR, OmniSR and others are supported.
-It writes the scale, the architecture, the input size requirements and the license into the ONNX metadata under `krupno.*` keys.
-Models converted before the project was renamed store the same keys as `upscalr.*`; Krupno reads both.
-
-Export order:
-1. The model is exported with the classic tracer with a dynamic input size and checked against PyTorch on an input of a different size.
-2. If the tracer baked the sizes into the graph, the model is exported again with `torch.export`: height and width are symbolic in the graph, and the exporter refuses if it cannot prove the graph is correct for any size. The result is checked against PyTorch on two more sizes. This happens with DAT/DAT2 (attention windows) and RealPLKSR with DySample (coordinate grid). The script finds the size multiple on its own: for DAT2 it is 8.
-3. If that fails too, the model is exported with a static 256×256 input (`--static-fallback`), and Krupno cuts the image into tiles of exactly that size. The `--no-dynamo` flag skips the second step.
-
-`torch.export` needs the `onnxscript` package. Converting DAT2 to ONNX this way takes several minutes. With PyTorch 2.14 both architectures get a dynamic input. With PyTorch 2.6 only RealPLKSR does, and DAT2 falls back to a static input: the 2.6 exporter is incompatible with the current onnxscript on its operators.
-
-The script adjusts the `torch.export` graph for DirectML:
-- DirectML does not accept `Reshape` with `allowzero=1`, so the script sets `allowzero=0` (upscaler tensors never have zero-sized dimensions);
-- a slice assignment (`x[:, :16] = …`) normally becomes `ScatterND` with transposes and makes RealPLKSR four times slower, so the script builds it from `Slice` and `Concat`;
-- DirectML computes `GridSample` (DySample) incorrectly when a single call outputs more than 2²³ pixels: it fails without any message and simply corrupts the bottom part of the image. The script samples each image of the batch separately. The limit then becomes a 724 px window for ×4, and the script stores it in the metadata (`krupno.size_maximum`). Krupno keeps the window within this limit for any tile: 768 and 1024 px tiles shrink to 724, and "No tiling" (`-t 0`) cuts an image larger than 724 px into windows of that size. In the app window the limit shows up in the model description: "Window up to 724 px".
-
-The script also strips dead weight from the `torch.export` graph: the exporter's debug info in every node (call stacks, module names) and copies of identical buffers (`relative_position_index` in every DAT block). Without this, DAT2 fp16 weighs 51 MB instead of 24.
-
-The `--fp16` flag halves the file size and VRAM usage; the model's input and output stay fp32.
-Before exporting, the script compares the model in fp16 and fp32 right in PyTorch and refuses to export if fp16 produces garbage.
-Example: UltraSharpV2 has an average error of 124 levels, so this model can only be used in fp32.
-Verifying an fp16 model through ONNX Runtime on the CPU takes tens of minutes for heavy models (DAT2); it can be skipped with `--no-verify`.
-But with `--no-verify` the dynamic size is not checked, so for DAT/HAT/DySample specify `--static 256` in that case.
-
-Where to get weights:
-- [Phhofm/models](https://github.com/Phhofm/models/releases): BHI/Nomos models for photos, CC-BY-4.0 license (can be bundled with attribution).
-- [Kim2091/UltraSharpV2](https://huggingface.co/Kim2091/UltraSharpV2): CC BY-NC-SA 4.0 license, non-commercial use only.
-- [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN/releases): BSD-3-Clause license.
-- [OpenModelDB](https://openmodeldb.info/): hundreds of community models. **Each has its own license**, many are for non-commercial use only.
-
-### Which model to use
-
-Tested on a 1920×1200 photo, downscaled 4 times and recompressed as JPEG (q70), then upscaled back.
-Speed: on an RTX 3080, 1920×1200 → 7680×4800 frame, second run, including reading PNG and writing BMP.
-
-| Model | Architecture | License | Speed | Verdict |
-|---|---|---|---|---|
-| `4xBHI_realplksr_dysample_real` | RealPLKSR | CC-BY-4.0 | 6.7 s | **default**: almost as good as DAT2 at Real-ESRGAN speed |
-| `4xBHI_dat2_real` | DAT2 | CC-BY-4.0 | 33 s (fp16), 41 s (fp32) | the most detailed, oversharpens in places |
-| `4x-UltraSharpV2` | DAT2 | CC BY-NC-SA 4.0 | 42 s, fp32 only | best PSNR/SSIM, softer than DAT2; personal use only |
-| `RealESRGAN_x4plus` | ESRGAN | BSD-3 | 8.6 s (fp32), 4.6 s (fp16) | outdated: "oil painting" look, invents textures |
-| `realesr-general-x4v3` | Compact | BSD-3 | 1.6 s | fast but blurry |
-
-All three modern models reproduce the structure of the rocks like the original, while Real-ESRGAN paints a forest in their place.
-The speeds in the table are for the models from the `models-v2` release: RealPLKSR and DAT2 fp16 have a dynamic input (`torch.export`), DAT2 fp32 and UltraSharpV2 a static 256×256 one.
-In `models-v1` all three modern models had a static input. The difference between the two is shown below.
-
-#### Static or dynamic input
-
-Measured under the same conditions: 1920×1200 → 7680×4800 frame, RTX 3080 (10 GB), 32 px overlap.
-"Difference from reference" is the mean difference from PyTorch processing the whole frame at once (480×300 → 1920×1200 test, levels 0–255).
-The lower it is, the less visible the tile seams are.
-
-| Model | Input, tile | Speed | Difference from reference |
-|---|---|---|---|
-| RealPLKSR | static 256 | 7.4 s | 1.37 |
-| RealPLKSR | dynamic, 384 (default) | 6.7 s | 0.89 |
-| DAT2 fp16 | static 256 | 34.3 s | 2.48 |
-| DAT2 fp16 | dynamic, 384 (default) | 32.9 s | 1.19 |
-| DAT2 fp16 | dynamic, 448 | 28.3 s | 0.98 |
-| DAT2 fp32 | static 256 | 43.5 s | 2.47 |
-| DAT2 fp32 | dynamic, 256 | 47.3 s | 2.47 |
-| DAT2 fp32 | dynamic, 320 | 49.4 s | 1.34 |
-| DAT2 fp32 | dynamic, 384 (default), falls back to 320 | 60.7 s; later frames of a batch as with 320 | 1.34 |
-
-- **RealPLKSR**: the dynamic input is faster and leaves smaller seams. With the same tile, the `torch.export` graph runs as fast as the static one.
-- **DAT2 fp16**: the dynamic input with a 448 tile (`-t 448`) pays off: 18% faster, with a 2.5 times smaller difference from the reference. A 512 window no longer fits in VRAM.
-- **DAT2 fp32 and UltraSharpV2** are better exported with a static input (`--no-dynamo`) on a 10 GB card. The same tile in the `torch.export` graph is 7–10% slower: DirectML optimizes its structure worse. A 384 window does not fit in memory, and Krupno reduces the tile to 320. The result is the same as with `-t 320`. About 10 s go to the failed attempt with 384, but only on the first frame of a batch: the following ones start with 320 right away. Previously the tile was halved, down to 192, and a frame took 71.5 s. A 352 window fits only by spilling into shared memory, without any error, and a frame takes 466 s. If you already have a dynamic model, use `-t 256` or `-t 320`.
-
-`.safetensors` is the safer choice: `.pth` files are pickles, so load them only from trusted sources.
-
-## Command-line tool
-
-```bash
-krupno-cli photo.jpg                          # → photo_x4.png next to the source
-krupno-cli photo.jpg -s 2 -f jpg -q 92        # ×2 result as JPEG
-krupno-cli C:\photos -o C:\photos_x4          # a whole folder
-krupno-cli photo.png -m realesr-general-x4v3 -d gpu1 -t 256
-krupno-cli photo.jpg --strength 70              # 70% network, 30% plain Lanczos resize
-krupno-cli photo.jpg --tta                      # all 8 rotations and mirrorings, averaged (8 times slower)
-krupno-cli C:\photos --long-side 3840           # every result 3840 px on its longer side
-krupno-cli C:\photos -r -o D:\x4                # subfolders too, repeated under D:\x4
-krupno-cli C:\photos -r -o D:\x4 --skip-existing   # resume: only the images without a result
-krupno-cli *.jpg scan.png -o C:\x4             # several inputs; krupno-cli expands the pattern itself
-krupno-cli --list-models --list-devices
-krupno-cli --install-accelerators              # download the vendors' execution providers Windows ML offers
-krupno-cli photo.jpg -d acc0                    # run on the first of them (see --list-devices)
-```
-
-See `krupno-cli --help` for details. Ctrl+C cancels processing. While it runs, Windows does not go to sleep on idle.
-
-A result never replaces a source image or another result of the same run. If `-o` points at the source's own folder, the result is named as next to the source (`photo_x4.png`). When a folder has both `photo.jpg` and `photo.png`, neither gets `photo.png` (or `photo_x4.png`): each takes its source's extension, `photo (jpg).png` and `photo (png).png`. So the name depends on the image, not on which others are in the folder, and an image added later can't take the name of another one's earlier result. Only images that even the extension doesn't tell apart (two `photo.jpg` from different folders into one `-o`) get ` (2)`. An existing file from an earlier run is overwritten, unless `--skip-existing` is given: then that image is left out, and if nothing is left the model isn't even loaded.
-
-Several files, folders and patterns can be given at once. cmd and PowerShell don't expand `*.jpg` for a program like krupno-cli, so it expands patterns itself, in the file name only (`photos\*.jpg`, not `pho*\a.jpg`); `*.jpg` doesn't match `.jpeg`. A file or pattern without `-o` keeps its result next to the source, a folder fills `<folder>_upscaled`; with `-o` everything goes into that folder. With `-r` the images in subfolders are taken too, and their folders are repeated in the output folder. An image found in a folder or by a pattern that is the result of another one in the same command is left out, and the tool says how many were: `*.png` next to the sources or `-o` inside the folder with `-r` doesn't upscale the results of an earlier run again. A file named on the command line is always taken, even if its name looks like another image's result, and then that result is named so that it doesn't replace it. A long path with the `\\?\` prefix is a path, not a pattern.
-
-In a batch, a file's line (size, time, output path) is printed as soon as it is upscaled, while its result is still being written in the background. If that save fails, `[i/n] Not saved: …` follows once the next file is done, the file counts as failed, and the exit code is 1.
-
-Without `-m`, `4xBHI_realplksr_dysample_real` is used, or the first model in alphabetical order if it is missing. `--list-models` marks the default model with an asterisk.
-
-## Window
-
-The preview is on the left, the settings panel on the right.
-
-- **Opening files:** drag photos or a folder into the window, click "Select files", or pass a path on the command line. With Ctrl held, dropped files are added to the queue; without it, they replace it.
-- **One window.** Krupno.exe started while a window is open hands its files to that window over a named pipe (for the same user and session only) and exits; started with no files, it brings the window forward. Files that arrive within 2 seconds of each other are one selection (Explorer starts a Krupno.exe per selected file) and share one queue; a later one replaces the queue, like opening files. While processing runs, handed-over files are not opened, and a message says so. If the open window doesn't answer within 5 seconds, or it is closing, the new Krupno.exe opens a window of its own instead of handing its files to a window that would drop them. `--new-window` always opens a separate window, for example to run two GPUs at once.
-- **Pasting:** Ctrl+V opens files copied in Explorer, or an image from the clipboard (a screenshot, "Copy image" in a browser). The queue works with files, so a pasted image is first saved as `Pictures\Krupno\Pasted <date> <time>.png`, and the result goes next to it like for any other file. A PNG on the clipboard (browsers and Office put one there) is saved as is, with transparency; a plain bitmap whose fourth byte is 0 everywhere, as most apps leave it, is taken as opaque.
-- **Models** are shown as cards with descriptive names ("Photo, fast", "Photo, maximum detail"…). The recommended and non-commercial models are marked, and technical details are in the tooltip. Known models are described in `ViewModels/ModelItem.cs`; the others are shown by file name.
-- **Strength** (10–100%, under the models) mixes the network's result with a plain Lanczos resize of the original. Below 100% it tones down the textures a model invents and its oversharpening (see [How it works](#how-it-works)).
-- **Scale and format** are picked with toggle buttons. The output size is shown right away, and JPEG has a quality slider. "Other" takes a scale of your own (2.5, or 2,5) or a length for one side of the result: width, height or long side in pixels. With a size, every image of a batch gets its own scale, shown next to the output size, and the name says what was asked for (`photo_3840px.png`).
-- **Settings** that are set once and rarely touched are in a window of their own: the gear button at the top right of the panel, or Ctrl+,. It has the device, the tile size, "Seamless tiles", "Test-time augmentation", the language and the update check, and a choice applies at once. The button's tooltip shows what is set there: "RTX 3080 · auto tiles · English", and "no update check" when that is off. Like the rest of the panel, it waits while processing runs.
-- **Device and tile size** are chosen automatically by default. Besides "Auto", every GPU (through DirectML) and the CPU, the device list has the GPU and NPU vendors' accelerators that Windows has installed, such as "RTX 3080 · TensorRT-RTX". When Windows ML offers more for this computer, a line under the list names them, and "Download" has Windows download them (some are hundreds of megabytes); Krupno downloads nothing by itself. "Seamless tiles" there doubles the tile overlap to 64 px (`--pad 64` in the command-line tool): no visible seams even with deep models, at the cost of more tiles (35 instead of 24 for a 1920×1200 photo with auto tiles, about 1.5 times the time).
-- **Comparison:** a slider wipe or two frames side by side. Zoom is measured in output pixels (100% is pixel for pixel), the mouse wheel zooms toward the point under the cursor, the right or middle button pans the image, and a double click toggles "Fit to window" ↔ 1:1.
-- **During processing** finished tiles are highlighted on the preview, with the percentage, the remaining time and the tile number next to it. Progress also shows on the Windows taskbar icon, and when a run ends (done or failed) while you are in another window, the icon flashes until you come back. While processing runs, Windows does not go to sleep on idle (the display may still turn off; closing the lid or choosing Sleep works as usual).
-- **A batch** is shown as a strip of thumbnails with each file's status: processing, done, error. A file keeps the "processing" mark while its result is written, which in a batch overlaps with the next file (see [How it works](#how-it-works)). Clicking a thumbnail shows the comparison for that file. Closing the window during a run cancels it and closes once it has stopped, so a result that is being written is finished first; closing it once more doesn't wait.
-- **Errors and the log.** Each session of the window writes a log to `%LOCALAPPDATA%\Krupno\logs` (the 20 newest are kept). It starts with the versions of Krupno, Windows, .NET, ONNX Runtime and DirectML and the GPUs with their driver versions, then records each run (model, device, tile, strength, scale, format), every file and its result, warnings (a reduced tile, the fallback to the CPU) and every error with its stack trace. After a failed run, "Copy error details" puts the same facts for that run on the clipboard, ready for a bug report, with the path to the log. The log stays on the computer, and it holds file paths, so look it over before sharing it. The command-line tool writes no log: everything goes to the console.
-- **Language.** The window speaks the Windows display language if it is one of these: English, Ukrainian, Russian, Polish, German, French, Italian, Spanish, Brazilian Portuguese, Turkish, Indonesian, Vietnamese, Japanese, Korean, Simplified and Traditional Chinese; otherwise English. "Language" in "Settings" picks another one, from the next start. Only the text changes: numbers keep the regional format of Windows. The log and "Copy error details" stay in English, for whoever reads the bug report, and so does the command-line tool, whose output scripts read.
-- **Updates.** At startup the window asks github.com which release of Krupno is the latest, and if it is newer, a line above the settings says so. The check is one HEAD request to `github.com/FLABER87/krupno/releases/latest`, not the GitHub API with its limit of 60 requests an hour. GitHub answers with a redirect to the latest release's tag, which isn't followed. Nothing else is sent (no settings, files or identifiers, only the version in the User-Agent), and nothing is downloaded until you ask for it. Only tags like `v0.3.0` count, so a model release can't pass for one of the app. "Check for updates" in "Settings" turns it off; until it is changed there, the installer's choice applies, and without an installer (the ZIP) it is on. The answer is in the log. `KRUPNO_UPDATE_FROM=0.0.9` makes the window compare as another version, to see the notice.
-  - **"Update"** (an installed copy) downloads the release's installer from github.com by its direct link (`releases/download/v0.3.0/Krupno-0.3.0-setup-x64.exe`; GitHub sends it on to its file storage) together with the release's `SHA256SUMS.txt`, into `%LOCALAPPDATA%\Krupno\updates`. The line shows the percentage, and ✕ cancels. The files aren't signed, so the installer runs only if its SHA-256 is the one `SHA256SUMS.txt` gives; otherwise the line says so and offers to try again. Then Setup runs without its wizard (`/SILENT`, a progress window only) in the mode of the installation the window belongs to (for the current user or for all users, which asks for administrator rights), in the window's language, and with its log in `%LOCALAPPDATA%\Krupno\logs\setup-<version>.log`. The window closes once Setup has taken over (it holds its `SetupMutex`, past the UAC prompt and the check for a running Krupno); if Setup ends before that (the UAC prompt was declined), the window stays and says the update wasn't installed. Setup keeps the components and tasks chosen before, skips the models it already has, and starts Krupno again when it ends; if it failed or was canceled, the old version starts and says the update wasn't installed, with a link to Setup's log. The next start deletes the downloaded installer.
-  - **The window never closes in the middle of processing:** "Update" waits while a run is going on, and no run starts while the installer downloads. Another Krupno window or `krupno-cli` would hold the files Setup replaces, so the line asks to close them first. "What's new" opens the release page.
-  - **The portable ZIP** has no installation to update: its line links to the release page, which has the installer and the ZIP.
-- **The theme** is light or dark to match the system, with the system accent color. On Windows 10 the window title bar turns dark too. The `KRUPNO_THEME=light|dark` variable forces a theme for testing.
-
-Keyboard shortcuts:
-
-| Keys | Action |
-|---|---|
-| Ctrl+O | open files |
-| Ctrl+Enter | upscale |
-| Esc | cancel processing |
-| Ctrl+0 / Ctrl+1 | fit to window / pixel for pixel |
-| Ctrl+Plus / Ctrl+Minus | zoom in / zoom out |
-| Ctrl+C | copy the result |
-| Ctrl+V | paste files or an image |
-| Ctrl+, | settings |
-
-The first launch starts with the default model, ×4, PNG and the "Auto" device and tile. Every choice is saved in `%LOCALAPPDATA%\Krupno\settings.json` as soon as it is made: the model, strength, scale, format, JPEG quality, output folder, device, tile size, "Seamless tiles", "Test-time augmentation", the language and, once changed there, "Check for updates". The window's size and position (and whether it was maximized) are saved when it closes; a window that would land on a monitor that is no longer connected is moved onto a visible one.
-The GPU is saved by name, since its DXGI index may change. If the saved model or GPU is gone, a value is not one the window offers, or the settings file is corrupt or missing, the window falls back to the defaults. A saved output folder is checked before processing starts: if its drive is gone, the window says so right away instead of after the first file.
-
-The app icon is drawn by `tools/make_icon.py` (requires Pillow and numpy).
-
-### Translations
-
-The window's text is in `src/Krupno.App/Properties/Strings.resx` (English) and `Strings.<culture>.resx` next to it, one file per language; the progress messages and errors of the library are in `src/Krupno.Core/Properties` the same way. The build turns each translation into a satellite assembly (`uk\Krupno.resources.dll` and so on), and .NET picks the one for the UI language. XAML reaches the text through `{x:Static p:Strings.Key}`, C# through `Strings.Key`; `Strings.Designer.cs` is generated by Visual Studio or Rider when `Strings.resx` is saved.
-
-- A text with plural forms holds one form per plural category of its language, separated by `|`: two in English (`{0} file|{0} files`), three in Ukrainian, Russian and Polish, one in Chinese, Japanese, Korean, Vietnamese and Indonesian (`Krupno.Core/Localization/Plurals.cs` has the rules). Its comment in `Strings.resx` says so.
-- To add a language: copy `Strings.resx` in both projects to `Strings.<culture>.resx`, translate the values, add the language to `Infrastructure/UiLanguage.cs` and, if its plural rules differ from English, to `Plurals.cs`.
-- `LocalizationTests` checks that every translation has the same keys as `Strings.resx`, the same placeholders, valid `string.Format` text and the right number of plural forms, that `Strings.Designer.cs` matches `Strings.resx`, and that every text is used somewhere.
-
-## Tests
-
-The unit tests (`tests/Krupno.Core.Tests`, xUnit) run in a couple of seconds and need nothing besides the .NET SDK:
-
-```bash
 dotnet test tests/Krupno.Core.Tests -c Release
 ```
 
-They cover the tile plan (cores that cover the image without gaps, real context around each, mirroring at the edges), output names that would clash,
-the Lanczos resizes (the blend for strength clips the plain resize to 0..255 first and leaves alpha alone; colors under transparency don't leak),
-target sizes and the number of passes, the SIMD packing of the network's output against the scalar conversion (NaN, infinities and values outside 0..1 included),
-the command-line options, and the whole pipeline on the CPU with the synthetic models below: exact results for every model, strength 50% against the formula,
-and `--pad 64` giving the same result in 35 tiles instead of 24 on a 1920×1200 image. They also hand paths from 12 clients at once to a window over the named pipe
-(`SingleInstance` from the app, compiled into the tests), and every path must arrive.
+More for contributors in [docs/](docs):
 
-The synthetic tests run the Release build through the command-line tool. The models in `tests/fixtures/models` are a few hundred bytes each.
-Each one upscales the image with nearest neighbor and keeps some of the color channels. So the correct result is known down to the pixel, and a mixed-up channel order shows immediately.
-Requires Python with numpy and Pillow:
-
-```bash
-pip install -r tests/requirements.txt
-dotnet build Krupno.slnx -c Release
-powershell -ExecutionPolicy Bypass -File tests\run_cli_tests.ps1
-```
-
-The script creates the input images (`tests/make_fixtures.py`), runs `krupno-cli.exe` on the GPU and on the CPU, and puts the results and logs into `tests/out/cli`.
-Then `tests/check_outputs.py` compares them with the expectations, and the script exits with code 0 only if everything matches. A run takes about 15 s.
-Covered: tiling (including a model with a static 64×64 input and a run without tiling), a probe run of a model without metadata, a model with fp16 input and output, reading `krupno.*` and `upscalr.*` metadata,
-fractional scale, ×8 in two passes, alpha channel (with the color fill under transparent pixels), EXIF rotation, ICC profiles (a Display P3 image keeps its pixels and profile; CMYK and grayscale images are converted to sRGB, also with a CMYK profile far from SWOP), folder processing,
-strength (the blend is checked against the same Lanczos filter computed in numpy; with transparency the alpha must stay as at full strength),
-a save that fails in the background during a batch, target sizes (`--width` with the name it gives, `--long-side` after the EXIF rotation, `-s` together with a target size refused),
-output names that would overwrite a source or another result, and broken files.
-`python tests/make_fixtures.py --models` regenerates the models (it also needs the `onnx` package).
-On GitHub, the `.github/workflows/tests.yml` workflow (`windows-latest`) builds and runs the unit tests and these tests on every push and pull request. The runner has no GPU, and Krupno does not count "Microsoft Basic Render Driver" as one. So the workflow runs the script with the `-CheckFallback` switch: it sets `KRUPNO_BASIC_RENDER_DRIVER=1`, "Auto" picks that adapter, DirectML fails to start on it, and every "GPU" run must fall back to the CPU. This is how the fallback is tested. If the tests fail, `tests/out/cli` is uploaded as the `cli-tests-out` artifact.
-Dependabot (`.github/dependabot.yml`) opens weekly update PRs for ONNX Runtime and the GitHub Actions, so these tests check every update before it is merged. The Python requirements are left out: `tools/requirements.txt` sets deliberate lower bounds, which Dependabot would raise.
-
-The UI scripts launch `Krupno.exe` and drive the window through UI Automation.
-They need real models in `models/`: `4xBHI_realplksr_dysample_real` and `4xBHI_dat2_real_fp16` by default; others are set with the `-Model` and `-SlowModel` parameters.
-- `tests\gui_states.ps1` walks through the window states (empty, tile-by-tile processing, result, side-by-side comparison, batch, error, light theme, the settings window) and saves screenshots to `tests/out/gui`. The script itself only checks that the states are reached; a human looks at the screenshots. The `color` scenario also checks pixels. A Display P3 image must look the way Windows' color-managed decoding shows it, before and after processing and in the filmstrip. An untagged copy must be shown unchanged, and the saved result must keep the stored pixels. About 2 min.
-- `tests\gui_keys.ps1` checks the keyboard shortcuts: preview zoom, Ctrl+Enter, Ctrl+C (image size on the clipboard), Ctrl+V (a bitmap and a PNG pasted from the clipboard are saved to `Pictures\Krupno` with the right size; the script deletes them afterwards) and Esc. It also checks handing files over to an open window: two Krupno.exe started together give one queue of two files and exit, and one started 3 seconds later replaces the queue (skipped if a Krupno window is already open). The UI scripts start their windows with `--new-window`, so a window you have open doesn't take their files. The keys are sent through SendKeys, so it is best not to touch the keyboard and mouse during the run (about 30 s). If the Krupno window is not in the foreground, the script stops and sends no keys.
-
-Both scripts swap `%LOCALAPPDATA%\Krupno\settings.json` for the duration of the run and restore the previous one afterwards; the settings they write set the window to English, since they find buttons by their English names, and turn the update check off, so the scripts stay offline and a newer release doesn't change the screenshots.
-
-## How it works
-
-- **Seamless tiling.** The image is cut into fixed-size windows that never go beyond its edges. Each tile keeps at least `--pad` pixels of real context around it, and only the central part of the tile goes into the result. Deep models have a receptive field larger than the overlap, so small deviations at the seams are possible. For RealESRGAN_x4plus compared with a whole-image run: with a 32 px overlap (the default), up to 9 levels on 0.01% of pixels; with 64 px, up to 1 level.
-- **Input shape for DirectML.** All tiles of an image are fed to the network in a window of the same size. The size is fixed through `AddFreeDimensionOverrideByName`, and DirectML compiles the graph once per image size.
-- **Tiles overlap with the CPU work around them.** While the network runs on one tile, another thread fills the input of the next one and copies the previous one's result into the image, so the GPU doesn't wait for that work between tiles. This keeps one more tile's output in memory.
-- **Checked against a reference.** Without tiling, the result matches the PyTorch implementation of Real-ESRGAN within ±1 level, both on DirectML and on the CPU.
-- **Out of memory.** If the window does not fit on the device, the tile shrinks and the pass starts over. Up to 512 px, the tile steps down a 64 px grid, respecting the model's size multiple (512 → 448 → 384 → 320 → 256 → …, no smaller than 128). A larger window is halved, but not below 512: every failed attempt costs a graph compilation, about 10 s for DAT2. Previously the tile was always halved and skipped the size that would fit: DAT2 fp32 on 10 GB dropped from 384 straight to 192. The chosen tile is remembered for the model on that device: later frames of a batch and the second ×8 pass start with it right away, and the reduction message is printed once. With DAT2 fp32 and `-t 384`, a batch of two 1920×1200 frames takes 62.1 + 51.7 s: only the first frame spends the extra ~10 s. In the window, the limit lasts until the model or device changes, and the next processing run shows "Tile 320 px (chosen after running out of memory)" once. To try a larger tile again, for example after freeing VRAM, switch the model or restart the app. DirectML does not report spilling into shared memory as an exception, so it cannot be caught this way. If the model also keeps sessions for other windows (a second pass, or TTA's transposed window), they are released and the same window gets one more try before the tile shrinks. With a vendor's accelerator only an error that reads as out of memory shrinks the tile: every attempt there is an engine build, so any other error is reported at once.
-- **Accelerators (Windows ML).** On Windows 11 24H2 and later, Windows ML has a catalog of the GPU and NPU vendors' execution providers: NVIDIA TensorRT-RTX (GeForce RTX 30 and later), Intel OpenVINO, AMD MIGraphX and Vitis AI, Qualcomm QNN. Windows downloads and updates them as packages from Microsoft. At startup Krupno registers the ones Windows has with ONNX Runtime (in the background in the window, without downloading anything), and each of their devices becomes a device of its own (`accN` in the command-line tool). A provider that Windows has but that isn't ready for this process yet (another app installed it, or it was just updated) is made ready then too, which downloads nothing; if that fails, it is offered under the device list like one Windows doesn't have. Two identical GPUs are told apart by their DXGI index ("RTX 4090 · TensorRT-RTX #1"). If Windows ML takes more than 30 s to register them, the window lists the devices once it is done, and a saved accelerator is kept meanwhile. They get the same fixed window size per image as DirectML, so TensorRT-RTX builds one engine per window size, and the first image of a size takes longer. The compiled model is kept in `%LOCALAPPDATA%\Krupno\cache\compiled` (ONNX Runtime's compile API, with the engine embedded), so the next start loads it instead of building it again. A file is about the size of the model; above 2 GB in all the least recently used go, and uninstalling removes the folder. One that no longer suits the provider or the driver, by ONNX Runtime's compatibility check or because it fails to load, is compiled again. A provider that can't compile a model for a window runs it as before, building the engine each time, and the log (the console in the command-line tool) says why; another window of the same model is still tried. A model whose input stays dynamic is compiled as it is. The weights of a model stored next to it (`model.onnx.data`) count for the cache too. Building an engine can't be stopped, so canceling doesn't wait for it: the build finishes in the background and its result is kept. "Auto" stays with DirectML, and a chosen accelerator never falls back to the CPU on its own: an error says what is wrong instead of a much slower run. That includes a model the provider doesn't take whole, which ONNX Runtime would quietly finish on the CPU: an accelerator's sessions and compiles may not put any operation on the CPU (`session.disable_cpu_ep_fallback`), so such a model gets an error that the accelerator can't run it. A compile that exports nothing (exporting what it compiled is optional for a provider) is followed by a plain session, which works if the provider takes the whole model. If the cache folder can't be written or has no room, the model is still compiled, into a temporary file for that session. On Windows 10, or where the catalog has nothing for the hardware, the list is the same as before.
-- **CPU fallback.** In "Auto" mode the GPU with the most memory is used; if DirectML fails to start, the work runs on the CPU, and the window says so during processing. Running out of video memory is not a reason to fall back: once DirectML has created a session for the model, or when the error reads as out of memory, the tile shrinks instead. The software "Microsoft Basic Render Driver" does not count as a GPU: on a machine without a GPU it is not in the device list, and "Auto" goes straight to the CPU.
-- **Any scale or size.** `--width`, `--height` and `--long-side` ("Other" in the window) set one side of the result in pixels instead of a scale: the scale is worked out for each image, the other side follows its proportions, and next to the source the name gets `_3840w`, `_2160h` or `_3840px`. The network runs as many times as needed (×8 with a ×4 model is two passes), then the result is resized precisely with a Lanczos-3 filter. If the last pass would not fit in memory at full size (×8 of a 1920×1200 photo makes a 30720×19200 intermediate), its input is first reduced so that the pass lands just above the target size, and a message says so. A size just above the model's own scale takes the second pass too: 3840 px wide from a 900 px photo is ×4.27, so a ×4 model runs twice (×16) and the result is reduced. The window shows the scale next to the output size for this reason.
-- **Strength.** Below 100%, the result is `plain + strength × (network − plain)`, where `plain` is a Lanczos resize of the pixels the network saw (with transparency, the colors filled in under alpha 0) to the output size, clipped to 0..255 like a saved image. The alpha stays as computed for the full-strength result. The mix is done band by band, so the plain resize never exists whole: for a 7680×4800 result it adds under a second on a 4-core CPU.
-- **Test-time augmentation** (`--tta`, "Test-time augmentation" in "Settings"). Every network pass runs on the image in all 8 rotations and mirrorings, each result is turned back, and the 8 are averaged, rounded to the nearest level. Networks are not quite the same in every direction, so this evens out noise and artifacts that lean one way, at 8 times the time. Each orientation is tiled on its own, as an image of its own; the preview shows the tiles where they are on the image as it is. If the image is smaller than a tile on one side, a quarter turn also turns the window, and on the GPU that is a second compiled graph; with TTA the model keeps up to four of them (a window and its transpose in each of two passes) instead of two, so a batch doesn't compile them again for every image. Each round's result is added to the sum through the orientation's pixel mapping rather than turned back as a copy, so TTA needs about 10 bytes per output pixel (the result and the sum) instead of 4: 4.1 GB for the ×16 intermediate of ×8 on a 1600×1000 photo. A quarter turn transposes the intermediate, so its size is checked both ways before the first round.
-- **Batches.** A result is written while the next file is loaded and upscaled, so the GPU doesn't wait for the encoder (compressing a 7680×4800 PNG can take seconds, most of a frame for a fast model). One save runs at a time, so files finish in order. The last file of a batch, and a result larger than 512 MB, are written right away instead: one more result in memory, plus the encoder's copy of it, could make a large batch run out of memory. On cancellation or an error, a result already being written is finished and counts as done, and closing the window waits for it too.
-- **The alpha channel** is scaled separately (Lanczos); the network processes RGB. The color under fully transparent pixels is first filled from the nearest visible pixel, so the edges don't pick up the color stored there (usually black), and the final resize weights colors by alpha.
-- **EXIF rotation** is applied to the pixels. An RGB ICC profile is carried over to the result (see below), and the metadata too if the output format matches the source.
-- **Color profiles.** The pixels are upscaled as stored: an Adobe RGB or Display P3 photo stays in its color space, and the result carries the same profile (BMP, which can't hold one, is converted to sRGB). The result is always RGB, which a CMYK or grayscale profile can't describe. So CMYK and grayscale images are converted with their profile to sRGB on load, the way color-managed viewers show them, and the result has no profile (untagged means sRGB). A profile that doesn't fit the pixels, such as a grayscale profile on a color image, is dropped. The copy of the profile in the source's metadata (a PNG iCCP chunk, JPEG APP2 segments, a TIFF tag) stays behind, so only a profile that fits goes into the result. WPF draws everything as sRGB, so the window converts the comparison and the filmstrip thumbnails from the embedded profile to sRGB, for display only. WIC does the conversion, so the colors match Windows' own color-managed decoding. Krupno converts to sRGB, not to the monitor's profile. Profiles that match sRGB within a couple of levels are left alone. A large result is converted in place, a few megabytes at a time, without another full-size copy. Ctrl+C copies the result as it is shown, in sRGB.
-
-## What's next
-
-- A 16-bit-per-channel pipeline (currently 8-bit).
-- Streaming output for images that do not fit in memory.
-- WebP/AVIF output (WIC has no encoders for them; this needs a custom implementation or a separate library).
-- A model catalog with downloads and license checks right in the window (currently only the installer downloads models).
+- [development.md](docs/development.md): layout, tests, CI and translations;
+- [installer.md](docs/installer.md): the installer, the portable ZIP and releases;
+- [models.md](docs/models.md): converting models to ONNX and how they compare;
+- [how-it-works.md](docs/how-it-works.md): tiling, memory, accelerators, color and the finer points of the window and the command-line tool.
 
 ## License
 
-The code is under the MIT license, see [LICENSE](LICENSE). It does not cover the models: each has its own license (see [Where to get weights](#models)).
+The code is under the MIT license, see [LICENSE](LICENSE). It does not cover the models: each has its own license (see [Models](#models)). The components Krupno ships with and the models it can download are listed in [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt).

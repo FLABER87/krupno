@@ -5,4 +5,4 @@ They are not committed to git (see `.gitignore`).
 
 Models are also looked up in `%LOCALAPPDATA%\Krupno\models`; the "Open models folder" button in the app window opens it.
 
-To get ONNX from PyTorch weights: `python tools/convert_to_onnx.py <file.pth>` (see the root README for details).
+To get ONNX from PyTorch weights: `python tools/convert_to_onnx.py <file.pth>` (see docs/models.md for details).
