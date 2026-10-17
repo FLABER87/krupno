@@ -10,4 +10,8 @@
     <ProjectReference Include="..\Krupno.Core\Krupno.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Krupno.Core.Tests" />
+  </ItemGroup>
+
 </Project>

@@ -23,8 +23,9 @@ internal static class SingleInstance
     /// <summary>The first window may still be starting when the next process tries to reach it.</summary>
     private const int ConnectTimeoutMs = 5000;
 
-    /// <summary>Per user and session: another user's window, or the same user's in another session, isn't this one's to take.</summary>
-    private static readonly string Name = $"Krupno-{Environment.UserName}-{Process.GetCurrentProcess().SessionId}";
+    /// <summary>Per user and session: another user's window, or the same user's in another session, isn't this one's to take.
+    /// The unit tests set a name of their own, so a window that is open doesn't take their paths.</summary>
+    internal static string Name { get; set; } = $"Krupno-{Environment.UserName}-{Process.GetCurrentProcess().SessionId}";
 
     private static readonly Lock Gate = new();
     private static readonly List<(string[] Paths, DateTime ArrivedAt)> Pending = [];
