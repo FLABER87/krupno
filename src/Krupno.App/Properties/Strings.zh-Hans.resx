@@ -222,6 +222,9 @@
   <data name="Model_PhotoFast" xml:space="preserve">
     <value>照片，快速</value>
   </data>
+  <data name="Model_Text" xml:space="preserve">
+    <value>文字和文档</value>
+  </data>
   <data name="ModelDetails_CantRead" xml:space="preserve">
     <value>无法读取模型：{0}</value>
   </data>

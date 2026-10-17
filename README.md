@@ -20,7 +20,7 @@ Get the latest version from [Releases](https://github.com/FLABER87/krupno/releas
   - the install folder in PATH, so `krupno-cli` runs from any console;
   - "Upscale with Krupno" in the Explorer context menu of images and folders;
   - the check for new versions at startup (ticked by default, see [Updates](#updates)).
-- **Portable ZIP** (`Krupno-<version>-win-x64.zip`): unpack it and run `Krupno.exe`. It comes without models: download them from the [models-v2](https://github.com/FLABER87/krupno/releases/tag/models-v2) release into its `models` folder or into `%LOCALAPPDATA%\Krupno\models`.
+- **Portable ZIP** (`Krupno-<version>-win-x64.zip`): unpack it and run `Krupno.exe`. It comes without models: download them from the [models-v3](https://github.com/FLABER87/krupno/releases/tag/models-v3) release into its `models` folder or into `%LOCALAPPDATA%\Krupno\models`.
 
 The files are not code-signed yet, so Windows SmartScreen may warn on the first launch ("More info" → "Run anyway"). Each release has a `SHA256SUMS.txt` to check the downloads against.
 Uninstalling keeps your settings, logs and own models in `%LOCALAPPDATA%\Krupno`.
@@ -62,22 +62,25 @@ krupno-cli --list-models --list-devices
 
 ## Models
 
-Krupno runs ONNX upscaling models. The installer downloads the ones you tick from the [models-v2](https://github.com/FLABER87/krupno/releases/tag/models-v2) release; the ZIP comes without them.
+Krupno runs ONNX upscaling models. The installer downloads the ones you tick from the [models-v3](https://github.com/FLABER87/krupno/releases/tag/models-v3) release; the ZIP comes without them.
 
 | Model | In the window | License | Time¹ |
 |---|---|---|---|
 | `4xBHI_realplksr_dysample_real` | Photo, fast (**default**) | CC BY 4.0 | 6.7 s |
 | `4xBHI_dat2_real` (fp16 and fp32) | Photo, maximum detail | CC BY 4.0 | 33 s (fp16) |
 | `4x-UltraSharpV2` | General purpose | CC BY-NC-SA 4.0, **non-commercial only** | 42 s |
+| `4x_foolhardy_Remacri_fp16` | Text and documents | CC BY-NC-SA 4.0, **non-commercial only** | 5.8 s |
 | `RealESRGAN_x4plus` (fp16 and fp32) | Classic | BSD-3-Clause | 4.6 s (fp16) |
 | `realesr-general-x4v3` | Draft | BSD-3-Clause | 1.6 s |
 
 ¹ A 1920×1200 photo upscaled ×4 on an RTX 3080.
 
+Models make small text sharp, but they may also change it, digits included. Remacri keeps small text best and is worse than the others on photos; see [Text](docs/models.md#text). Check important numbers against the original whatever the model.
+
 **Each model has its own license**, which Krupno's MIT license does not cover:
 
 - The BHI models are by Philip Hofmann ([Phhofm/models](https://github.com/Phhofm/models)), under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/): commercial use is allowed, with attribution.
-- UltraSharpV2 is by [Kim2091](https://huggingface.co/Kim2091/UltraSharpV2), under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/): **non-commercial use only**. The window marks it as such.
+- UltraSharpV2 is by [Kim2091](https://huggingface.co/Kim2091/UltraSharpV2) and Remacri by foolhardy ([OpenModelDB](https://openmodeldb.info/models/4x-Remacri)), both under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/): **non-commercial use only**. The window marks them as such.
 - The Real-ESRGAN models are by Xintao Wang ([Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)), under the BSD 3-Clause license.
 
 Other models work too: put `.onnx` files into `%LOCALAPPDATA%\Krupno\models` ("Open models folder" in the window). To convert PyTorch weights (`.pth`, `.safetensors`), use `tools/convert_to_onnx.py`; see [docs/models.md](docs/models.md) for how, where to get weights and how the models compare. Community models, for example from [OpenModelDB](https://openmodeldb.info/), each have their own license, and many are for non-commercial use only.

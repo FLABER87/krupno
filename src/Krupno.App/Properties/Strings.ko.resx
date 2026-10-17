@@ -222,6 +222,9 @@
   <data name="Model_PhotoFast" xml:space="preserve">
     <value>사진, 빠름</value>
   </data>
+  <data name="Model_Text" xml:space="preserve">
+    <value>텍스트 및 문서</value>
+  </data>
   <data name="ModelDetails_CantRead" xml:space="preserve">
     <value>모델을 읽을 수 없습니다: {0}</value>
   </data>

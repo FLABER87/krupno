@@ -34,7 +34,7 @@ C#/WinRT and the Windows SDK projection for .NET (WinRT.Runtime.dll, Microsoft.W
 Models (optional, downloaded during installation)
 -------------------------------------------------
 
-Download location: https://github.com/FLABER87/krupno/releases/tag/models-v2
+Download location: https://github.com/FLABER87/krupno/releases/tag/models-v3
 
 The models were converted from their authors' PyTorch weights to ONNX with
 tools/convert_to_onnx.py from https://github.com/FLABER87/krupno. Files with the "_fp16"
@@ -54,6 +54,14 @@ The converted files are shared under the same licenses as the original weights.
            (CC BY-NC-SA 4.0), https://creativecommons.org/licenses/by-nc-sa/4.0/
            NON-COMMERCIAL USE ONLY.
   Source:  https://huggingface.co/Kim2091/UltraSharpV2
+
+4x_foolhardy_Remacri_fp16.onnx
+  Author: foolhardy
+  License: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+           (CC BY-NC-SA 4.0), https://creativecommons.org/licenses/by-nc-sa/4.0/
+           NON-COMMERCIAL USE ONLY.
+  Source:  https://openmodeldb.info/models/4x-Remacri
+           https://huggingface.co/FacehugmanIII/4x_foolhardy_Remacri
 
 RealESRGAN_x4plus.onnx, RealESRGAN_x4plus_fp16.onnx, realesr-general-x4v3.onnx
   Real-ESRGAN, https://github.com/xinntao/Real-ESRGAN

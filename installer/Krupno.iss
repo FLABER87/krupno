@@ -1,5 +1,5 @@
 ﻿; Krupno installer. It carries only the app itself (self-contained publish with .NET inside); the models are
-; downloaded during installation from the models-v2 release and verified by SHA-256. The wizard speaks the languages of
+; downloaded during installation from the models-v3 release and verified by SHA-256. The wizard speaks the languages of
 ; the app window: Inno Setup's own messages files, four unofficial ones in languages\ (taken from the is-6_7_1 tag of
 ; jrsoftware/issrc, as Inno Setup doesn't install them) and our text in messages.iss.
 ; Built by installer\build.ps1, which also passes the parameters:
@@ -22,11 +22,11 @@
 #endif
 
 #define RepoUrl "https://github.com/FLABER87/krupno"
-#define ModelsUrl RepoUrl + "/releases/download/models-v2"
+#define ModelsUrl RepoUrl + "/releases/download/models-v3"
 #define ImageVerb "Software\Classes\SystemFileAssociations\image\shell\Krupno"
 #define FolderVerb "Software\Classes\Directory\shell\Krupno"
 
-; A [Files] line for a model from the models-v2 release. When the app is updated, a model with the same SHA-256
+; A [Files] line for a model from the models-v3 release. When the app is updated, a model with the same SHA-256
 ; is not downloaded again (ModelNeeded in [Code]).
 #define Model(Component, File, Size, Hash) \
   'Source: "' + ModelsUrl + '/' + File + '"; DestDir: "{app}\models"; DestName: "' + File + '"; ' + \
@@ -128,6 +128,7 @@ Name: "models"; Description: "{cm:ComponentModels}"; Types: full compact
 Name: "models\realplksr"; Description: "{cm:ModelRealPlksr}"; Types: full compact
 Name: "models\dat2fp16"; Description: "{cm:ModelDat2Fp16}"; Types: full
 Name: "models\ultrasharp"; Description: "{cm:ModelUltraSharp}"; Types: full
+Name: "models\remacri"; Description: "{cm:ModelRemacri}"; Types: full
 Name: "models\dat2"; Description: "{cm:ModelDat2}"; Types: full
 Name: "models\esrganfp16"; Description: "{cm:ModelEsrganFp16}"; Types: full
 Name: "models\esrgan"; Description: "{cm:ModelEsrgan}"; Types: full
@@ -147,6 +148,7 @@ Source: "models-README.txt"; DestDir: "{app}\models"; DestName: "README.txt"; Fl
 {#Model("realplksr", "4xBHI_realplksr_dysample_real.onnx", "29_824_646", "4c5a800d7c8afbbb533724185a0f9784ca79e8813d6d6cd190ff5092c297a697")}
 {#Model("dat2fp16", "4xBHI_dat2_real_fp16.onnx", "25_330_673", "afb2687e5eaf58b46b5679d2a5c4b8190b58dbcf6beedd492a18de88da264974")}
 {#Model("ultrasharp", "4x-UltraSharpV2.onnx", "51_871_076", "7cbc3daf6b8e9800932196a252f8b88d19ecbbe63fdfc4976ce27ce537311f04")}
+{#Model("remacri", "4x_foolhardy_Remacri_fp16.onnx", "33_770_910", "9473a9a317fafb08d3d47756b5dbd488efb8d38ab0a646b09448f364dd71fb7e")}
 {#Model("dat2", "4xBHI_dat2_real.onnx", "51_871_070", "4daffb7c3e695b5a8f7586be3546fd306abdf00fbfce86acef94bdab696d9780")}
 {#Model("esrganfp16", "RealESRGAN_x4plus_fp16.onnx", "33_770_922", "97b1d38c36492a7931c9844221d862c89680e5e47eb86e419ee262b4cea49d07")}
 {#Model("esrgan", "RealESRGAN_x4plus.onnx", "67_167_465", "12938ed2823438c7b32f86964af788f8a3a0d73f9d9b5200d72f34765a447547")}

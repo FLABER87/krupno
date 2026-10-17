@@ -222,6 +222,9 @@
   <data name="Model_PhotoFast" xml:space="preserve">
     <value>Ảnh chụp, nhanh</value>
   </data>
+  <data name="Model_Text" xml:space="preserve">
+    <value>Văn bản và tài liệu</value>
+  </data>
   <data name="ModelDetails_CantRead" xml:space="preserve">
     <value>Không thể đọc mô hình: {0}</value>
   </data>

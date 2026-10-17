@@ -222,6 +222,9 @@
   <data name="Model_PhotoFast" xml:space="preserve">
     <value>Zdjęcia, szybko</value>
   </data>
+  <data name="Model_Text" xml:space="preserve">
+    <value>Tekst i dokumenty</value>
+  </data>
   <data name="ModelDetails_CantRead" xml:space="preserve">
     <value>Nie można odczytać modelu: {0}</value>
   </data>

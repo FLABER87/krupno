@@ -227,6 +227,9 @@
   <data name="Model_PhotoFast" xml:space="preserve">
     <value>Photo, fast</value>
   </data>
+  <data name="Model_Text" xml:space="preserve">
+    <value>Text and documents</value>
+  </data>
   <data name="ModelDetails_CantRead" xml:space="preserve">
     <value>Can't read the model: {0}</value>
   </data>
