@@ -57,7 +57,10 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 ; Windows ML needs Windows 10 1903 (build 18362) or later.
 MinVersion=10.0.18362
-WizardStyle=modern dynamic
+; Light even in Windows' dark mode: the dark style ("dynamic") draws the checkboxes of the components and tasks lists in a
+; rect sized from the system's OBM_CHECKBOXES bitmap, which at 300% DPI is narrower than the style's checkbox, so they come
+; out cut on both sides (Inno Setup 6.7.1, unchanged in 7.1). The light wizard has Windows draw them at their own size.
+WizardStyle=modern
 SetupIconFile=..\src\Krupno.App\Assets\Krupno.ico
 UninstallDisplayIcon={app}\Krupno.exe
 UninstallDisplayName=Krupno
