@@ -172,11 +172,13 @@ const
   UserEnvironmentKey = 'Environment';
   SystemEnvironmentKey = 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment';
 
-  // Each language of the wizard: the app's culture name (UiLanguage.cs) and the Windows language ID for which the app
-  // finds that translation by itself: a primary language ID for a neutral culture (any German is "de"), the full one for
-  // Brazilian Portuguese (.NET doesn't take pt-BR for Portugal's pt-PT).
+  // Each language of the wizard: the app's culture name (UiLanguage.cs) and the Windows language IDs for which the app
+  // finds that translation by itself, separated by "/": a primary language ID for a neutral culture (any German is "de"),
+  // full ones for Brazilian Portuguese (.NET doesn't take pt-BR for Portugal's pt-PT) and for each Chinese script, which
+  // share the primary ID: Simplified for China and Singapore, Traditional for Taiwan, Hong Kong and Macau.
   LanguageTable = '|en=en,$09|uk=uk,$22|ru=ru,$19|pl=pl,$15|de=de,$07|fr=fr,$0C|it=it,$10|es=es,$0A|ptbr=pt-BR,$0416|' +
-    'tr=tr,$1F|id=id,$21|vi=vi,$2A|ja=ja,$11|ko=ko,$12|zhhans=zh-Hans,$04|zhhant=zh-Hant,$04|zhhk=zh-Hant,$04|zhmo=zh-Hant,$04|';
+    'tr=tr,$1F|id=id,$21|vi=vi,$2A|ja=ja,$11|ko=ko,$12|zhhans=zh-Hans,$0804/$1004|zhhant=zh-Hant,$0404/$0C04/$1404|' +
+    'zhhk=zh-Hant,$0404/$0C04/$1404|zhmo=zh-Hant,$0404/$0C04/$1404|';
 
 var
   // ModelNeeded cache of the form '|name=1|name=0': Setup may call Check several times, and hashing a model takes a while.
@@ -263,7 +265,7 @@ end;
 // so a later choice under "Advanced" in the app stays the user's.
 procedure SaveLanguageForApp;
 var
-  Entry, Culture, Path: String;
+  Entry, Culture, Ids, Path: String;
   P, Id: Integer;
 begin
   P := Pos('|' + ActiveLanguage + '=', LanguageTable);
@@ -272,9 +274,14 @@ begin
   Entry := Copy(LanguageTable, P + Length(ActiveLanguage) + 2, MaxInt);
   Entry := Copy(Entry, 1, Pos('|', Entry) - 1);
   Culture := Copy(Entry, 1, Pos(',', Entry) - 1);
-  Id := StrToInt(Copy(Entry, Pos(',', Entry) + 1, MaxInt));
-  if ((Id > $3FF) and (GetUILanguage = Id)) or ((Id <= $3FF) and ((GetUILanguage and $3FF) = Id)) then
-    Exit;
+  Ids := Copy(Entry, Pos(',', Entry) + 1, MaxInt) + '/';
+  while Ids <> '' do
+  begin
+    Id := StrToInt(Copy(Ids, 1, Pos('/', Ids) - 1));
+    Delete(Ids, 1, Pos('/', Ids));
+    if ((Id > $3FF) and (GetUILanguage = Id)) or ((Id <= $3FF) and ((GetUILanguage and $3FF) = Id)) then
+      Exit;
+  end;
   // When installing for all users, this is the settings of the account that runs Setup.
   Path := ExpandConstant('{localappdata}\Krupno\settings.json');
   if FileExists(Path) then

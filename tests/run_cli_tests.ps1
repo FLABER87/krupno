@@ -82,11 +82,11 @@ Run "batch"           @($img, "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\batc
 Run "broken"          @("$fx\broken\broken.png", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\broken.png") -Expect 1
 Run "broken_gif"      @("$fx\broken\broken.gif", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\broken_gif.png") -Expect 1
 
-# "-o" pointing at the source's own folder must not replace the source: the result gets " (2)".
+# "-o" pointing at the source's own folder must not replace the source: the result is named as next to the source.
 New-Item -ItemType Directory -Force "$out\same" | Out-Null
 Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\same\noise.png"
 Run "same_folder"     @("$out\same\noise.png", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\same")
-# "x.png" and "x.jpg" in one folder both become "x.png": the second one gets " (2)" instead of overwriting the first.
+# "x.png" and "x.jpg" in one folder both become "x.png": neither gets it, each takes its source's extension instead.
 New-Item -ItemType Directory -Force "$out\dup" | Out-Null
 Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\dup\x.png"
 Copy-Item -LiteralPath "$img\orient6.jpg" "$out\dup\x.jpg"

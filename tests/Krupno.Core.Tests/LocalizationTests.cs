@@ -217,7 +217,7 @@ public partial class LocalizationTests
         // The table that tells the app which language Setup ran in: every language, with the app's culture name for it.
         string table = string.Concat(Regex.Matches(script, @"^\s*(?:LanguageTable = )?'([^']*)'", RegexOptions.Multiline)
             .Select(m => m.Groups[1].Value));
-        var cultures = Regex.Matches(table, @"\|(\w+)=([\w-]+),\$[0-9A-F]+(?=\|)")
+        var cultures = Regex.Matches(table, @"\|(\w+)=([\w-]+),\$[0-9A-F]+(?:/\$[0-9A-F]+)*(?=\|)")
             .ToDictionary(m => m.Groups[1].Value, m => m.Groups[2].Value);
         Assert.Equal(InstallerLanguages.Order(StringComparer.Ordinal), cultures.Keys.Order(StringComparer.Ordinal));
         Assert.All(cultures, c => Assert.Equal(c.Key is "zhhk" or "zhmo" ? "zh-Hant" : UiLanguage.All.Single(l => InnoName(l.Culture) == c.Key).Culture, c.Value));

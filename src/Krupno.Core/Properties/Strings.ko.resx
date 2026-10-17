@@ -15,6 +15,9 @@
   <data name="Error_AcceleratorMissing" xml:space="preserve">
     <value>{0}을(를) 더 이상 사용할 수 없습니다. 다른 장치를 선택하세요.</value>
   </data>
+  <data name="Error_AcceleratorUnsupported" xml:space="preserve">
+    <value>{0}에서 이 모델 전체를 실행할 수 없습니다. 모델의 연산 중 일부 또는 전부를 지원하지 않습니다. DirectML을 통한 GPU 또는 CPU를 선택하세요.</value>
+  </data>
   <data name="Error_CannotOpen" xml:space="preserve">
     <value>"{0}"을(를) 열 수 없습니다. 파일이 손상되었거나 이미지가 아닙니다.</value>
   </data>

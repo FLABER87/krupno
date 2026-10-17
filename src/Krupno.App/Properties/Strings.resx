@@ -151,7 +151,8 @@
     <value>No model is selected.</value>
   </data>
   <data name="Error_NoneUpscaled" xml:space="preserve">
-    <value>None of the {0} files could be upscaled. {1}</value>
+    <value>The file could not be upscaled. {1}|None of the {0} files could be upscaled. {1}</value>
+    <comment>Plural forms separated by |, as many as the language has; {0} is the number of files (always 2 or more), {1} the first file's error.</comment>
   </data>
   <data name="Error_OutputFolder" xml:space="preserve">
     <value>Can't save to the output folder: {0} Choose another folder or save next to the originals.</value>

@@ -148,7 +148,7 @@
     <value>Model seçilmedi.</value>
   </data>
   <data name="Error_NoneUpscaled" xml:space="preserve">
-    <value>Dosyaların hiçbiri büyütülemedi (toplam: {0}). {1}</value>
+    <value>Dosya büyütülemedi. {1}|Dosyaların hiçbiri büyütülemedi (toplam: {0}). {1}</value>
   </data>
   <data name="Error_OutputFolder" xml:space="preserve">
     <value>Çıktı klasörüne kaydedilemiyor: {0} Başka bir klasör seçin veya orijinallerin yanına kaydedin.</value>

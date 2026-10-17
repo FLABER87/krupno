@@ -15,6 +15,9 @@
   <data name="Error_AcceleratorMissing" xml:space="preserve">
     <value>{0} không còn khả dụng: hãy chọn thiết bị khác.</value>
   </data>
+  <data name="Error_AcceleratorUnsupported" xml:space="preserve">
+    <value>{0} không chạy được toàn bộ mô hình này: không hỗ trợ tất cả thao tác của mô hình. Hãy chọn GPU qua DirectML hoặc CPU.</value>
+  </data>
   <data name="Error_CannotOpen" xml:space="preserve">
     <value>Không thể mở “{0}”: tệp bị hỏng hoặc không phải là ảnh.</value>
   </data>

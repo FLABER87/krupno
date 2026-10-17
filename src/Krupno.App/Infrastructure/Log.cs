@@ -34,8 +34,9 @@ public static class Log
             var now = DateTime.Now;
             string path = Path.Combine(Folder,
                 $"krupno-{now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}-{Environment.ProcessId}.log");
-            // Readable while the window is open; flushed on every entry, so a crash leaves everything up to it.
-            var stream = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
+            // Readable while the window is open; flushed on every entry, so a crash leaves everything up to it. Not deletable:
+            // another window's DeleteOld must leave the log of a window that is still open alone.
+            var stream = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
             lock (Gate)
                 _writer = new StreamWriter(stream, new UTF8Encoding(false)) { AutoFlush = true };
             FilePath = path;

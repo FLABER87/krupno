@@ -47,15 +47,46 @@ internal sealed class PastedImage
     {
         Directory.CreateDirectory(Folder);
         string name = string.Format(Strings.Pasted_FileName, DateTime.Now.ToString("yyyy-MM-dd HHmmss", CultureInfo.InvariantCulture));
-        string path = Path.Combine(Folder, name + ".png");
-        for (int n = 2; File.Exists(path); n++)
-            path = Path.Combine(Folder, $"{name} ({n}).png");
-
-        if (_png is not null)
-            File.WriteAllBytes(path, _png);
-        else
-            ImageCodec.Save(_bitmap!, path, ImageFileFormat.Png);
+        string path = Reserve(name);
+        try
+        {
+            if (_png is not null)
+                File.WriteAllBytes(path, _png);
+            else
+                ImageCodec.Save(_bitmap!, path, ImageFileFormat.Png);
+        }
+        catch
+        {
+            try
+            {
+                File.Delete(path);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+            }
+            throw;
+        }
         return path;
+    }
+
+    /// <summary>
+    /// Creates an empty file under a name no other file has: two pastes within the same second (the name has seconds) both
+    /// save in the background, and checking for the name first would let the second one replace the first.
+    /// </summary>
+    private static string Reserve(string name)
+    {
+        for (int n = 1; ; n++)
+        {
+            string path = Path.Combine(Folder, n == 1 ? name + ".png" : $"{name} ({n}).png");
+            try
+            {
+                using (new FileStream(path, FileMode.CreateNew, FileAccess.Write))
+                    return path;
+            }
+            catch (IOException) when (File.Exists(path))
+            {
+            }
+        }
     }
 
     private static byte[]? ReadBytes(object? data)

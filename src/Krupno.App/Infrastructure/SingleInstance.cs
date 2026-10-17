@@ -23,13 +23,21 @@ internal static class SingleInstance
     /// <summary>The first window may still be starting when the next process tries to reach it.</summary>
     private const int ConnectTimeoutMs = 5000;
 
+    /// <summary>
+    /// How long the window may take to accept handed-over paths: less than the sender waits for the answer, so that a window
+    /// that is too busy withdraws its acceptance before the sender gives up and opens a window of its own with the same files.
+    /// </summary>
+    private const int AcceptTimeoutMs = 4000;
+
     /// <summary>Per user and session: another user's window, or the same user's in another session, isn't this one's to take.
     /// The unit tests set a name of their own, so a window that is open doesn't take their paths.</summary>
     internal static string Name { get; set; } = $"Krupno-{Environment.UserName}-{Process.GetCurrentProcess().SessionId}";
 
     private static readonly Lock Gate = new();
     private static readonly List<(string[] Paths, DateTime ArrivedAt)> Pending = [];
-    private static Action<string[], DateTime>? _handler;
+    private static Func<string[], DateTime, CancellationToken, Task<bool>>? _handler;
+    /// <summary>The window is closing: paths that arrive now aren't taken, so their Krupno.exe opens a window of its own.</summary>
+    private static bool _stopped;
     /// <summary>Held for as long as this window is the one that takes the paths.</summary>
     private static Mutex? _mutex;
 
@@ -42,7 +50,17 @@ internal static class SingleInstance
     /// </summary>
     public static bool TryHandOver(string[] args)
     {
-        var mutex = new Mutex(initiallyOwned: true, @"Local\" + Name, out bool createdNew);
+        Mutex mutex;
+        bool createdNew;
+        try
+        {
+            mutex = new Mutex(initiallyOwned: true, @"Local\" + Name, out createdNew);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or WaitHandleCannotBeOpenedException or IOException)
+        {
+            // The mutex exists but this process may not open it (the window was started elevated, for example): a window of its own.
+            return false;
+        }
         if (createdNew)
         {
             _mutex = mutex;
@@ -76,18 +94,27 @@ internal static class SingleInstance
     }
 
     /// <summary>
-    /// From now on, paths handed over by other Krupno.exe go to <paramref name="handler"/> (on a background thread), the ones that
-    /// came while the window was starting first.
+    /// From now on, paths handed over by other Krupno.exe go to <paramref name="handler"/> (called on a background thread), the
+    /// ones that came while the window was starting first. The handler completes with whether the window took them; when the token
+    /// is canceled it should withdraw them if it hasn't taken them yet. Without "took them" their Krupno.exe isn't told they
+    /// arrived, and opens a window of its own.
     /// </summary>
-    public static void Attach(Action<string[], DateTime> handler)
+    public static void Attach(Func<string[], DateTime, CancellationToken, Task<bool>> handler)
     {
         lock (Gate)
         {
             _handler = handler;
             foreach (var (paths, arrivedAt) in Pending)
-                handler(paths, arrivedAt);
+                _ = handler(paths, arrivedAt, CancellationToken.None);
             Pending.Clear();
         }
+    }
+
+    /// <summary>The window is closing: paths that arrive from now on are refused, so they aren't lost with the window.</summary>
+    public static void Stop()
+    {
+        lock (Gate)
+            _stopped = true;
     }
 
     /// <summary>On exit, on the thread that started the app: the next Krupno.exe opens a window of its own.</summary>
@@ -157,9 +184,12 @@ internal static class SingleInstance
                 var paths = new List<string>();
                 while (await reader.ReadLineAsync(timeout.Token) is { Length: > 0 } line)
                     paths.Add(line);
-                Deliver([.. paths], arrivedAt);
+                // Without the answer the other Krupno.exe opens a window of its own rather than lose its files.
+                if (!await DeliverAsync([.. paths], arrivedAt))
+                    return;
+                // Not with the reading's timeout: accepting may have used most of it, and the answer is a single byte.
                 server.WriteByte(Received);
-                await server.FlushAsync(timeout.Token);
+                server.Flush();
             }
             catch (Exception ex)
             {
@@ -168,14 +198,30 @@ internal static class SingleInstance
         }
     }
 
-    private static void Deliver(string[] paths, DateTime arrivedAt)
+    /// <summary>False if the window didn't take the paths. Waits for the window outside the lock: the UI thread may take a moment.</summary>
+    private static async Task<bool> DeliverAsync(string[] paths, DateTime arrivedAt)
     {
+        Func<string[], DateTime, CancellationToken, Task<bool>> handler;
         lock (Gate)
         {
+            if (_stopped)
+                return false;
             if (_handler is null)
+            {
+                // The window is still starting: it takes these when it attaches.
                 Pending.Add((paths, arrivedAt));
-            else
-                _handler(paths, arrivedAt);
+                return true;
+            }
+            handler = _handler;
+        }
+        using var giveUp = new CancellationTokenSource(AcceptTimeoutMs);
+        try
+        {
+            return await handler(paths, arrivedAt, giveUp.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return false;
         }
     }
 

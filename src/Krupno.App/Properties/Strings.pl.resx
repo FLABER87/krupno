@@ -148,7 +148,7 @@
     <value>Nie wybrano modelu.</value>
   </data>
   <data name="Error_NoneUpscaled" xml:space="preserve">
-    <value>Nie udało się powiększyć żadnego z plików (łącznie: {0}). {1}</value>
+    <value>Nie udało się powiększyć pliku. {1}|Nie udało się powiększyć żadnego z {0} plików. {1}|Nie udało się powiększyć żadnego z {0} plików. {1}</value>
   </data>
   <data name="Error_OutputFolder" xml:space="preserve">
     <value>Nie można zapisać w folderze wyjściowym: {0} Wybierz inny folder lub zapisz obok oryginałów.</value>

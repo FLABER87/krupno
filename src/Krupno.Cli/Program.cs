@@ -79,7 +79,7 @@ catch (OperationCanceledException)
     return 130;
 }
 catch (Exception ex) when (ex is CliException or IOException or NotSupportedException or InvalidOperationException
-                               or UnauthorizedAccessException or Microsoft.ML.OnnxRuntime.OnnxRuntimeException)
+                               or UnauthorizedAccessException or OutOfMemoryException or Microsoft.ML.OnnxRuntime.OnnxRuntimeException)
 {
     Console.Error.WriteLine();
     Console.Error.WriteLine($"Error: {ex.Message}");
@@ -94,7 +94,9 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
     // Next to the source, the name says what was asked for: "_x4", "_x2.5", "_3840w".
     string suffix = options.Target?.Suffix
         ?? "_x" + (options.Scale > 0 ? options.Scale : UpscaleModel.Inspect(modelPath).Scale).ToString("0.##", CultureInfo.InvariantCulture);
-    var jobs = JobPlanner.Plan(options.Inputs, options.Output, options.Format, options.Recursive, suffix);
+    var jobs = JobPlanner.Plan(options.Inputs, options.Output, options.Format, options.Recursive, suffix, out int leftOut);
+    if (leftOut > 0)
+        Console.WriteLine($"Leaving out {leftOut} of {jobs.Count + leftOut} images: they are results of other images in this command.");
     if (jobs.Count == 0)
         throw new CliException($"No supported images found in {string.Join(", ", options.Inputs.Select(i => $"\"{i}\""))}.");
     if (options.SkipExisting)

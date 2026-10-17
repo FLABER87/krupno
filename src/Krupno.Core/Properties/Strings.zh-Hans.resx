@@ -15,6 +15,9 @@
   <data name="Error_AcceleratorMissing" xml:space="preserve">
     <value>{0} 已不可用：请选择其他设备。</value>
   </data>
+  <data name="Error_AcceleratorUnsupported" xml:space="preserve">
+    <value>{0} 无法完整运行此模型：不支持其中部分或全部运算。请选择通过 DirectML 的 GPU 或 CPU。</value>
+  </data>
   <data name="Error_CannotOpen" xml:space="preserve">
     <value>无法打开“{0}”：文件已损坏或不是图像。</value>
   </data>

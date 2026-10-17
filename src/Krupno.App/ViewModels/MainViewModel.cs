@@ -16,6 +16,7 @@ using Krupno.App.Infrastructure;
 using Krupno.App.Properties;
 using Krupno.Core.Imaging;
 using Krupno.Core.Inference;
+using Krupno.Core.Localization;
 using Krupno.Core.Processing;
 
 namespace Krupno.App.ViewModels;
@@ -93,6 +94,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     /// <summary>Whether the accelerators are known yet: until then a saved accelerator must not be overwritten by "Auto".</summary>
     private bool _acceleratorsLoaded;
     private bool _installingAccelerators;
+    /// <summary>The run going on, or the last one: closing the window waits for it (see <see cref="CancelRunAsync"/>).</summary>
+    private Task _run = Task.CompletedTask;
     private string? _acceleratorStatus;
     private Option<string?> _selectedLanguage;
     /// <summary>The language the window was started in: a different choice takes effect after a restart.</summary>
@@ -166,13 +169,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (State == PanelState.Empty)
                 OpenFiles(append: false);
             else
-                _ = UpscaleAsync();
-        }, () => !IsBusy && (State == PanelState.Empty || (SelectedModel is not null && ScaleChoice is not null)));
+                StartRun();
+        }, () => !IsBusy && (State == PanelState.Empty || (CanStartRun && SelectedModel is not null && ScaleChoice is not null)));
         OpenCommand = new RelayCommand(() => OpenFiles(append: false), () => !IsBusy);
         AddFilesCommand = new RelayCommand(() => OpenFiles(append: true), () => !IsBusy);
         ClearFilesCommand = new RelayCommand(ClearFiles, () => !IsBusy && HasFiles);
-        UpscaleCommand = new RelayCommand(() => _ = UpscaleAsync(),
-            () => !IsBusy && HasFiles && SelectedModel is not null && ScaleChoice is not null);
+        UpscaleCommand = new RelayCommand(StartRun,
+            () => !IsBusy && CanStartRun && HasFiles && SelectedModel is not null && ScaleChoice is not null);
         CancelCommand = new RelayCommand(() => _cts?.Cancel(), () => IsBusy);
         OpenResultCommand = new RelayCommand(OpenResult, () => ResultFile is not null);
         ShowInFolderCommand = new RelayCommand(ShowInFolder, () => ResultFile is not null);
@@ -970,9 +973,21 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     /// <summary>A run came to an end by itself, done or failed (not canceled): the user may want to know if they looked away.</summary>
     public event EventHandler? RunFinished;
 
+    /// <summary>Cancels the run, if one is going, and completes once it has stopped, with a result being written finished.</summary>
+    public Task CancelRunAsync()
+    {
+        _cts?.Cancel();
+        return _run;
+    }
+
+    /// <summary>While an accelerator is being downloaded and registered with ONNX Runtime, no run creates sessions.</summary>
+    private bool CanStartRun => !_installingAccelerators;
+
+    private void StartRun() => _run = UpscaleAsync();
+
     private async Task UpscaleAsync()
     {
-        if (IsBusy || !HasFiles || SelectedModel is not { } modelItem || ScaleChoice is not { } choice)
+        if (IsBusy || !CanStartRun || !HasFiles || SelectedModel is not { } modelItem || ScaleChoice is not { } choice)
             return;
 
         var files = Files.ToList();
@@ -983,7 +998,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             Format: SelectedFormat.Value, Quality: JpegQuality, Folder: OutputFolder);
         // All names up front: a result must not overwrite a queued source ("photo.png" → "photo_x4.png" while
         // "photo_x4.png" waits in the queue) or another result ("photo.jpg" and "photo.png" → "photo_x4.png").
-        var outputs = OutputPaths.MakeUnique(files.Select(f => f.Path),
+        var outputs = OutputPaths.MakeUnique(files.Select(f => f.Path).ToList(),
             files.Select(f => BuildOutputPath(f.Path, settings.Folder, settings.Scale, settings.Target, settings.Format)).ToList());
         foreach (var file in files)
         {
@@ -1121,7 +1136,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (succeeded == 0)
             {
                 // Every file of the batch failed: that is not a success, whatever the count.
-                ErrorDetail = string.Format(Strings.Error_NoneUpscaled, files.Count, firstError);
+                ErrorDetail = Plurals.Format(Strings.Error_NoneUpscaled, files.Count, null, firstError);
                 ErrorTechnical = firstError;
                 State = PanelState.Error;
                 TaskbarState = TaskbarItemProgressState.Error;
@@ -1520,7 +1535,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             _settings.DeviceKind = device.Kind;
             _settings.DeviceName = device.AdapterName;
-            _settings.DeviceIndex = device.Kind == DeviceKind.Gpu ? device.AdapterIndex : null;
+            _settings.DeviceIndex = device.Kind is DeviceKind.Gpu or DeviceKind.Accelerator && device.AdapterIndex >= 0 ? device.AdapterIndex : null;
             _settings.DeviceProvider = device.Provider;
         }
         _settings.Strength = Strength;
@@ -1543,7 +1558,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         return _settings.DeviceKind switch
         {
             DeviceKind.Cpu => ExecutionDevice.Cpu,
-            DeviceKind.Accelerator => accelerators.FirstOrDefault(a => a.Provider == _settings.DeviceProvider && a.AdapterName == _settings.DeviceName),
+            // Of two identical cards, the one with the saved index; if the indices changed, the first of that name.
+            DeviceKind.Accelerator => accelerators.FirstOrDefault(a => a.Provider == _settings.DeviceProvider && a.AdapterName == _settings.DeviceName
+                                                                       && a.AdapterIndex == (_settings.DeviceIndex ?? -1))
+                                      ?? accelerators.FirstOrDefault(a => a.Provider == _settings.DeviceProvider && a.AdapterName == _settings.DeviceName),
             DeviceKind.Gpu => (gpus.FirstOrDefault(a => a.Name == _settings.DeviceName && a.Index == _settings.DeviceIndex)
                                ?? gpus.FirstOrDefault(a => a.Name == _settings.DeviceName)) is { } adapter
                 ? ExecutionDevice.Gpu(adapter)
@@ -1708,10 +1726,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         [
             new(ExecutionDevice.Auto, string.Format(Strings.Device_AutoWith, Text.Device(autoDevice))),
             .. GpuAdapters.Enumerate().Select(a => new Option<ExecutionDevice>(ExecutionDevice.Gpu(a), a.Name.Replace("(R)", "").Replace("(TM)", ""))),
-            .. accelerators.Select(a => new Option<ExecutionDevice>(a, a.ToString())),
+            .. accelerators.Select(a => new Option<ExecutionDevice>(a, AcceleratorLabel(a, accelerators))),
             new(ExecutionDevice.Cpu, Strings.Device_CpuSlow),
         ];
     }
+
+    /// <summary>"RTX 3080 · TensorRT-RTX"; two identical cards get their DXGI index as well, to tell them apart.</summary>
+    private static string AcceleratorLabel(ExecutionDevice device, IReadOnlyList<ExecutionDevice> accelerators) =>
+        device.AdapterIndex >= 0 && accelerators.Count(a => a.ToString() == device.ToString()) > 1
+            ? $"{device} #{device.AdapterIndex}"
+            : device.ToString();
 
     /// <summary>
     /// Registers the accelerators Windows already has (loading a provider's library can take a while, so not on the UI thread),
@@ -1728,13 +1752,29 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var selected = SelectedDevice.Value;
         if (!_acceleratorsLoaded && _settings.DeviceKind == DeviceKind.Accelerator && FindSavedDevice(devices) is { } saved)
             selected = saved;
-        _acceleratorsLoaded = true;
+        if (!Accelerators.LateRegistration.IsCompleted)
+        {
+            // Windows ML didn't answer in time and is still registering: the saved accelerator may only be missing from the list
+            // for now, so it isn't replaced with "Auto" yet, and the list is built again once the registration ends.
+            _ = ReloadAcceleratorsAsync();
+        }
+        else
+        {
+            _acceleratorsLoaded = true;
+        }
         Devices = BuildDevices(devices);
         SelectedDevice = Devices.FirstOrDefault(d => d.Value == selected) ?? Devices[0];
         // The same choice in a new list: the combo box must find it there again.
         OnPropertyChanged(nameof(SelectedDevice));
         _acceleratorPackages = packages;
         OnAcceleratorsChanged();
+    }
+
+    private async Task ReloadAcceleratorsAsync()
+    {
+        await Accelerators.LateRegistration;
+        Log.Info("Windows ML finished registering the accelerators late");
+        await LoadAcceleratorsAsync();
     }
 
     /// <summary>Downloads every accelerator Windows ML offers and doesn't have yet, one after another, then lists their devices.</summary>

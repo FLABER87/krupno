@@ -465,7 +465,7 @@ namespace Krupno.App.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to None of the {0} files could be upscaled. {1}.
+        ///   Looks up a localized string similar to The file could not be upscaled. {1}|None of the {0} files could be upscaled. {1}.
         /// </summary>
         public static string Error_NoneUpscaled {
             get {

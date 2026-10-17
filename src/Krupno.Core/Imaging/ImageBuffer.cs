@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Krupno.Core.Properties;
 
@@ -167,22 +168,29 @@ public sealed class ImageBuffer
         {
             for (int x = 0; x < dst.Width; x++)
             {
-                // For each output pixel, look up the source pixel (inverse transform).
-                (int sx, int sy) = orientation switch
-                {
-                    2 => (w - 1 - x, y),
-                    3 => (w - 1 - x, h - 1 - y),
-                    4 => (x, h - 1 - y),
-                    5 => (y, x),
-                    6 => (y, h - 1 - x),
-                    7 => (w - 1 - y, h - 1 - x),
-                    _ => (w - 1 - y, x), // 8
-                };
+                (int sx, int sy) = SourceOf(orientation, x, y, w, h);
                 d[y * dst.Width + x] = s[sy * w + sx];
             }
         }
         return dst;
     }
+
+    /// <summary>
+    /// The pixel of a <paramref name="width"/>×<paramref name="height"/> image that lands at (<paramref name="x"/>, <paramref name="y"/>)
+    /// of the image in EXIF orientation <paramref name="orientation"/> applied (the inverse transform, looked up per output pixel).
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static (int X, int Y) SourceOf(int orientation, int x, int y, int width, int height) => orientation switch
+    {
+        2 => (width - 1 - x, y),
+        3 => (width - 1 - x, height - 1 - y),
+        4 => (x, height - 1 - y),
+        5 => (y, x),
+        6 => (y, height - 1 - x),
+        7 => (width - 1 - y, height - 1 - x),
+        8 => (width - 1 - y, x),
+        _ => (x, y),
+    };
 
     private static byte[] AllocatePixels(int width, int height)
     {

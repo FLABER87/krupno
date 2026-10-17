@@ -130,6 +130,74 @@ public sealed class JobPlannerTests : IDisposable
     }
 
     [Fact]
+    public void NamedImagesAreNeverLeftOut()
+    {
+        // b_x4.png is named like b.png's result, but it was asked for by name: it is upscaled, and b.png's result goes elsewhere
+        // instead of replacing it.
+        File.WriteAllBytes(P("photos/b_x4.png"), []);
+        AssertJobs(
+            [(P("photos/b.png"), P("photos/b_x4 (png).png")), (P("photos/b_x4.png"), P("photos/b_x4_x4.png"))],
+            Plan(["photos/b.png", "photos/b_x4.png"]));
+        // Found by a pattern, the same file is an earlier result and is left out.
+        var jobs = JobPlanner.Plan([P("photos/*.png")], null, null, false, "_x4", out int leftOut);
+        Assert.Equal(1, leftOut);
+        AssertJobs([(P("photos/b.png"), P("photos/b_x4.png"))], jobs);
+    }
+
+    [Fact]
+    public void SourceFolderAsOutputKeepsTheSuffix()
+    {
+        // -o pointing at the sources' own folder: the results are named as next to the sources, so a rerun tells them apart.
+        AssertJobs(
+            [(P("photos/a.jpg"), P("photos/a_x4.png")), (P("photos/b.png"), P("photos/b_x4.png"))],
+            Plan(["photos"], "photos"));
+        File.WriteAllBytes(P("photos/a_x4.png"), []);
+        File.WriteAllBytes(P("photos/b_x4.png"), []);
+        AssertJobs(
+            [(P("photos/a.jpg"), P("photos/a_x4.png")), (P("photos/b.png"), P("photos/b_x4.png"))],
+            Plan(["photos"], "photos"));
+        AssertJobs([(P("photos/a.jpg"), P("photos/a_x4.png"))], Plan(["photos/a.jpg"], "photos"));
+    }
+
+    [Fact]
+    public void AddedImageDoesNotTakeAnEarlierResult()
+    {
+        // photos_upscaled/a.png is a.jpg's. With a.bmp added (it sorts first) neither takes that name, so --skip-existing
+        // can't skip a.bmp as done.
+        Assert.Equal(P("photos_upscaled/a.png"), Plan(["photos"])[0].Output);
+        File.WriteAllBytes(P("photos/a.bmp"), []);
+        AssertJobs(
+            [
+                (P("photos/a.bmp"), P("photos_upscaled/a (bmp).png")), (P("photos/a.jpg"), P("photos_upscaled/a (jpg).png")),
+                (P("photos/b.png"), P("photos_upscaled/b.png")),
+            ],
+            Plan(["photos"]));
+    }
+
+    [Fact]
+    public void ResultsWithTheSourceExtensionAreLeftOut()
+    {
+        // b.jpg and b.png both want b_x4.png; the earlier run's "b_x4 (jpg).png" and "b_x4 (png).png" are results, not sources.
+        File.WriteAllBytes(P("photos/b.jpg"), []);
+        File.WriteAllBytes(P("photos/b_x4 (jpg).png"), []);
+        File.WriteAllBytes(P("photos/b_x4 (png).png"), []);
+        AssertJobs(
+            [
+                (P("photos/a.jpg"), P("photos/a_x4.png")), (P("photos/b.jpg"), P("photos/b_x4 (jpg).png")),
+                (P("photos/b.png"), P("photos/b_x4 (png).png")),
+            ],
+            Plan(["photos/*.*"]));
+    }
+
+    [Fact]
+    public void LongPathPrefixIsNotAPattern()
+    {
+        string file = @"\\?\" + P("photos/a.jpg");
+        Assert.Equal(@"\\?\" + P("photos/a_x4.png"), JobPlanner.Plan([file], null, null, false, "_x4").Single().Output);
+        Assert.Equal(2, JobPlanner.Plan([file, P("photos/b.png")], null, null, false, "_x4").Count);
+    }
+
+    [Fact]
     public void Errors()
     {
         Assert.Contains("not found", Assert.Throws<CliException>(() => Plan(["missing.jpg"])).Message);

@@ -79,7 +79,7 @@ public class TestTimeAugmentationTests
     [Fact]
     public void AverageRoundsToTheNearestLevel()
     {
-        // Eight results of two pixels: blue 10 ×5 and 11 ×3 is 10.375 → 10, ×4 each is 10.5 → 11; 0 and 255 stay, alpha stays.
+        // Eight results of two pixels: blue 10 ×5 and 11 ×3 is 10.375 → 10, ×4 each is 10.5 → 11; 0 and 255 stay; opaque.
         byte[][] results =
         [
             [10, 0, 255, 255, 10, 0, 255, 7], [10, 0, 255, 255, 10, 0, 255, 7], [10, 0, 255, 255, 10, 0, 255, 7],
@@ -88,10 +88,31 @@ public class TestTimeAugmentationTests
         ];
         var sum = new ushort[2 * 3];
         foreach (var result in results)
-            Upscaler.AddColors(result, sum);
-        var average = results[^1];
+            Upscaler.AddColors(new ImageBuffer(2, 1, result), 1, sum);
+        var average = new byte[2 * ImageBuffer.BytesPerPixel];
         Upscaler.Average(sum, results.Length, average);
-        Assert.Equal([10, 0, 255, 255, 11, 0, 255, 7], average);
+        Assert.Equal([10, 0, 255, 255, 11, 0, 255, 255], average);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(6)]
+    [InlineData(7)]
+    [InlineData(8)]
+    public void AddingTurnedColorsIsAddingTheTurnedBackCopy(int orientation)
+    {
+        // TTA reads a round's result through the orientation's pixel mapping instead of turning it back as a copy first.
+        var turned = TestImages.Noise(13, 7, seed: orientation);
+        var copy = turned.ApplyExifOrientation(orientation);
+        var expected = new ushort[copy.Width * copy.Height * 3];
+        Upscaler.AddColors(copy, 1, expected);
+        var actual = new ushort[expected.Length];
+        Upscaler.AddColors(turned, orientation, actual);
+        Assert.Equal(expected, actual);
     }
 
     [Theory]
