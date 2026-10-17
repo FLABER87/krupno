@@ -52,6 +52,13 @@ Run "noise_red_x8"    @("$img\noise_300x200.png", "-m", "$mod\nearest_red_x4.onn
 Run "noise_red_s50"   @("$img\noise_300x200.png", "-m", "$mod\nearest_red_x4.onnx", "--strength", "50", "-o", "$out\noise_red_s50.png")
 Run "alpha_red_s30"   @("$img\alpha_257x129.png", "-m", "$mod\nearest_red_x4.onnx", "--strength", "30", "-o", "$out\alpha_red_s30.png")
 Run "strength_0"      @("$img\noise_300x200.png", "-m", "$mod\nearest_red_x4.onnx", "--strength", "0", "-o", "$out\strength_0.png") -Expect 2
+# Target sizes: --width gives that width (×2.5 here) and a name saying so next to the source; --long-side counts the longer
+# side after the EXIF rotation (90×160 → 540×960); -s together with a target size is refused.
+New-Item -ItemType Directory -Force "$out\target" | Out-Null
+Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\target\noise.png"
+Run "target_width"    @("$out\target\noise.png", "-m", "$mod\nearest_red_x4.onnx", "--width", "750")
+Run "target_long"     @("$img\orient6.jpg", "-m", "$mod\nearest_red_x4.onnx", "--long-side", "960", "-o", "$out\target_long.png")
+Run "target_conflict" @("$img\noise_300x200.png", "-m", "$mod\nearest_red_x4.onnx", "-s", "2", "--width", "750", "-o", "$out\target_conflict.png") -Expect 2
 Run "orient6_red"     @("$img\orient6.jpg", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\orient6_red.png")
 if (Test-Path -LiteralPath "$img\icc_60x40.png") {
     Run "icc_red"     @("$img\icc_60x40.png", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\icc_red.png")

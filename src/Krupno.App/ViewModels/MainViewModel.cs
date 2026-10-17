@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -42,6 +43,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private const int MinStrength = 10, MaxStrength = 100;
     /// <summary>The tile overlap of "Seamless tiles": 64 px leaves no visible seams even with deep models (README, "How it works").</summary>
     private const int SeamlessPadding = 64;
+    /// <summary>The limits of "Other", the same as the command-line tool's.</summary>
+    private const double MaxCustomScale = 64;
+    private const int MaxTargetPixels = 1_000_000;
 
     private readonly AppSettings _settings;
     private readonly List<ModelItem> _allModels = [];
@@ -71,6 +75,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool _showAllModels;
     private int _strength = MaxStrength;
     private Option<double> _selectedScale;
+    private readonly Option<double> _customScale = new(0, "Other");
+    private Option<CustomScaleMode> _selectedCustomMode;
+    private string _customValueText;
     private Option<ImageFileFormat> _selectedFormat;
     private int _jpegQuality = 92;
     private string? _outputFolder;
@@ -114,8 +121,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         // The choices from the last session; a value the window doesn't offer (an edited settings file) falls back to the default.
         if (_settings.Strength is int strength)
             _strength = Math.Clamp(strength, MinStrength, MaxStrength);
-        Scales = [new(2, "×2"), new(3, "×3"), new(4, "×4"), new(8, "×8")];
+        // "Other" is saved as scale 0, with its mode and number alongside.
+        Scales = [new(2, "×2"), new(3, "×3"), new(4, "×4"), new(8, "×8"), _customScale];
         _selectedScale = Scales.FirstOrDefault(s => s.Value == _settings.Scale) ?? Scales[2];
+        CustomModes =
+        [
+            new(CustomScaleMode.Scale, "Scale ×"), new(CustomScaleMode.Width, "Width, px"),
+            new(CustomScaleMode.Height, "Height, px"), new(CustomScaleMode.LongSide, "Long side, px"),
+        ];
+        _selectedCustomMode = CustomModes.FirstOrDefault(m => m.Value == _settings.CustomScaleMode) ?? CustomModes[3];
+        _customValueText = _settings.CustomScaleValue ?? DefaultCustomValue(_selectedCustomMode.Value);
 
         Formats = [new(ImageFileFormat.Png, "PNG"), new(ImageFileFormat.Jpeg, "JPEG"), new(ImageFileFormat.Tiff, "TIFF")];
         _selectedFormat = Formats.FirstOrDefault(f => f.Value == _settings.Format) ?? Formats[0];
@@ -133,11 +148,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 OpenFiles(append: false);
             else
                 _ = UpscaleAsync();
-        }, () => !IsBusy && (State == PanelState.Empty || SelectedModel is not null));
+        }, () => !IsBusy && (State == PanelState.Empty || (SelectedModel is not null && ScaleChoice is not null)));
         OpenCommand = new RelayCommand(() => OpenFiles(append: false), () => !IsBusy);
         AddFilesCommand = new RelayCommand(() => OpenFiles(append: true), () => !IsBusy);
         ClearFilesCommand = new RelayCommand(ClearFiles, () => !IsBusy && HasFiles);
-        UpscaleCommand = new RelayCommand(() => _ = UpscaleAsync(), () => !IsBusy && HasFiles && SelectedModel is not null);
+        UpscaleCommand = new RelayCommand(() => _ = UpscaleAsync(),
+            () => !IsBusy && HasFiles && SelectedModel is not null && ScaleChoice is not null);
         CancelCommand = new RelayCommand(() => _cts?.Cancel(), () => IsBusy);
         OpenResultCommand = new RelayCommand(OpenResult, () => ResultFile is not null);
         ShowInFolderCommand = new RelayCommand(ShowInFolder, () => ResultFile is not null);
@@ -283,14 +299,97 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         set
         {
             if (value is not null && SetProperty(ref _selectedScale, value))
+            {
+                OnPropertyChanged(nameof(IsCustomScale));
                 OnOutputSettingsChanged();
+            }
         }
     }
 
-    public string SizePreview => _sourceSize is { } size
-        ? $"{Text.Size(size.Width, size.Height)}  →  " +
-          Text.Size((int)Math.Round(size.Width * SelectedScale.Value), (int)Math.Round(size.Height * SelectedScale.Value))
-        : "Select a file to see the output size";
+    /// <summary>"Other": a scale of the user's own, or a length for one side of the result.</summary>
+    public bool IsCustomScale => SelectedScale == _customScale;
+
+    public IReadOnlyList<Option<CustomScaleMode>> CustomModes { get; }
+
+    public Option<CustomScaleMode> SelectedCustomMode
+    {
+        get => _selectedCustomMode;
+        set
+        {
+            if (value is null || !SetProperty(ref _selectedCustomMode, value))
+                return;
+            // "3840" means nothing as a scale, and "2.5" nothing as a size: start the new mode from its own example.
+            if (ScaleChoice is null)
+                CustomValueText = DefaultCustomValue(value.Value);
+            OnOutputSettingsChanged();
+        }
+    }
+
+    public string CustomValueText
+    {
+        get => _customValueText;
+        set
+        {
+            if (SetProperty(ref _customValueText, value ?? ""))
+            {
+                OnOutputSettingsChanged();
+                // The buttons are disabled while the number is not valid.
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+    }
+
+    /// <summary>The scale and target size chosen under "Scale"; null while "Other" holds something that isn't a valid number.</summary>
+    private (double Scale, ScaleTarget? Target)? ScaleChoice
+    {
+        get
+        {
+            if (!IsCustomScale)
+                return (SelectedScale.Value, null);
+
+            string text = CustomValueText.Trim();
+            var mode = SelectedCustomMode.Value;
+            if (mode == CustomScaleMode.Scale)
+            {
+                // "2,5" as well as "2.5": a decimal comma is what many keyboards type.
+                return double.TryParse(text.TrimStart('×', 'x', 'X').Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture,
+                           out double scale) && scale is > 0 and <= MaxCustomScale
+                    ? (scale, null)
+                    : null;
+            }
+
+            var side = mode switch
+            {
+                CustomScaleMode.Width => TargetSide.Width,
+                CustomScaleMode.Height => TargetSide.Height,
+                _ => TargetSide.LongSide,
+            };
+            return int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out int pixels) && pixels is > 0 and <= MaxTargetPixels
+                ? (0, new ScaleTarget(side, pixels))
+                : null;
+        }
+    }
+
+    public string SizePreview
+    {
+        get
+        {
+            if (ScaleChoice is not { } choice)
+            {
+                return SelectedCustomMode.Value == CustomScaleMode.Scale
+                    ? $"Enter a scale above 0, up to {MaxCustomScale}"
+                    : "Enter a size in pixels";
+            }
+            if (_sourceSize is not { } size)
+                return "Select a file to see the output size";
+
+            double scale = choice.Target?.ScaleFor(size.Width, size.Height) ?? choice.Scale;
+            var (width, height) = Upscaler.OutputSize(size.Width, size.Height, scale);
+            string preview = $"{Text.Size(size.Width, size.Height)}  →  {Text.Size((int)width, (int)height)}";
+            // With a target size the scale differs from image to image, and above the model's own it takes more passes.
+            return choice.Target is null ? preview : $"{preview}  ({Text.Scale(scale)})";
+        }
+    }
 
     public IReadOnlyList<Option<ImageFileFormat>> Formats { get; }
 
@@ -436,9 +535,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public bool IsIdle => !IsBusy;
 
-    public string UpscaleButtonText => Files.Count > 1
-        ? $"Upscale {Text.Files(Files.Count)} {Text.Scale(SelectedScale.Value)}"
-        : $"Upscale {Text.Scale(SelectedScale.Value)}";
+    public string UpscaleButtonText
+    {
+        get
+        {
+            string choice = ScaleChoice is { } c ? " " + Text.ScaleChoice(c.Scale, c.Target) : "";
+            return Files.Count > 1 ? $"Upscale {Text.Files(Files.Count)}{choice}" : $"Upscale{choice}";
+        }
+    }
 
     /// <summary>A note above the button: cancellation, an unreadable file, etc.</summary>
     public string? Notice
@@ -765,18 +869,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private async Task UpscaleAsync()
     {
-        if (IsBusy || !HasFiles || SelectedModel is not { } modelItem)
+        if (IsBusy || !HasFiles || SelectedModel is not { } modelItem || ScaleChoice is not { } choice)
             return;
 
         var files = Files.ToList();
         var deviceOption = SelectedDevice;
-        var settings = (Scale: SelectedScale.Value, Tile: SelectedTile.Value,
+        var settings = (Scale: choice.Scale, Target: choice.Target, Tile: SelectedTile.Value,
             Padding: SeamlessTiles ? SeamlessPadding : UpscaleOptions.Default.TilePadding, Strength: Strength,
             Format: SelectedFormat.Value, Quality: JpegQuality, Folder: OutputFolder);
         // All names up front: a result must not overwrite a queued source ("photo.png" → "photo_x4.png" while
         // "photo_x4.png" waits in the queue) or another result ("photo.jpg" and "photo.png" → "photo_x4.png").
         var outputs = OutputPaths.MakeUnique(files.Select(f => f.Path),
-            files.Select(f => BuildOutputPath(f.Path, settings.Folder, settings.Scale, settings.Format)).ToList());
+            files.Select(f => BuildOutputPath(f.Path, settings.Folder, settings.Scale, settings.Target, settings.Format)).ToList());
         foreach (var file in files)
         {
             file.State = FileState.Pending;
@@ -834,7 +938,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             var upscaler = new Upscaler(model);
             var options = new UpscaleOptions
             {
-                Scale = settings.Scale, TileSize = settings.Tile, TilePadding = settings.Padding, Strength = settings.Strength / 100.0,
+                Scale = settings.Scale, Target = settings.Target, TileSize = settings.Tile, TilePadding = settings.Padding,
+                Strength = settings.Strength / 100.0,
             };
 
             for (int i = 0; i < files.Count; i++)
@@ -984,7 +1089,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             string tile = $"{(settings.Tile == 0 ? "no tiling" : $"tile {settings.Tile} px")}, overlap {settings.Padding} px";
             string format = settings.Format == ImageFileFormat.Jpeg ? $"JPEG {settings.Quality}" : settings.Format.ToString().ToUpperInvariant();
             return $"{modelLine}\nDevice: {device} (selected: {deviceOption.Label}{fallback}) · {tile} · strength {settings.Strength}% · " +
-                   $"{Text.Scale(settings.Scale)} · {format} · {Text.Files(files.Count)} → {settings.Folder ?? "next to the originals"}";
+                   $"{Text.ScaleChoice(settings.Scale, settings.Target)} · {format} · {Text.Files(files.Count)} → {settings.Folder ?? "next to the originals"}";
         }
 
         // The file is written: record it, and show the result if its file is the one on the canvas.
@@ -1288,6 +1393,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _settings.DeviceIndex = device.Kind == DeviceKind.Gpu ? device.AdapterIndex : null;
         _settings.Strength = Strength;
         _settings.Scale = SelectedScale.Value;
+        _settings.CustomScaleMode = SelectedCustomMode.Value;
+        _settings.CustomScaleValue = CustomValueText;
         _settings.Format = SelectedFormat.Value;
         _settings.JpegQuality = JpegQuality;
         _settings.OutputFolder = OutputFolder;
@@ -1463,10 +1570,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _toastTimer.Start();
     }
 
-    private static string BuildOutputPath(string input, string? folder, double scale, ImageFileFormat format)
+    /// <summary>The name says what was asked for: "photo_x4.png", "photo_x2.5.png", "photo_3840w.png" (see ScaleTarget.Suffix).</summary>
+    private static string BuildOutputPath(string input, string? folder, double scale, ScaleTarget? target, ImageFileFormat format)
     {
         string directory = folder ?? Path.GetDirectoryName(input)!;
-        string suffix = "_x" + scale.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        string suffix = target?.Suffix ?? "_x" + scale.ToString("0.##", CultureInfo.InvariantCulture);
         return Path.Combine(directory, Path.GetFileNameWithoutExtension(input) + suffix + ImageCodec.GetExtension(format));
     }
+
+    private static string DefaultCustomValue(CustomScaleMode mode) => mode switch
+    {
+        CustomScaleMode.Scale => "2.5",
+        CustomScaleMode.Height => "2160",
+        _ => "3840",
+    };
 }

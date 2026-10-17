@@ -1,6 +1,7 @@
 using System.Globalization;
 using Krupno.Core.Imaging;
 using Krupno.Core.Inference;
+using Krupno.Core.Processing;
 
 namespace Krupno.Cli;
 
@@ -21,6 +22,9 @@ internal sealed class CliOptions
           -m, --model <name|path> model from the catalog or path to an .onnx file
                                   (default: {ModelCatalog.DefaultModelName}; if it is missing, the first one alphabetically)
           -s, --scale <number>    final scale, e.g. 2, 3, 4, 8 or 2.5 (default: the model's own scale)
+              --width <px>        a width for every result instead of a scale; the height follows the proportions
+              --height <px>       the same for the height
+              --long-side <px>    the same for the longer side, whichever it is for each image
           -f, --format <fmt>      png | jpg | tiff | bmp (default: from the output extension, or png)
           -q, --quality <1-100>   JPEG quality (default: 95)
           -t, --tile <px>         tile size; 0 = no tiling (default: 384)
@@ -39,6 +43,7 @@ internal sealed class CliOptions
     public string? Output { get; private set; }
     public string? Model { get; private set; }
     public double Scale { get; private set; }
+    public ScaleTarget? Target { get; private set; }
     public ImageFileFormat? Format { get; private set; }
     public int Quality { get; private set; } = 95;
     public int Tile { get; private set; } = 384;
@@ -52,6 +57,8 @@ internal sealed class CliOptions
     public static CliOptions Parse(string[] args)
     {
         var options = new CliOptions();
+        // -s and the target sizes all set the size of the result, so only one of them makes sense.
+        var sizes = new List<string>();
         for (int i = 0; i < args.Length; i++)
         {
             string arg = args[i];
@@ -70,6 +77,12 @@ internal sealed class CliOptions
                     break;
                 case "-s" or "--scale":
                     options.Scale = ParseScale(Value());
+                    sizes.Add(arg);
+                    break;
+                case "--width" or "--height" or "--long-side":
+                    var side = arg switch { "--width" => TargetSide.Width, "--height" => TargetSide.Height, _ => TargetSide.LongSide };
+                    options.Target = new ScaleTarget(side, ParseInt(arg, Value(), 1, 1_000_000));
+                    sizes.Add(arg);
                     break;
                 case "-f" or "--format":
                     options.Format = ParseFormat(Value());
@@ -104,6 +117,8 @@ internal sealed class CliOptions
                     break;
             }
         }
+        if (sizes.Count > 1)
+            throw new CliException($"Use only one of -s, --width, --height and --long-side (got {string.Join(", ", sizes)}).");
         return options;
     }
 

@@ -365,6 +365,15 @@
                         <TextBlock Style="{StaticResource SectionHeader}" Text="Scale" Margin="0,16,0,8" />
                         <ListBox Style="{StaticResource SegmentedList}" ItemsSource="{Binding Scales}"
                                  SelectedItem="{Binding SelectedScale}" />
+                        <!-- "Other": a scale of one's own, or one side of the result in pixels -->
+                        <DockPanel Margin="0,8,0,0" Visibility="{Binding IsCustomScale, Converter={StaticResource BoolToVisibility}}">
+                            <ComboBox DockPanel.Dock="Left" Width="150" ItemsSource="{Binding CustomModes}"
+                                      SelectedItem="{Binding SelectedCustomMode}" DisplayMemberPath="Label"
+                                      AutomationProperties.Name="What the number sets" />
+                            <TextBox Margin="8,0,0,0" VerticalContentAlignment="Center"
+                                     Text="{Binding CustomValueText, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.Name="Scale or size" />
+                        </DockPanel>
                         <TextBlock Style="{StaticResource Caption}" Text="{Binding SizePreview}" Margin="2,6,0,0" />
 
                         <!-- Saving -->

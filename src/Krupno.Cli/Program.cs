@@ -87,13 +87,17 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
     var stopwatch = Stopwatch.StartNew();
     using var model = UpscaleModel.Load(modelPath, ParseDevice(options.Device));
 
-    var jobs = PlanJobs(options, options.Scale > 0 ? options.Scale : model.Info.Scale);
+    // Next to the source, the name says what was asked for: "_x4", "_x2.5", "_3840w".
+    string suffix = options.Target?.Suffix
+        ?? "_x" + (options.Scale > 0 ? options.Scale : model.Info.Scale).ToString("0.##", CultureInfo.InvariantCulture);
+    var jobs = PlanJobs(options, suffix);
     if (jobs.Count == 0)
         throw new CliException($"No supported images found in \"{options.Input}\".");
     var upscaler = new Upscaler(model);
     var upscaleOptions = new UpscaleOptions
     {
-        Scale = options.Scale, TileSize = options.Tile, TilePadding = options.Padding, Strength = options.Strength / 100.0,
+        Scale = options.Scale, Target = options.Target, TileSize = options.Tile, TilePadding = options.Padding,
+        Strength = options.Strength / 100.0,
     };
 
     Console.WriteLine($"Model:  {model.Info}{(model.Info.IsHalfPrecision ? ", fp16" : "")}");
@@ -178,10 +182,9 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
     }
 }
 
-static List<(string Input, string Output)> PlanJobs(CliOptions options, double scale)
+static List<(string Input, string Output)> PlanJobs(CliOptions options, string suffix)
 {
     string input = Path.GetFullPath(options.Input!);
-    string suffix = "_x" + scale.ToString("0.##", CultureInfo.InvariantCulture);
 
     if (Directory.Exists(input))
     {

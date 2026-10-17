@@ -12,6 +12,10 @@ public sealed record UpscaleOptions
     /// several network passes and an exact final resize with a Lanczos filter.</summary>
     public double Scale { get; init; }
 
+    /// <summary>A length for one side of the result instead of <see cref="Scale"/>: the scale is worked out for each image,
+    /// so every image of a batch comes out with that side exactly as long.</summary>
+    public ScaleTarget? Target { get; init; }
+
     /// <summary>The window (network input) side in source pixels; 0 means no tiling. Determines VRAM usage.</summary>
     public int TileSize { get; init; } = 384;
 
@@ -22,6 +26,10 @@ public sealed record UpscaleOptions
     /// <summary>How much of the network's result goes into the output, above 0 and up to 1. The rest is a plain Lanczos resize of
     /// the source: below 1 it tones down invented textures and oversharpening.</summary>
     public double Strength { get; init; } = 1;
+
+    /// <summary>The final scale for an image of this size: from <see cref="Target"/>, <see cref="Scale"/> or the model's own.</summary>
+    public double ScaleFor(int width, int height, int modelScale) =>
+        Target?.ScaleFor(width, height) ?? (Scale > 0 ? Scale : modelScale);
 }
 
 /// <summary>A finished tile as fractions of the current pass's image sides (0..1), for highlighting in the preview.</summary>
@@ -50,11 +58,12 @@ public sealed class Upscaler(UpscaleModel model)
         Task.Run(() => Upscale(input, options, progress, cancellationToken), cancellationToken);
 
     /// <summary>The size of the result for an image of the given size.</summary>
-    public (long Width, long Height) OutputSize(int width, int height, UpscaleOptions? options = null)
-    {
-        double scale = (options ?? UpscaleOptions.Default).Scale is > 0 and var requested ? requested : model.Info.Scale;
-        return (Math.Max(1, (long)Math.Round(width * scale)), Math.Max(1, (long)Math.Round(height * scale)));
-    }
+    public (long Width, long Height) OutputSize(int width, int height, UpscaleOptions? options = null) =>
+        OutputSize(width, height, (options ?? UpscaleOptions.Default).ScaleFor(width, height, model.Info.Scale));
+
+    /// <summary>The size of an image of the given size scaled by <paramref name="scale"/>, rounded the way processing rounds it.</summary>
+    public static (long Width, long Height) OutputSize(int width, int height, double scale) =>
+        (Math.Max(1, (long)Math.Round(width * scale)), Math.Max(1, (long)Math.Round(height * scale)));
 
     public ImageBuffer Upscale(ImageBuffer input, UpscaleOptions? options = null,
         IProgress<UpscaleProgress>? progress = null, CancellationToken cancellationToken = default)
@@ -63,7 +72,7 @@ public sealed class Upscaler(UpscaleModel model)
         if (!(options.Strength > 0 && options.Strength <= 1))
             throw new ArgumentOutOfRangeException(nameof(options), options.Strength, "The strength must be above 0 and at most 1.");
         int modelScale = model.Info.Scale;
-        double scale = options.Scale > 0 ? options.Scale : modelScale;
+        double scale = options.ScaleFor(input.Width, input.Height, modelScale);
 
         var (targetWidth, targetHeight) = OutputSize(input.Width, input.Height, options);
         if (!ImageBuffer.CanAllocate(targetWidth, targetHeight))

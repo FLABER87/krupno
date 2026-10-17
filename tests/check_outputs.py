@@ -127,6 +127,19 @@ got = load(out / "noise_red_x2_5.png")
 check("noise_red_x2_5.png", got.shape == (500, 750, 3) and int(got[..., 1:].max()) == 0,
       f"shape {got.shape}, G/B max {int(got[..., 1:].max())}")
 
+# Target sizes. --width 750 on 300×200 is ×2.5, and the name next to the source says the target; --long-side 960 on the
+# rotated 90×160 image is ×6 (two passes); -s together with a target size is refused before any work.
+path = out / "target" / "noise_750w.png"
+got = load(path) if path.exists() else np.zeros((0, 0, 3), np.int32)
+check("target/noise_750w.png", got.shape == (500, 750, 3) and int(got[..., 1:].max(initial=0)) == 0,
+      f"shape {got.shape}" + ("" if path.exists() else ", file missing"))
+path = out / "target_long.png"
+got = load(path) if path.exists() else np.zeros((0, 0, 3), np.int32)
+check("target_long.png", got.shape == (960, 540, 3) and got.size > 0 and got[:40, -40:, 0].mean() > 200,
+      f"shape {got.shape}, top-right R {got[:40, -40:, 0].mean() if got.size else 0:.0f}")
+check("target_conflict.log", "Use only one of" in log("target_conflict") and not (out / "target_conflict.png").exists(),
+      " | ".join(line for line in log("target_conflict").splitlines() if line.strip()) or "empty output")
+
 # Multiple passes: ×8 with a ×4 model means two passes (×16), then downscaling to ×8.
 got = load(out / "noise_red_x8.png")
 check("noise_red_x8.png", got.shape == (1600, 2400, 3), f"shape {got.shape}")

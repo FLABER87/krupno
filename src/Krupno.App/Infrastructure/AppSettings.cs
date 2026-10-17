@@ -6,6 +6,15 @@ using Krupno.Core.Inference;
 
 namespace Krupno.App.Infrastructure;
 
+/// <summary>What the number under "Other" in "Scale" sets.</summary>
+public enum CustomScaleMode
+{
+    Scale,
+    Width,
+    Height,
+    LongSide,
+}
+
 /// <summary>User choices kept between launches: %LOCALAPPDATA%\Krupno\settings.json.</summary>
 public sealed class AppSettings
 {
@@ -31,8 +40,14 @@ public sealed class AppSettings
     /// <summary>How much of the network's result goes into the output, in percent.</summary>
     public int? Strength { get; set; }
 
-    /// <summary>The final scale (×2, ×3, ×4, ×8).</summary>
+    /// <summary>The final scale (×2, ×3, ×4, ×8); 0 for "Other", see <see cref="CustomScaleMode"/>.</summary>
     public double? Scale { get; set; }
+
+    /// <summary>What the number under "Other" sets: a scale, or the width, height or long side of the result.</summary>
+    public CustomScaleMode? CustomScaleMode { get; set; }
+
+    /// <summary>The number under "Other", as typed.</summary>
+    public string? CustomScaleValue { get; set; }
 
     public ImageFileFormat? Format { get; set; }
 
