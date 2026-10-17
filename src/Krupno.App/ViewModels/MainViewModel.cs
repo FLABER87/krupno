@@ -889,6 +889,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     // ── Processing ──────────────────────────────────────────────────
 
+    /// <summary>A run came to an end by itself, done or failed (not canceled): the user may want to know if they looked away.</summary>
+    public event EventHandler? RunFinished;
+
     private async Task UpscaleAsync()
     {
         if (IsBusy || !HasFiles || SelectedModel is not { } modelItem || ScaleChoice is not { } choice)
@@ -935,6 +938,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         // What went wrong, for the log and "Copy error details": the file (null for the run as a whole) and the error.
         var errors = new List<(string? File, Exception Error)>();
         UpscaleModel? runModel = null;
+        bool finished = false;
         ErrorReport = null;
         _fallbackReported = false;
 
@@ -1061,6 +1065,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 State = PanelState.Done;
                 TaskbarState = failed > 0 ? TaskbarItemProgressState.Error : TaskbarItemProgressState.None;
             }
+            finished = true;
         }
         catch (OperationCanceledException)
         {
@@ -1088,6 +1093,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             ErrorTechnical = ex.Message;
             State = PanelState.Error;
             TaskbarState = TaskbarItemProgressState.Error;
+            finished = true;
         }
         finally
         {
@@ -1098,6 +1104,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (errors.Count > 0)
                 ErrorReport = BuildErrorReport(DescribeRun(), errors);
         }
+        if (finished)
+            RunFinished?.Invoke(this, EventArgs.Empty);
 
         // The model, the device and the settings, for the log and the error report.
         string DescribeRun()
