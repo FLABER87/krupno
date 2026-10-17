@@ -180,4 +180,67 @@ public partial class LocalizationTests
         // Fewer forms than the language has (a translation not done yet): the last one is used rather than nothing.
         Assert.Equal("5 x", Plurals.Format("{0} x", 5, uk));
     }
+
+    [Fact]
+    public void PublishKeepsWpfTranslationsForTheWindowsLanguages()
+    {
+        // Directory.Build.props lists the languages whose satellite assemblies the self-contained publish keeps; WPF's own
+        // text (the text box menu) would stay English in a language left out.
+        string props = File.ReadAllText(Path.Combine(Root, "Directory.Build.props"));
+        string list = Regex.Match(props, "<SatelliteResourceLanguages>([^<]*)</SatelliteResourceLanguages>").Groups[1].Value;
+        Assert.Equal(UiLanguage.All.Select(l => l.Culture).Order(StringComparer.Ordinal), list.Split(';').Order(StringComparer.Ordinal));
+    }
+
+    // ── The installer (installer/Krupno.iss and messages.iss) ──
+
+    /// <summary>The Inno Setup name of a culture: "pt-BR" → "ptbr".</summary>
+    private static string InnoName(string culture) => culture.Replace("-", "").ToLowerInvariant();
+
+    /// <summary>The installer's languages: one per language of the window, and Traditional Chinese again for Hong Kong and
+    /// Macau, which Setup finds by their own language IDs.</summary>
+    private static readonly string[] InstallerLanguages =
+        [.. UiLanguage.All.Select(l => InnoName(l.Culture)), "zhhk", "zhmo"];
+
+    [Fact]
+    public void InstallerHasTheLanguagesOfTheWindow()
+    {
+        string script = File.ReadAllText(Path.Combine(Root, "installer", "Krupno.iss"));
+        var languages = Regex.Matches(script, @"^Name: ""(\w+)""; MessagesFile: ""([^""]+)""", RegexOptions.Multiline)
+            .ToDictionary(m => m.Groups[1].Value, m => m.Groups[2].Value);
+        Assert.Equal(InstallerLanguages.Order(StringComparer.Ordinal), languages.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(languages["zhhant"], languages["zhhk"]);
+        Assert.Equal(languages["zhhant"], languages["zhmo"]);
+        // The messages files that Inno Setup doesn't install are kept next to the script.
+        Assert.All(languages.Values.Where(f => !f.StartsWith("compiler:", StringComparison.Ordinal)),
+            f => Assert.True(File.Exists(Path.Combine(Root, "installer", f.Replace('\\', Path.DirectorySeparatorChar))), $"{f} is missing"));
+
+        // The table that tells the app which language Setup ran in: every language, with the app's culture name for it.
+        string table = string.Concat(Regex.Matches(script, @"^\s*(?:LanguageTable = )?'([^']*)'", RegexOptions.Multiline)
+            .Select(m => m.Groups[1].Value));
+        var cultures = Regex.Matches(table, @"\|(\w+)=([\w-]+),\$[0-9A-F]+(?=\|)")
+            .ToDictionary(m => m.Groups[1].Value, m => m.Groups[2].Value);
+        Assert.Equal(InstallerLanguages.Order(StringComparer.Ordinal), cultures.Keys.Order(StringComparer.Ordinal));
+        Assert.All(cultures, c => Assert.Equal(c.Key is "zhhk" or "zhmo" ? "zh-Hant" : UiLanguage.All.Single(l => InnoName(l.Culture) == c.Key).Culture, c.Value));
+    }
+
+    [Fact]
+    public void InstallerMessagesExistInEveryLanguage()
+    {
+        var messages = File.ReadAllLines(Path.Combine(Root, "installer", "messages.iss"))
+            .Select(line => Regex.Match(line, @"^(\w+)\.(\w+)="))
+            .Where(m => m.Success)
+            .GroupBy(m => m.Groups[1].Value, m => m.Groups[2].Value)
+            .ToDictionary(g => g.Key, g => g.ToList());
+        Assert.Equal(InstallerLanguages.Order(StringComparer.Ordinal), messages.Keys.Order(StringComparer.Ordinal));
+        var english = messages["en"];
+        Assert.Equal(english.Count, english.Distinct().Count());
+        Assert.All(messages, m => Assert.Equal(english.Order(StringComparer.Ordinal), m.Value.Order(StringComparer.Ordinal)));
+
+        // Every {cm:...} of the script is ours or one of Inno Setup's own.
+        string script = File.ReadAllText(Path.Combine(Root, "installer", "Krupno.iss"));
+        string[] innoOwn = ["CreateDesktopIcon", "AdditionalIcons", "LaunchProgram"];
+        var used = Regex.Matches(script, @"\{cm:(\w+)").Select(m => m.Groups[1].Value).Distinct();
+        Assert.All(used.Except(innoOwn), name => Assert.Contains(name, english));
+        Assert.All(english, name => Assert.Contains($"{{cm:{name}}}", script));
+    }
 }

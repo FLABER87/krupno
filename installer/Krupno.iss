@@ -1,5 +1,7 @@
 ﻿; Krupno installer. It carries only the app itself (self-contained publish with .NET inside); the models are
-; downloaded during installation from the models-v2 release and verified by SHA-256. The UI is English only.
+; downloaded during installation from the models-v2 release and verified by SHA-256. The wizard speaks the languages of
+; the app window: Inno Setup's own messages files, four unofficial ones in languages\ (taken from the is-6_7_1 tag of
+; jrsoftware/issrc, as Inno Setup doesn't install them) and our text in messages.iss.
 ; Built by installer\build.ps1, which also passes the parameters:
 ;   ISCC /DAppVersion=0.1.0 /DFileVersion=0.1.0.0 /DAppDir=<publish folder> /DOutputDir=<output folder> Krupno.iss
 
@@ -66,30 +68,62 @@ OutputBaseFilename=Krupno-{#AppVersion}-setup-x64
 Compression=lzma2/ultra64
 SolidCompression=yes
 
+; Without a language matching Windows, Setup asks which one to use.
+ShowLanguageDialog=auto
+
+; The same languages as the app window (src/Krupno.App/Infrastructure/UiLanguage.cs); the names are the culture names
+; without the hyphen. Setup picks the language whose ID matches Windows, or else the first one with the same primary
+; language, so Hong Kong and Macau get Traditional Chinese entries of their own (zhhk, zhmo, IDs in [LangOptions]);
+; otherwise they would get Simplified Chinese, the first Chinese one.
 [Languages]
 Name: "en"; MessagesFile: "compiler:Default.isl"
+Name: "uk"; MessagesFile: "compiler:Languages\Ukrainian.isl"
+Name: "ru"; MessagesFile: "compiler:Languages\Russian.isl"
+Name: "pl"; MessagesFile: "compiler:Languages\Polish.isl"
+Name: "de"; MessagesFile: "compiler:Languages\German.isl"
+Name: "fr"; MessagesFile: "compiler:Languages\French.isl"
+Name: "it"; MessagesFile: "compiler:Languages\Italian.isl"
+Name: "es"; MessagesFile: "compiler:Languages\Spanish.isl"
+Name: "ptbr"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
+Name: "tr"; MessagesFile: "compiler:Languages\Turkish.isl"
+Name: "id"; MessagesFile: "languages\Indonesian.isl"
+Name: "vi"; MessagesFile: "languages\Vietnamese.isl"
+Name: "ja"; MessagesFile: "compiler:Languages\Japanese.isl"
+Name: "ko"; MessagesFile: "compiler:Languages\Korean.isl"
+Name: "zhhans"; MessagesFile: "languages\ChineseSimplified.isl"
+Name: "zhhant"; MessagesFile: "languages\ChineseTraditional.isl"
+Name: "zhhk"; MessagesFile: "languages\ChineseTraditional.isl"
+Name: "zhmo"; MessagesFile: "languages\ChineseTraditional.isl"
+
+[LangOptions]
+zhhk.LanguageName=繁體中文（香港）
+zhhk.LanguageID=$0C04
+zhmo.LanguageName=繁體中文（澳門）
+zhmo.LanguageID=$1404
+
+#include "messages.iss"
 
 [Types]
-Name: "full"; Description: "Full installation (all models)"
-Name: "compact"; Description: "Compact installation (recommended model only)"
-Name: "custom"; Description: "Custom installation"; Flags: iscustom
+Name: "full"; Description: "{cm:TypeFull}"
+Name: "compact"; Description: "{cm:TypeCompact}"
+Name: "custom"; Description: "{cm:TypeCustom}"; Flags: iscustom
 
 ; Models are listed in the same order and with the same names as in the app window (ViewModels/ModelItem.cs).
 [Components]
-Name: "app"; Description: "Krupno (desktop app and krupno-cli command-line tool)"; Types: full compact custom; Flags: fixed
-Name: "models"; Description: "Models (downloaded from GitHub during installation)"; Types: full compact
-Name: "models\realplksr"; Description: "Photo, fast: BHI RealPLKSR (CC BY 4.0), recommended"; Types: full compact
-Name: "models\dat2fp16"; Description: "Photo, maximum detail: BHI DAT2 fp16 (CC BY 4.0)"; Types: full
-Name: "models\ultrasharp"; Description: "General purpose: UltraSharpV2 (CC BY-NC-SA 4.0, non-commercial use only)"; Types: full
-Name: "models\dat2"; Description: "Photo, maximum detail: BHI DAT2 fp32 (CC BY 4.0), very slow"; Types: full
-Name: "models\esrganfp16"; Description: "Classic: Real-ESRGAN x4plus fp16 (BSD-3-Clause)"; Types: full
-Name: "models\esrgan"; Description: "Classic: Real-ESRGAN x4plus fp32 (BSD-3-Clause)"; Types: full
-Name: "models\general"; Description: "Draft, very fast: Real-ESRGAN general x4v3 (BSD-3-Clause)"; Types: full
+Name: "app"; Description: "{cm:ComponentApp}"; Types: full compact custom; Flags: fixed
+Name: "models"; Description: "{cm:ComponentModels}"; Types: full compact
+Name: "models\realplksr"; Description: "{cm:ModelRealPlksr}"; Types: full compact
+Name: "models\dat2fp16"; Description: "{cm:ModelDat2Fp16}"; Types: full
+Name: "models\ultrasharp"; Description: "{cm:ModelUltraSharp}"; Types: full
+Name: "models\dat2"; Description: "{cm:ModelDat2}"; Types: full
+Name: "models\esrganfp16"; Description: "{cm:ModelEsrganFp16}"; Types: full
+Name: "models\esrgan"; Description: "{cm:ModelEsrgan}"; Types: full
+Name: "models\general"; Description: "{cm:ModelGeneral}"; Types: full
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-Name: "path"; Description: "Add the install folder to PATH, so krupno-cli can be run from any console"; GroupDescription: "Command line:"
-Name: "contextmenu"; Description: "Add ""Upscale with Krupno"" to the Explorer context menu of images and folders"; GroupDescription: "Explorer integration:"
+Name: "path"; Description: "{cm:TaskPath}"; GroupDescription: "{cm:GroupCommandLine}"
+Name: "contextmenu"; Description: "{cm:TaskContextMenu}"; GroupDescription: "{cm:GroupExplorer}"
 
 [Files]
 Source: "{#AppDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: app
@@ -116,11 +150,11 @@ Name: "{autodesktop}\Krupno"; Filename: "{app}\Krupno.exe"; Tasks: desktopicon
 [Registry]
 Root: HKA; Subkey: "{#ImageVerb}"; Flags: deletekey; Tasks: not contextmenu
 Root: HKA; Subkey: "{#FolderVerb}"; Flags: deletekey; Tasks: not contextmenu
-Root: HKA; Subkey: "{#ImageVerb}"; ValueType: string; ValueData: "Upscale with Krupno"; Flags: uninsdeletekey; Tasks: contextmenu
+Root: HKA; Subkey: "{#ImageVerb}"; ValueType: string; ValueData: "{cm:ContextMenu}"; Flags: uninsdeletekey; Tasks: contextmenu
 Root: HKA; Subkey: "{#ImageVerb}"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\Krupno.exe,0"; Tasks: contextmenu
 Root: HKA; Subkey: "{#ImageVerb}"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Document"; Tasks: contextmenu
 Root: HKA; Subkey: "{#ImageVerb}\command"; ValueType: string; ValueData: """{app}\Krupno.exe"" ""%1"""; Tasks: contextmenu
-Root: HKA; Subkey: "{#FolderVerb}"; ValueType: string; ValueData: "Upscale with Krupno"; Flags: uninsdeletekey; Tasks: contextmenu
+Root: HKA; Subkey: "{#FolderVerb}"; ValueType: string; ValueData: "{cm:ContextMenu}"; Flags: uninsdeletekey; Tasks: contextmenu
 Root: HKA; Subkey: "{#FolderVerb}"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\Krupno.exe,0"; Tasks: contextmenu
 Root: HKA; Subkey: "{#FolderVerb}"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Document"; Tasks: contextmenu
 Root: HKA; Subkey: "{#FolderVerb}\command"; ValueType: string; ValueData: """{app}\Krupno.exe"" ""%1"""; Tasks: contextmenu
@@ -132,6 +166,12 @@ Filename: "{app}\Krupno.exe"; Description: "{cm:LaunchProgram,Krupno}"; Flags: n
 const
   UserEnvironmentKey = 'Environment';
   SystemEnvironmentKey = 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment';
+
+  // Each language of the wizard: the app's culture name (UiLanguage.cs) and the Windows language ID for which the app
+  // finds that translation by itself: a primary language ID for a neutral culture (any German is "de"), the full one for
+  // Brazilian Portuguese (.NET doesn't take pt-BR for Portugal's pt-PT).
+  LanguageTable = '|en=en,$09|uk=uk,$22|ru=ru,$19|pl=pl,$15|de=de,$07|fr=fr,$0C|it=it,$10|es=es,$0A|ptbr=pt-BR,$0416|' +
+    'tr=tr,$1F|id=id,$21|vi=vi,$2A|ja=ja,$11|ko=ko,$12|zhhans=zh-Hans,$04|zhhant=zh-Hant,$04|zhhk=zh-Hant,$04|zhmo=zh-Hant,$04|';
 
 var
   // ModelNeeded cache of the form '|name=1|name=0': Setup may call Check several times, and hashing a model takes a while.
@@ -212,13 +252,45 @@ begin
     Log('Could not remove ' + Dir + ' from PATH');
 end;
 
+// The app shows the Windows language when it has a translation for it. When the wizard runs in a language the app wouldn't
+// pick by itself (one chosen in the language dialog, as Windows' own isn't translated, or Brazilian Portuguese on a
+// Portuguese Windows), the app is told to use it too: on the first install only, as settings.json doesn't exist yet then,
+// so a later choice under "Advanced" in the app stays the user's.
+procedure SaveLanguageForApp;
+var
+  Entry, Culture, Path: String;
+  P, Id: Integer;
+begin
+  P := Pos('|' + ActiveLanguage + '=', LanguageTable);
+  if P = 0 then
+    Exit;
+  Entry := Copy(LanguageTable, P + Length(ActiveLanguage) + 2, MaxInt);
+  Entry := Copy(Entry, 1, Pos('|', Entry) - 1);
+  Culture := Copy(Entry, 1, Pos(',', Entry) - 1);
+  Id := StrToInt(Copy(Entry, Pos(',', Entry) + 1, MaxInt));
+  if ((Id > $3FF) and (GetUILanguage = Id)) or ((Id <= $3FF) and ((GetUILanguage and $3FF) = Id)) then
+    Exit;
+  // When installing for all users, this is the settings of the account that runs Setup.
+  Path := ExpandConstant('{localappdata}\Krupno\settings.json');
+  if FileExists(Path) then
+    Exit;
+  if not ForceDirectories(ExtractFileDir(Path)) or
+     not SaveStringToFile(Path, '{ "Language": "' + Culture + '" }', False) then
+    Log('Could not write ' + Path)
+  else
+    Log('The app will start in ' + Culture + ', the language chosen for Setup');
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
+  begin
     if WizardIsTaskSelected('path') then
       AddToPath(ExpandConstant('{app}'))
     else
       RemoveFromPath(ExpandConstant('{app}'));
+    SaveLanguageForApp;
+  end;
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);

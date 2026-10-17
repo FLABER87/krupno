@@ -10,6 +10,8 @@
     <SelfContained>false</SelfContained>
     <Version>0.1.0</Version>
     <Product>Krupno</Product>
-    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- The languages the window is translated into (src/Krupno.App/Infrastructure/UiLanguage.cs): the self-contained
+         publish takes WPF's own translations for them (the text box menu, for example) and leaves out the rest. -->
+    <SatelliteResourceLanguages>en;uk;ru;pl;de;fr;it;es;pt-BR;tr;id;vi;ja;ko;zh-Hans;zh-Hant</SatelliteResourceLanguages>
   </PropertyGroup>
 </Project>
