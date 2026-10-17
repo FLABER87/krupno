@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- xUnit v3 test projects are executables. -->
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Krupno.Core.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <!-- The models folder at the repository root isn't needed: the tests use the synthetic ones from tests/fixtures/models. -->
+    <KrupnoCopyModels>false</KrupnoCopyModels>
+    <!-- The resizes and runs under test take milliseconds: passing the test's cancellation token to each buys nothing. -->
+    <NoWarn>$(NoWarn);xUnit1051</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Krupno.Core\Krupno.Core.csproj" />
+    <ProjectReference Include="..\..\src\Krupno.Cli\Krupno.Cli.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The hand-over between windows needs no WPF, so it is compiled in rather than referencing the app. -->
+    <Compile Include="..\..\src\Krupno.App\Infrastructure\SingleInstance.cs" Link="App\SingleInstance.cs" />
+    <Compile Include="..\..\src\Krupno.App\Infrastructure\Log.cs" Link="App\Log.cs" />
+    <Compile Include="..\..\src\Krupno.App\Infrastructure\SystemInfo.cs" Link="App\SystemInfo.cs" />
+    <Compile Include="..\..\src\Krupno.App\Infrastructure\Text.cs" Link="App\Text.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\fixtures\models\*.onnx" Link="models\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

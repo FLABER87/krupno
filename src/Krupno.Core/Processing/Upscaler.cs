@@ -125,7 +125,7 @@ public sealed class Upscaler(UpscaleModel model)
         return current;
     }
 
-    private static int PassCount(double scale, int modelScale)
+    internal static int PassCount(double scale, int modelScale)
     {
         if (modelScale <= 1)
             return 1;

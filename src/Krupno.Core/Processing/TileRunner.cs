@@ -154,7 +154,7 @@ internal sealed class TileRunner : IDisposable
     /// Planar RGB 0..1 → BGRA bytes, opaque. The vector path does the same float operations as <see cref="ToByte"/>
     /// (a multiply, then an add, a saturating conversion and a clamp), so the bytes are the same, NaN and infinities included.
     /// </summary>
-    private static void Pack(ReadOnlySpan<float> r, ReadOnlySpan<float> g, ReadOnlySpan<float> b, Span<uint> bgra)
+    internal static void Pack(ReadOnlySpan<float> r, ReadOnlySpan<float> g, ReadOnlySpan<float> b, Span<uint> bgra)
     {
         int x = 0;
         if (Vector.IsHardwareAccelerated)
@@ -182,5 +182,5 @@ internal sealed class TileRunner : IDisposable
             value.Dispose();
     }
 
-    private static byte ToByte(float value) => (byte)Math.Clamp((int)(value * 255f + 0.5f), 0, 255);
+    internal static byte ToByte(float value) => (byte)Math.Clamp((int)(value * 255f + 0.5f), 0, 255);
 }

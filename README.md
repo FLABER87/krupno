@@ -19,7 +19,7 @@ Images are read and written with WIC (built into Windows), the UI is WPF, and GP
 src/Krupno.Core    library: model, tiling, inference, resampling, codecs
 src/Krupno.Cli     command-line tool krupno-cli.exe
 src/Krupno.App     WPF window (Krupno.exe)
-tests/             synthetic tests through the CLI and UI scripts
+tests/             unit tests (Krupno.Core.Tests), synthetic tests through the CLI and UI scripts
 installer/         Inno Setup installer and release build
 tools/             PyTorch → ONNX model conversion (Python, development only)
 models/            put .onnx files here (not committed to git)
@@ -206,6 +206,19 @@ The app icon is drawn by `tools/make_icon.py` (requires Pillow and numpy).
 
 ## Tests
 
+The unit tests (`tests/Krupno.Core.Tests`, xUnit) run in a couple of seconds and need nothing besides the .NET SDK:
+
+```bash
+dotnet test tests/Krupno.Core.Tests -c Release
+```
+
+They cover the tile plan (cores that cover the image without gaps, real context around each, mirroring at the edges), output names that would clash,
+the Lanczos resizes (the blend for strength clips the plain resize to 0..255 first and leaves alpha alone; colors under transparency don't leak),
+target sizes and the number of passes, the SIMD packing of the network's output against the scalar conversion (NaN, infinities and values outside 0..1 included),
+the command-line options, and the whole pipeline on the CPU with the synthetic models below: exact results for every model, strength 50% against the formula,
+and `--pad 64` giving the same result in 35 tiles instead of 24 on a 1920×1200 image. They also hand paths from 12 clients at once to a window over the named pipe
+(`SingleInstance` from the app, compiled into the tests), and every path must arrive.
+
 The synthetic tests run the Release build through the command-line tool. The models in `tests/fixtures/models` are a few hundred bytes each.
 Each one upscales the image with nearest neighbor and keeps some of the color channels. So the correct result is known down to the pixel, and a mixed-up channel order shows immediately.
 Requires Python with numpy and Pillow:
@@ -224,7 +237,7 @@ strength (the blend is checked against the same Lanczos filter computed in numpy
 a save that fails in the background during a batch, target sizes (`--width` with the name it gives, `--long-side` after the EXIF rotation, `-s` together with a target size refused),
 output names that would overwrite a source or another result, and broken files.
 `python tests/make_fixtures.py --models` regenerates the models (it also needs the `onnx` package).
-On GitHub, the `.github/workflows/tests.yml` workflow (`windows-latest`) builds and runs these tests on every push and pull request. The runner has no GPU, and Krupno does not count "Microsoft Basic Render Driver" as one. So the workflow runs the script with the `-CheckFallback` switch: it sets `KRUPNO_BASIC_RENDER_DRIVER=1`, "Auto" picks that adapter, DirectML fails to start on it, and every "GPU" run must fall back to the CPU. This is how the fallback is tested. If the tests fail, `tests/out/cli` is uploaded as the `cli-tests-out` artifact.
+On GitHub, the `.github/workflows/tests.yml` workflow (`windows-latest`) builds and runs the unit tests and these tests on every push and pull request. The runner has no GPU, and Krupno does not count "Microsoft Basic Render Driver" as one. So the workflow runs the script with the `-CheckFallback` switch: it sets `KRUPNO_BASIC_RENDER_DRIVER=1`, "Auto" picks that adapter, DirectML fails to start on it, and every "GPU" run must fall back to the CPU. This is how the fallback is tested. If the tests fail, `tests/out/cli` is uploaded as the `cli-tests-out` artifact.
 Dependabot (`.github/dependabot.yml`) opens weekly update PRs for ONNX Runtime and the GitHub Actions, so these tests check every update before it is merged. The Python requirements are left out: `tools/requirements.txt` sets deliberate lower bounds, which Dependabot would raise.
 
 The UI scripts launch `Krupno.exe` and drive the window through UI Automation.
@@ -255,7 +268,6 @@ Both scripts swap `%LOCALAPPDATA%\Krupno\settings.json` for the duration of the 
 - WebP/AVIF output (WIC has no encoders for them; this needs a custom implementation or a separate library).
 - Overlapping the preparation of the next tile with inference of the current one.
 - A model catalog with downloads and license checks right in the window (currently only the installer downloads models).
-- Unit tests for `Krupno.Core`. The current tests are end-to-end: synthetic models through the CLI (also run in CI) and UI scripts (see [Tests](#tests)).
 
 ## License
 
