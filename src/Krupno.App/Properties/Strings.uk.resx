@@ -51,6 +51,12 @@
   <data name="Change" xml:space="preserve">
     <value>Змінити</value>
   </data>
+  <data name="CheckForUpdates" xml:space="preserve">
+    <value>Перевіряти оновлення</value>
+  </data>
+  <data name="CheckForUpdates_Description" xml:space="preserve">
+    <value>Під час запуску запитує в github.com, який випуск Krupno останній. Більше нічого не надсилається й нічого не завантажується.</value>
+  </data>
   <data name="Chip_Original" xml:space="preserve">
     <value>Оригінал · {0} × {1}</value>
   </data>
@@ -453,6 +459,15 @@
   </data>
   <data name="Unit_MB" xml:space="preserve">
     <value>{0} МБ</value>
+  </data>
+  <data name="Update_Available" xml:space="preserve">
+    <value>Доступна версія Krupno {0}</value>
+  </data>
+  <data name="Update_Download" xml:space="preserve">
+    <value>Завантажити</value>
+  </data>
+  <data name="Update_Hide" xml:space="preserve">
+    <value>Сховати</value>
   </data>
   <data name="Upscale" xml:space="preserve">
     <value>Збільшити</value>

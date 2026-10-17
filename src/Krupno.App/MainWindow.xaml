@@ -284,6 +284,28 @@
                     </Grid>
                 </Border>
 
+                <!-- A newer release, found at startup (see UpdateCheck) -->
+                <Border DockPanel.Dock="Top" Padding="20,8,12,8" BorderThickness="0,0,0,1"
+                        BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                        Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                        Visibility="{Binding UpdateText, Converter={StaticResource NullToCollapsed}}">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource SubtleButton}" Command="{Binding HideUpdateCommand}"
+                                VerticalAlignment="Center" ToolTip="{x:Static p:Strings.Update_Hide}"
+                                AutomationProperties.Name="{x:Static p:Strings.Update_Hide}">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE711;" FontSize="12" />
+                        </Button>
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE896;" Margin="0,0,10,0" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                        <WrapPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding UpdateText}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <Button Style="{StaticResource LinkButton}" Command="{Binding OpenUpdateCommand}" VerticalAlignment="Center">
+                                <TextBlock Text="{x:Static p:Strings.Update_Download}" />
+                            </Button>
+                        </WrapPanel>
+                    </DockPanel>
+                </Border>
+
                 <!-- Settings -->
                 <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
                     <!-- Disabled while processing; the custom model cards and segmented lists have no disabled look of their own, so dim the panel. -->
@@ -449,6 +471,9 @@
                                 <TextBlock Style="{StaticResource Caption}" Margin="0,6,0,0" Text="{x:Static p:Strings.Language_Restart}"
                                            Foreground="{DynamicResource SystemFillColorCautionBrush}"
                                            Visibility="{Binding LanguageNeedsRestart, Converter={StaticResource BoolToVisibility}}" />
+                                <CheckBox Content="{x:Static p:Strings.CheckForUpdates}" IsChecked="{Binding CheckForUpdates}" Margin="0,12,0,0" />
+                                <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0"
+                                           Text="{x:Static p:Strings.CheckForUpdates_Description}" />
                             </StackPanel>
                         </Expander>
                     </StackPanel>

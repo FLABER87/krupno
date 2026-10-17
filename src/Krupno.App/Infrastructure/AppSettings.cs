@@ -71,6 +71,15 @@ public sealed class AppSettings
     /// <summary>The window's language (a culture name from <see cref="UiLanguage.All"/>); null follows Windows.</summary>
     public string? Language { get; set; }
 
+    /// <summary>
+    /// "Check for updates" in "Advanced", once the user has changed it there; until then null, and the installer's choice applies
+    /// (see <see cref="UpdateCheck.Decide"/>).
+    /// </summary>
+    public bool? CheckForUpdates { get; set; }
+
+    /// <summary>The installation (its time) that was the last one when <see cref="CheckForUpdates"/> was chosen or reset.</summary>
+    public string? CheckForUpdatesSetAt { get; set; }
+
     public WindowBounds? Window { get; set; }
 
     public static AppSettings Load()

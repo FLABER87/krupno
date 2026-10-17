@@ -51,6 +51,12 @@
   <data name="Change" xml:space="preserve">
     <value>Cambiar</value>
   </data>
+  <data name="CheckForUpdates" xml:space="preserve">
+    <value>Buscar actualizaciones</value>
+  </data>
+  <data name="CheckForUpdates_Description" xml:space="preserve">
+    <value>Al iniciar, pregunta a github.com cuál es la última versión de Krupno. No se envía nada más ni se descarga nada.</value>
+  </data>
   <data name="Chip_Original" xml:space="preserve">
     <value>Original · {0} × {1}</value>
   </data>
@@ -453,6 +459,15 @@
   </data>
   <data name="Unit_MB" xml:space="preserve">
     <value>{0} MB</value>
+  </data>
+  <data name="Update_Available" xml:space="preserve">
+    <value>Krupno {0} está disponible</value>
+  </data>
+  <data name="Update_Download" xml:space="preserve">
+    <value>Descargar</value>
+  </data>
+  <data name="Update_Hide" xml:space="preserve">
+    <value>Ocultar</value>
   </data>
   <data name="Upscale" xml:space="preserve">
     <value>Ampliar</value>

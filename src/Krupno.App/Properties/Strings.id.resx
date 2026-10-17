@@ -51,6 +51,12 @@
   <data name="Change" xml:space="preserve">
     <value>Ubah</value>
   </data>
+  <data name="CheckForUpdates" xml:space="preserve">
+    <value>Periksa pembaruan</value>
+  </data>
+  <data name="CheckForUpdates_Description" xml:space="preserve">
+    <value>Saat dimulai, menanyakan ke github.com rilis Krupno mana yang terbaru. Tidak ada hal lain yang dikirim dan tidak ada yang diunduh.</value>
+  </data>
   <data name="Chip_Original" xml:space="preserve">
     <value>Asli · {0} × {1}</value>
   </data>
@@ -453,6 +459,15 @@
   </data>
   <data name="Unit_MB" xml:space="preserve">
     <value>{0} MB</value>
+  </data>
+  <data name="Update_Available" xml:space="preserve">
+    <value>Krupno {0} tersedia</value>
+  </data>
+  <data name="Update_Download" xml:space="preserve">
+    <value>Unduh</value>
+  </data>
+  <data name="Update_Hide" xml:space="preserve">
+    <value>Sembunyikan</value>
   </data>
   <data name="Upscale" xml:space="preserve">
     <value>Perbesar</value>

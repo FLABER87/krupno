@@ -51,6 +51,12 @@
   <data name="Change" xml:space="preserve">
     <value>변경</value>
   </data>
+  <data name="CheckForUpdates" xml:space="preserve">
+    <value>업데이트 확인</value>
+  </data>
+  <data name="CheckForUpdates_Description" xml:space="preserve">
+    <value>시작할 때 github.com에 최신 Krupno 릴리스를 확인합니다. 그 밖에는 아무것도 보내지 않고 아무것도 내려받지 않습니다.</value>
+  </data>
   <data name="Chip_Original" xml:space="preserve">
     <value>원본 · {0} × {1}</value>
   </data>
@@ -453,6 +459,15 @@
   </data>
   <data name="Unit_MB" xml:space="preserve">
     <value>{0} MB</value>
+  </data>
+  <data name="Update_Available" xml:space="preserve">
+    <value>Krupno {0}을(를) 사용할 수 있습니다</value>
+  </data>
+  <data name="Update_Download" xml:space="preserve">
+    <value>다운로드</value>
+  </data>
+  <data name="Update_Hide" xml:space="preserve">
+    <value>숨기기</value>
   </data>
   <data name="Upscale" xml:space="preserve">
     <value>업스케일</value>

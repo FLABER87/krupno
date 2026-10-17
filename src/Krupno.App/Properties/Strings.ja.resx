@@ -51,6 +51,12 @@
   <data name="Change" xml:space="preserve">
     <value>変更</value>
   </data>
+  <data name="CheckForUpdates" xml:space="preserve">
+    <value>更新を確認する</value>
+  </data>
+  <data name="CheckForUpdates_Description" xml:space="preserve">
+    <value>起動時に github.com に Krupno の最新リリースを問い合わせます。それ以外は何も送信せず、何もダウンロードしません。</value>
+  </data>
   <data name="Chip_Original" xml:space="preserve">
     <value>元画像 · {0} × {1}</value>
   </data>
@@ -453,6 +459,15 @@
   </data>
   <data name="Unit_MB" xml:space="preserve">
     <value>{0} MB</value>
+  </data>
+  <data name="Update_Available" xml:space="preserve">
+    <value>Krupno {0} が公開されています</value>
+  </data>
+  <data name="Update_Download" xml:space="preserve">
+    <value>ダウンロード</value>
+  </data>
+  <data name="Update_Hide" xml:space="preserve">
+    <value>非表示</value>
   </data>
   <data name="Upscale" xml:space="preserve">
     <value>拡大</value>
