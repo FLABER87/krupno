@@ -291,6 +291,9 @@
   <data name="NonCommercial_ToolTip" xml:space="preserve">
     <value>Ліцензія CC BY-NC-SA: лише некомерційне використання</value>
   </data>
+  <data name="Note_CpuNodes" xml:space="preserve">
+    <value>DirectML не підтримує частину моделі: вона працює на CPU, набагато повільніше</value>
+  </data>
   <data name="Note_DirectMLUnavailable" xml:space="preserve">
     <value>DirectML недоступний, обробка на CPU</value>
   </data>

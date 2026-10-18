@@ -291,6 +291,9 @@
   <data name="NonCommercial_ToolTip" xml:space="preserve">
     <value>Giấy phép CC BY-NC-SA: chỉ dùng phi thương mại</value>
   </data>
+  <data name="Note_CpuNodes" xml:space="preserve">
+    <value>DirectML không chạy được một phần của mô hình: phần đó chạy trên CPU, chậm hơn nhiều</value>
+  </data>
   <data name="Note_DirectMLUnavailable" xml:space="preserve">
     <value>DirectML không khả dụng, đang chạy trên CPU</value>
   </data>

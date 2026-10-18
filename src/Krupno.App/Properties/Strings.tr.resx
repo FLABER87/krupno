@@ -291,6 +291,9 @@
   <data name="NonCommercial_ToolTip" xml:space="preserve">
     <value>CC BY-NC-SA lisansı: yalnızca ticari olmayan kullanım</value>
   </data>
+  <data name="Note_CpuNodes" xml:space="preserve">
+    <value>DirectML modelin bir kısmını çalıştıramıyor: o kısım CPU üzerinde çok daha yavaş çalışıyor</value>
+  </data>
   <data name="Note_DirectMLUnavailable" xml:space="preserve">
     <value>DirectML kullanılamıyor, CPU üzerinde çalışılıyor</value>
   </data>

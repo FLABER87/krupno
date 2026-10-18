@@ -51,7 +51,7 @@ internal static class CompiledModels
 
     /// <summary>
     /// ONNX Runtime's error when some operation would go to its CPU provider while "session.disable_cpu_ep_fallback" forbids it:
-    /// the accelerator doesn't take the whole model.
+    /// the accelerator doesn't take the whole model (or DirectML doesn't, see UpscaleModel.CreateGpuSession).
     /// </summary>
     internal static bool CpuFallbackRefused(OnnxRuntimeException ex) =>
         ex.Message.Contains("fallback to CPU EP has been explicitly disabled", StringComparison.OrdinalIgnoreCase);

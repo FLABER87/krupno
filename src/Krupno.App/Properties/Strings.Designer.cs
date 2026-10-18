@@ -897,6 +897,15 @@ namespace Krupno.App.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to DirectML can't run part of the model: that part runs on the CPU, much slower.
+        /// </summary>
+        public static string Note_CpuNodes {
+            get {
+                return ResourceManager.GetString("Note_CpuNodes", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to DirectML is unavailable, running on the CPU.
         /// </summary>
         public static string Note_DirectMLUnavailable {

@@ -291,6 +291,9 @@
   <data name="NonCommercial_ToolTip" xml:space="preserve">
     <value>CC BY-NC-SA ライセンス：非営利目的でのみ使用できます</value>
   </data>
+  <data name="Note_CpuNodes" xml:space="preserve">
+    <value>DirectML ではモデルの一部を実行できないため、その部分は CPU で実行され、大幅に遅くなります</value>
+  </data>
   <data name="Note_DirectMLUnavailable" xml:space="preserve">
     <value>DirectML を利用できないため、CPU で実行しています</value>
   </data>

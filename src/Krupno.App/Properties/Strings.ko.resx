@@ -291,6 +291,9 @@
   <data name="NonCommercial_ToolTip" xml:space="preserve">
     <value>CC BY-NC-SA 라이선스: 비상업적 용도로만 사용 가능</value>
   </data>
+  <data name="Note_CpuNodes" xml:space="preserve">
+    <value>DirectML이 모델의 일부를 실행할 수 없어 해당 부분은 CPU에서 실행되며 훨씬 느립니다</value>
+  </data>
   <data name="Note_DirectMLUnavailable" xml:space="preserve">
     <value>DirectML을 사용할 수 없어 CPU에서 실행합니다</value>
   </data>

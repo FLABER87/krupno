@@ -27,6 +27,8 @@ public class UpscalerTests
     [InlineData("legacy_x2.onnx", 2, true, true, true)]
     // fp16 input and output: each byte level survives the trip through fp16.
     [InlineData("half_x2.onnx", 2, false, true, true)]
+    // A bicubic Resize times zero on the side, which DirectML can't run (see CpuNodesTests).
+    [InlineData("cubic_x2.onnx", 2, true, false, true)]
     public void FixtureModelsGiveTheExactResult(string model, int scale, bool keepB, bool keepG, bool keepR)
     {
         foreach (var (width, height) in new[] { (150, 100), (40, 30), (1, 1) })
