@@ -1,0 +1,44 @@
+{
+    "version": "0.2.4",
+    "description": "AI image upscaler: enlarges photos and other images ×2, ×4 or to any size with neural networks, in a window or from the command line.",
+    "homepage": "https://github.com/FLABER87/krupno",
+    "license": "MIT",
+    "notes": [
+        "Krupno comes with its default model, 4xBHI_realplksr_dysample_real by Philip Hofmann (CC BY 4.0).",
+        "The other models, some of them for non-commercial use only, are in https://github.com/FLABER87/krupno/releases/tag/models-v4",
+        "Put them into $persist_dir\\models: they are kept when Krupno is updated."
+    ],
+    "architecture": {
+        "64bit": {
+            "url": [
+                "https://github.com/FLABER87/krupno/releases/download/v0.2.4/Krupno-0.2.4-win-x64.zip",
+                "https://github.com/FLABER87/krupno/releases/download/models-v4/4xBHI_realplksr_dysample_real.onnx"
+            ],
+            "hash": [
+                "b78e9ad2544f9560e468974e4532d187c0f04a71cdf6c974239cca7a5bed14c4",
+                "4c5a800d7c8afbbb533724185a0f9784ca79e8813d6d6cd190ff5092c297a697"
+            ],
+            "extract_dir": "Krupno"
+        }
+    },
+    "pre_install": "Move-Item \"$dir\\4xBHI_realplksr_dysample_real.onnx\" \"$dir\\models\\\" -Force",
+    "bin": "krupno-cli.exe",
+    "shortcuts": [
+        [
+            "Krupno.exe",
+            "Krupno"
+        ]
+    ],
+    "persist": "models",
+    "checkver": "github",
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": [
+                    "https://github.com/FLABER87/krupno/releases/download/v$version/Krupno-$version-win-x64.zip",
+                    "https://github.com/FLABER87/krupno/releases/download/models-v4/4xBHI_realplksr_dysample_real.onnx"
+                ]
+            }
+        }
+    }
+}

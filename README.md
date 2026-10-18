@@ -26,6 +26,7 @@ Get the latest version from [Releases](https://github.com/FLABER87/krupno/releas
   - a desktop shortcut;
   - the install folder in PATH, so `krupno-cli` runs from any console;
   - "Upscale with Krupno" in the Explorer context menu of images and folders.
+- **Scoop**: `scoop bucket add krupno https://github.com/FLABER87/krupno`, then `scoop install krupno/krupno`. It installs the portable ZIP with the default model; `krupno-cli` is on the PATH, and the models you add to its `models` folder are kept on updates (`scoop update krupno`).
 - **Portable ZIP** (`Krupno-<version>-win-x64.zip`): unpack it and run `Krupno.exe`. It comes without models: download them from the [models-v4](https://github.com/FLABER87/krupno/releases/tag/models-v4) release into its `models` folder or into `%LOCALAPPDATA%\Krupno\models`.
 
 The files are not code-signed yet, so Windows SmartScreen may warn on the first launch ("More info" → "Run anyway"). Each release has a `SHA256SUMS.txt` to check the downloads against.
