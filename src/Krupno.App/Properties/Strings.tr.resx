@@ -324,6 +324,9 @@
   <data name="Progress_File" xml:space="preserve">
     <value>Dosya {0}/{1}</value>
   </data>
+  <data name="Progress_Frame" xml:space="preserve">
+    <value>kare {0}/{1}</value>
+  </data>
   <data name="Progress_Orientation" xml:space="preserve">
     <value>yön {0}/{1}</value>
   </data>

@@ -36,7 +36,10 @@ public sealed record SaveOptions
     public LoadedImage? Source { get; init; }
 }
 
-/// <summary>Reading and writing via WIC, the built-in Windows codecs, with no third-party libraries.</summary>
+/// <summary>
+/// Reading and writing images via WIC, the built-in Windows codecs. A WebP that Windows has no codec for is read through libwebp;
+/// animated GIF and WebP are in <see cref="Animation"/>.
+/// </summary>
 public static class ImageCodec
 {
     /// <summary>sRGB, the color space WPF draws in (the Windows system profile).</summary>
@@ -46,8 +49,8 @@ public static class ImageCodec
     private static readonly byte[] ProbeColors = MakeProbeColors();
 
     /// <summary>
-    /// Extensions we try to open. WebP/HEIC/AVIF only work if the matching extensions
-    /// from the Microsoft Store are installed.
+    /// Extensions we try to open. HEIC/AVIF only work if the matching extensions from the Microsoft Store are installed; WebP
+    /// without its extension is read through libwebp.
     /// </summary>
     public static IReadOnlySet<string> InputExtensions { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
@@ -96,6 +99,9 @@ public static class ImageCodec
         catch (Exception ex) when (ex is NotSupportedException or FileFormatException or ArgumentException or COMException
                                        or OverflowException)
         {
+            // Without the Microsoft Store's codec (Windows 10 LTSC has none), libwebp reads a WebP: its first frame, as is.
+            if (WebPFallback(path) is { } webp)
+                return new LoadedImage { Image = webp };
             throw new NotSupportedException(DecodeError(path), ex);
         }
 
@@ -222,6 +228,35 @@ public static class ImageCodec
     /// image never gets into memory.
     /// </summary>
     public static BitmapSource LoadThumbnail(string path, int height)
+    {
+        try
+        {
+            return LoadThumbnailWic(path, height);
+        }
+        catch (Exception) when (WebPFallback(path) is { } webp)
+        {
+            int width = Math.Max(1, (int)Math.Round((double)webp.Width * height / webp.Height));
+            return ToDisplayBitmap(Resampler.Resize(webp, width, Math.Max(1, height)), null, convertInPlace: true);
+        }
+    }
+
+    /// <summary>A WebP's first frame through libwebp, for when WIC can't read it; null for another format or a broken file.</summary>
+    private static ImageBuffer? WebPFallback(string path)
+    {
+        if (!Path.GetExtension(path).Equals(".webp", StringComparison.OrdinalIgnoreCase))
+            return null;
+        try
+        {
+            return WebPAnimation.LoadFirstFrame(path);
+        }
+        catch (Exception ex) when (ex is NotSupportedException or InvalidOperationException or IOException or DllNotFoundException
+                                       or EntryPointNotFoundException)
+        {
+            return null;
+        }
+    }
+
+    private static BitmapSource LoadThumbnailWic(string path, int height)
     {
         var bitmap = new BitmapImage();
         bitmap.BeginInit();

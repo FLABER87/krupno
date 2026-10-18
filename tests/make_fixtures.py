@@ -209,6 +209,26 @@ gray = np.tile(np.arange(256, dtype=np.uint8), (32, 1))
 Image.fromarray(gray).save(profiles / "gray.png", icc_profile=gray_profile(1.8))
 Image.fromarray(np.dstack([gray, np.full_like(gray, 160)])).save(profiles / "gray_alpha.png", icc_profile=gray_profile(1.8))
 
+# Animations (a folder of their own): four frames of a few colors with a moving square, a transparent hole in the third, and
+# every disposal (Pillow stores only the part of a frame that changed, so later frames are partial).
+animated = root / "animated"
+animated.mkdir(parents=True, exist_ok=True)
+anim_frames = []
+for step in range(4):
+    frame = np.zeros((32, 48, 4), np.uint8)
+    frame[:, :, 0] = 90
+    frame[:, :, 1] = (np.arange(32) // 8 * 50)[:, None]
+    frame[:, :, 2] = (np.arange(48) // 8 * 40)[None, :]
+    frame[:, :, 3] = 255
+    frame[4:12, step * 8 + 4:step * 8 + 12, :3] = [240, 200, 20]
+    if step == 2:
+        frame[16:28, 20:40, 3] = 0
+    anim_frames.append(Image.fromarray(frame))
+anim_frames[0].save(animated / "anim.gif", save_all=True, append_images=anim_frames[1:], duration=[100, 50, 200, 30], loop=0,
+                    disposal=[1, 3, 2, 1])
+anim_frames[0].save(animated / "anim.webp", save_all=True, append_images=anim_frames[1:], duration=[100, 50, 200, 30], loop=2,
+                    lossless=True)
+
 # A file with a .png extension that isn't an image: a read error, not a program crash.
 broken = root / "broken"
 broken.mkdir(parents=True, exist_ok=True)

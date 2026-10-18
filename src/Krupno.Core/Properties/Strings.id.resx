@@ -18,6 +18,9 @@
   <data name="Error_AcceleratorUnsupported" xml:space="preserve">
     <value>{0} tidak dapat menjalankan seluruh model ini: tidak semua operasinya didukung. Pilih GPU melalui DirectML atau CPU.</value>
   </data>
+  <data name="Error_AnimationSizeLimit" xml:space="preserve">
+    <value>{0} tidak dapat menyimpan animasi dengan sisi lebih dari {1} px, sedangkan hasilnya {2}×{3}. Pilih skala yang lebih kecil.</value>
+  </data>
   <data name="Error_CannotOpen" xml:space="preserve">
     <value>Tidak dapat membuka “{0}”: file rusak atau bukan gambar.</value>
   </data>

@@ -18,6 +18,9 @@
   <data name="Error_AcceleratorUnsupported" xml:space="preserve">
     <value>{0} ne peut pas exécuter ce modèle en entier : toutes ses opérations ne sont pas prises en charge. Choisissez le GPU via DirectML ou le CPU.</value>
   </data>
+  <data name="Error_AnimationSizeLimit" xml:space="preserve">
+    <value>Le format {0} ne peut pas contenir une animation de plus de {1} px de côté, et le résultat fait {2}×{3}. Choisissez une échelle plus petite.</value>
+  </data>
   <data name="Error_CannotOpen" xml:space="preserve">
     <value>Impossible d'ouvrir « {0} » : le fichier est endommagé ou n'est pas une image.</value>
   </data>

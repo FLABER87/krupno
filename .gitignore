@@ -26,4 +26,5 @@ tests/fixtures/images/
 tests/fixtures/broken/
 tests/fixtures/color/
 tests/fixtures/profiles/
+tests/fixtures/animated/
 tests/out/

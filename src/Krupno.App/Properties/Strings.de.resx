@@ -324,6 +324,9 @@
   <data name="Progress_File" xml:space="preserve">
     <value>Datei {0} von {1}</value>
   </data>
+  <data name="Progress_Frame" xml:space="preserve">
+    <value>Bild {0} von {1}</value>
+  </data>
   <data name="Progress_Orientation" xml:space="preserve">
     <value>Ausrichtung {0} von {1}</value>
   </data>

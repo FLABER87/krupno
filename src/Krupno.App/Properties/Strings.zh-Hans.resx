@@ -324,6 +324,9 @@
   <data name="Progress_File" xml:space="preserve">
     <value>第 {0} 个文件，共 {1} 个</value>
   </data>
+  <data name="Progress_Frame" xml:space="preserve">
+    <value>帧 {0}/{1}</value>
+  </data>
   <data name="Progress_Orientation" xml:space="preserve">
     <value>方向 {0}/{1}</value>
   </data>

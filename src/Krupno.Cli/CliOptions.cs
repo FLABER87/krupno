@@ -30,8 +30,9 @@ internal sealed class CliOptions
               --width <px>        a width for every result instead of a scale; the height follows the proportions
               --height <px>       the same for the height
               --long-side <px>    the same for the longer side, whichever it is for each image
-          -f, --format <fmt>      png | jpg | tiff | bmp (default: from the output extension, or png)
-          -q, --quality <1-100>   JPEG quality (default: 95)
+          -f, --format <fmt>      png | jpg | tiff | bmp (default: from the output extension, or png); an animated
+                                  GIF or WebP stays an animation in its own format
+          -q, --quality <1-100>   JPEG quality, and that of an animated WebP's frames, where 100 is lossless (default: 95)
           -t, --tile <px>         tile size; 0 = no tiling (default: 384)
               --pad <px>          tile overlap (default: 32; 64 leaves no visible seams even with deep models)
               --tta               test-time augmentation: all 8 rotations and mirrorings, averaged (8 times slower)
@@ -47,6 +48,8 @@ internal sealed class CliOptions
               --install-accelerators  download the GPU and NPU vendors' execution providers Windows ML offers for
                                   this computer (Windows 11 24H2 and later; can take minutes)
           -h, --help              show this help
+
+        Animated GIF and WebP are upscaled frame by frame, keeping the durations and the loop count.
 
         Several files, folders and patterns can be given at once. Patterns such as photos\*.jpg are expanded by
         krupno-cli itself (cmd and PowerShell pass them on as they are); wildcards work in the file name only.

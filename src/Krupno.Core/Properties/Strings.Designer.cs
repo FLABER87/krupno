@@ -78,6 +78,15 @@ namespace Krupno.Core.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to {0} can't hold an animation larger than {1} px on a side, and the result is {2}×{3}. Choose a smaller scale..
+        /// </summary>
+        internal static string Error_AnimationSizeLimit {
+            get {
+                return ResourceManager.GetString("Error_AnimationSizeLimit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cannot open "{0}": the file is corrupt or is not an image..
         /// </summary>
         internal static string Error_CannotOpen {

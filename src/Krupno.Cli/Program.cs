@@ -167,6 +167,20 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
             try
             {
                 var itemTimer = Stopwatch.StartNew();
+                if (Animation.Detect(input) is not null)
+                {
+                    // Frame by frame into an animation of the same format, written here and now.
+                    FinishPendingSave();
+                    var frameProgress = new ConsoleProgress();
+                    var animation = AnimationUpscaler.Upscale(upscaler, input, output, upscaleOptions,
+                        new AnimationSaveOptions { Quality = options.Quality }, frameProgress, cancellationToken);
+                    frameProgress.Finish();
+                    Console.WriteLine($"  {animation.FirstSource.Width}×{animation.FirstSource.Height} → " +
+                                      $"{animation.FirstResult.Width}×{animation.FirstResult.Height}, {animation.Frames} frames  " +
+                                      $"{itemTimer.Elapsed.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture)} s  → {output}");
+                    ReportDevice(i);
+                    continue;
+                }
                 var loaded = ImageCodec.Load(input);
                 var format = options.Format ?? ImageCodec.FormatFromExtension(output) ?? ImageFileFormat.Png;
                 var (outputWidth, outputHeight) = upscaler.OutputSize(loaded.Image.Width, loaded.Image.Height, upscaleOptions);
@@ -200,15 +214,7 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
                 Console.Error.WriteLine($"  Skipped: {ex.Message}");
             }
 
-            if (model.FallbackReason is { } reason && i == 0)
-                Console.WriteLine($"  DirectML is unavailable, running on CPU: {reason}");
-            if (model.CompileFailure is { } compileFailure && i == 0)
-                Console.WriteLine($"  The accelerator can't compile the model for the cache, so it builds the engine on every start: {compileFailure}");
-            // The denoiser has sessions of its own, so it may fare differently on the same device.
-            if (denoiser?.FallbackReason is { } denoiserReason && model.FallbackReason is null && i == 0)
-                Console.WriteLine($"  DirectML is unavailable for the noise removal model, running it on CPU: {denoiserReason}");
-            if (denoiser?.CompileFailure is { } denoiserCompileFailure && i == 0)
-                Console.WriteLine($"  The accelerator can't compile the noise removal model for the cache, so it builds the engine on every start: {denoiserCompileFailure}");
+            ReportDevice(i);
         }
     }
     finally
@@ -220,6 +226,22 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
     if (jobs.Count > 1)
         Console.WriteLine($"Done: {jobs.Count - failed} of {jobs.Count} in {stopwatch.Elapsed.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture)} s");
     return failed == 0 ? 0 : 1;
+
+    // After the first file: what became of the device, which is known once the sessions are made.
+    void ReportDevice(int i)
+    {
+        if (i != 0)
+            return;
+        if (model.FallbackReason is { } reason)
+            Console.WriteLine($"  DirectML is unavailable, running on CPU: {reason}");
+        if (model.CompileFailure is { } compileFailure)
+            Console.WriteLine($"  The accelerator can't compile the model for the cache, so it builds the engine on every start: {compileFailure}");
+        // The denoiser has sessions of its own, so it may fare differently on the same device.
+        if (denoiser?.FallbackReason is { } denoiserReason && model.FallbackReason is null)
+            Console.WriteLine($"  DirectML is unavailable for the noise removal model, running it on CPU: {denoiserReason}");
+        if (denoiser?.CompileFailure is { } denoiserCompileFailure)
+            Console.WriteLine($"  The accelerator can't compile the noise removal model for the cache, so it builds the engine on every start: {denoiserCompileFailure}");
+    }
 
     void FinishPendingSave()
     {

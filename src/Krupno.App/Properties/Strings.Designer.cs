@@ -996,6 +996,15 @@ namespace Krupno.App.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to frame {0} of {1}.
+        /// </summary>
+        public static string Progress_Frame {
+            get {
+                return ResourceManager.GetString("Progress_Frame", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to orientation {0} of {1}.
         /// </summary>
         public static string Progress_Orientation {

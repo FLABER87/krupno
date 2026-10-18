@@ -263,6 +263,43 @@ multi = out / "multi_out"
 check("multi_pattern", sorted(p.name for p in multi.iterdir()) == ["a.png", "b.png", "orient6.png"] if multi.exists() else False,
       ", ".join(sorted(p.name for p in multi.iterdir())) if multi.exists() else "folder missing")
 
+# Animations: each frame is the nearest upscale of the source frame as shown (Pillow draws the frames over each other itself),
+# red only, with the alpha scaled smoothly, so its edges may round the other way; a GIF keeps the durations, both the loop count.
+def frames(path):
+    image = Image.open(path)
+    result, durations = [], []
+    for i in range(image.n_frames):
+        image.seek(i)
+        result.append(np.asarray(image.convert("RGBA")).astype(np.int32))
+        durations.append(image.info.get("duration"))
+    return result, durations, image.info.get("loop")
+
+
+for name, loop_expected in (("anim.gif", 0), ("anim.webp", 2)):
+    path = out / "anim" / name
+    if not path.exists():
+        check(f"anim/{name}", False, "file missing")
+        continue
+    src, src_durations, _ = frames(fixtures / "animated" / name)
+    got, got_durations, loop = frames(path)
+    problems = [] if len(got) == len(src) else [f"{len(got)} frames instead of {len(src)}"]
+    for i, (s, g) in enumerate(zip(src, got)):
+        exp = np.repeat(np.repeat(s, 4, 0), 4, 1)
+        if g.shape != exp.shape:
+            problems.append(f"frame {i}: shape {g.shape}")
+            continue
+        opaque = (exp[:, :, 3] == 255) & (g[:, :, 3] == 255)
+        diff = int(np.abs(g[:, :, :3] - exp[:, :, :3] * np.array([1, 0, 0]))[opaque].max(initial=0))
+        alpha = float(np.mean((exp[:, :, 3] >= 128) != (g[:, :, 3] >= 128)))
+        if diff > 0 or alpha > 0.02:
+            problems.append(f"frame {i}: max diff {diff}, alpha differs on {alpha:.1%}")
+    if name.endswith(".gif") and got_durations != src_durations:
+        problems.append(f"durations {got_durations} != {src_durations}")
+    if loop != loop_expected:
+        problems.append(f"loop {loop}")
+    check(f"anim/{name}", not problems, "; ".join(problems) or f"{len(got)} frames, loop {loop}")
+check("anim_png_name", "is an animation" in log("anim_png_name"), " | ".join(log("anim_png_name").splitlines()))
+
 # --name-model and --no-overwrite: the second run without overwriting keeps the first result and takes number 2.
 names = out / "names"
 check("names", sorted(p.name for p in names.iterdir()) == ["a.png", "a_x4 (2).png", "a_x4.png", "a_x4_nearest_red_x4_s70.png"]
