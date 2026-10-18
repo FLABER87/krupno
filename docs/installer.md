@@ -66,4 +66,12 @@ Releases are built by the `.github/workflows/release.yml` workflow. To release a
 2. Push a `v<version>` tag.
 3. The workflow builds the installer and the ZIP and creates a draft release. Publish it manually on GitHub.
 
+4. Once the release is published, `.github/workflows/packages.yml` updates the package managers (see below).
+
 Code signing through SignPath Foundation is already built into the workflow. It is turned on by the setup described in [installer/signpath/README.md](../installer/signpath/README.md).
+
+## Package managers
+
+**Scoop.** The repository is a Scoop bucket of its own: `bucket/krupno.json` installs the portable ZIP and the default model, which goes into the `models` folder; that folder is persisted, so the models a user adds stay through updates. The official Extras bucket takes apps with at least 100 stars on GitHub. After a release is published, the `Packages` workflow runs `installer/update-scoop.ps1`, which takes the new version and the ZIP's SHA-256 from the release's `SHA256SUMS.txt`, and opens a pull request with the new manifest (GitHub Actions may open it only with "Allow GitHub Actions to create and approve pull requests" in the repository's settings; otherwise the log has the link to open it by hand). A pull request from the workflow runs no checks, so it is merged by an administrator. When the default model moves to a new model release, its link and hash in the manifest (in `url`, `hash` and `autoupdate`) change by hand, together with `Krupno.iss`.
+
+**WinGet.** The package is `FLABER87.Krupno` in [microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs): the installer, for the current user (`/CURRENTUSER`) or for all users (`/ALLUSERS`). Its first version was submitted by hand; after that, the `Packages` workflow submits each release through [WinGet Releaser](https://github.com/vedantmgoyal9/winget-releaser) once the `WINGET_TOKEN` secret is set: a classic token with the `public_repo` scope of an account with a fork of winget-pkgs. Without the secret, the job only says so. Microsoft's checks and review take from hours to days.

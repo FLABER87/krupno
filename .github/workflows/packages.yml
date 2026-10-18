@@ -1,0 +1,81 @@
+# Package managers, once a release of Krupno is published (not a model release):
+# - Scoop: bucket/krupno.json gets the new version and the ZIP's SHA-256 from the release's SHA256SUMS.txt, on a branch
+#   with a pull request to merge. GitHub Actions may create the pull request only with "Allow GitHub Actions to create and
+#   approve pull requests" in the repository's settings; without it the branch is still pushed, and the log has its link.
+# - WinGet: a pull request to microsoft/winget-pkgs with the new installer (FLABER87.Krupno), through the user's fork,
+#   turned on by the WINGET_TOKEN secret: a classic token with the public_repo scope. The first version of the package was
+#   submitted by hand; this only updates it.
+# A manual run takes the tag of a published release.
+name: Packages
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, such as v0.2.5
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  TAG: ${{ github.event.release.tag_name || inputs.tag }}
+
+jobs:
+  scoop:
+    name: Scoop manifest
+    if: startsWith(github.event.release.tag_name || inputs.tag, 'v')
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Update bucket/krupno.json
+        id: update
+        shell: pwsh
+        run: |
+          $version = & installer/update-scoop.ps1 -Tag $env:TAG -Repository $env:GITHUB_REPOSITORY
+          if ($version) { "version=$version" >> $env:GITHUB_OUTPUT } else { "The manifest already has $env:TAG" }
+
+      - name: Pull request
+        if: steps.update.outputs.version != ''
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.update.outputs.version }}
+        run: |
+          $branch = "packages/scoop-$env:VERSION"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c $branch
+          git commit -am "Scoop: Krupno $env:VERSION"
+          git push --force origin $branch
+          gh pr create --base main --head $branch --title "Scoop: Krupno $env:VERSION" `
+            --body "Updates bucket/krupno.json to the release $env:TAG: the ZIP's link and SHA-256 from its SHA256SUMS.txt."
+          if ($LASTEXITCODE -ne 0) {
+            "::warning::The pull request was not created. Open it from https://github.com/$env:GITHUB_REPOSITORY/pull/new/$branch"
+            exit 0
+          }
+
+  winget:
+    name: WinGet manifest
+    if: startsWith(github.event.release.tag_name || inputs.tag, 'v')
+    runs-on: windows-latest
+    env:
+      WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+    steps:
+      - name: No token
+        if: env.WINGET_TOKEN == ''
+        run: echo "::notice::WINGET_TOKEN is not set, so WinGet is not updated."
+
+      - uses: vedantmgoyal9/winget-releaser@v2
+        if: env.WINGET_TOKEN != ''
+        with:
+          identifier: FLABER87.Krupno
+          release-tag: ${{ env.TAG }}
+          installers-regex: '-setup-x64\.exe$'
+          token: ${{ secrets.WINGET_TOKEN }}
