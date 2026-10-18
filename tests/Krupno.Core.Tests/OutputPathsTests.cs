@@ -20,6 +20,17 @@ public class OutputPathsTests
         Assert.Equal(expected, OutputPaths.SettingsTag(model, denoise, strength, tta));
     }
 
+    [Theory]
+    [InlineData("photo_x4 (2).png", "photo_x4.png")]
+    [InlineData("photo_x4 (jpg) (13).png", "photo_x4 (jpg).png")]
+    [InlineData("photo_x4 (1).png", "photo_x4 (1).png")]
+    [InlineData("photo_x4 (jpg).png", "photo_x4 (jpg).png")]
+    [InlineData("photo_x4.png", "photo_x4.png")]
+    public void Unnumbered(string name, string expected)
+    {
+        Assert.Equal(In(expected), OutputPaths.Unnumbered(In(name)));
+    }
+
     [Fact]
     public void KeepExistingNumbersOnlyTheResultsThatAreThere()
     {

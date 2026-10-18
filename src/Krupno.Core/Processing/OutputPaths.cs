@@ -43,6 +43,22 @@ public static partial class OutputPaths
     private static partial Regex Precision();
 
     /// <summary>
+    /// The name without the number <see cref="KeepExisting"/> or <see cref="MakeUnique"/> gives it: "photo_x4 (2).png" →
+    /// "photo_x4.png"; a name without one stays as it is.
+    /// </summary>
+    public static string Unnumbered(string path)
+    {
+        string name = Path.GetFileNameWithoutExtension(path);
+        var match = Number().Match(name);
+        return match.Success && int.TryParse(match.Groups[1].ValueSpan, out int n) && n >= 2
+            ? Path.Combine(Path.GetDirectoryName(path) ?? "", name[..match.Index] + Path.GetExtension(path))
+            : path;
+    }
+
+    [GeneratedRegex(@" \((\d{1,9})\)$")]
+    private static partial Regex Number();
+
+    /// <summary>
     /// Returns <paramref name="outputs"/> (from <see cref="MakeUnique"/>) with the ones that <paramref name="exists"/> numbered,
     /// so an earlier result stays: "photo_x4.png" → "photo_x4 (2).png", or the next number free. A number never takes a source
     /// or a name another image of the batch gets.

@@ -52,11 +52,14 @@ internal static class JobPlanner
 
         // An image found in a folder or by a pattern that is the result of another one is left out: "*.png" next to the
         // sources, or "-r" with -o inside the folder, would otherwise pick up the results of an earlier run and upscale them
-        // again. A result is known by the name it gets, plain or with its source's extension after a clash (see OutputPaths).
+        // again. A result is known by the name it gets, plain or with its source's extension after a clash (see OutputPaths),
+        // and also with a number after it, as --no-overwrite keeps earlier ones ("photo_x4 (2).png").
         // An image named on the command line is always taken, and then it is a source no result may replace.
         var results = new HashSet<string>(planned.SelectMany(p => new[] { p.Job.Output, OutputPaths.Tagged(p.Job.Output, p.Job.Input) }).Select(OutputPaths.Key),
             StringComparer.OrdinalIgnoreCase);
-        leftOut = planned.RemoveAll(p => !p.Named && results.Contains(OutputPaths.Key(p.Job.Input))
+        leftOut = planned.RemoveAll(p => !p.Named
+                                         && (results.Contains(OutputPaths.Key(p.Job.Input))
+                                             || results.Contains(OutputPaths.Key(OutputPaths.Unnumbered(p.Job.Input))))
                                          && !string.Equals(OutputPaths.Key(p.Job.Input), OutputPaths.Key(p.Job.Output), StringComparison.OrdinalIgnoreCase));
 
         var outputs = OutputPaths.MakeUnique(planned.Select(p => p.Job.Input).ToList(), planned.Select(p => p.Job.Output).ToList());

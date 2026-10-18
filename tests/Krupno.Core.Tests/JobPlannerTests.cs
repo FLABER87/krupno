@@ -206,6 +206,17 @@ public sealed class JobPlannerTests : IDisposable
     }
 
     [Fact]
+    public void NumberedResultsAreResultsToo()
+    {
+        // --no-overwrite left "b_x4 (2).png" from an earlier run: "*.png" must not upscale it again.
+        File.WriteAllBytes(P("photos/b_x4.png"), []);
+        File.WriteAllBytes(P("photos/b_x4 (2).png"), []);
+        var jobs = JobPlanner.Plan([P("photos/*.png")], null, null, false, "_x4", "", out int leftOut);
+        Assert.Equal(2, leftOut);
+        Assert.Equal([P("photos/b.png")], jobs.Select(j => j.Input));
+    }
+
+    [Fact]
     public void LongPathPrefixIsNotAPattern()
     {
         string file = @"\\?\" + P("photos/a.jpg");
