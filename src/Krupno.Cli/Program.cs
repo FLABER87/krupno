@@ -173,7 +173,7 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
                     FinishPendingSave();
                     var frameProgress = new ConsoleProgress();
                     var animation = AnimationUpscaler.Upscale(upscaler, input, output, upscaleOptions,
-                        new AnimationSaveOptions { Quality = options.Quality }, frameProgress, cancellationToken);
+                        new AnimationSaveOptions { Quality = options.QualityGiven ? options.Quality : null }, frameProgress, cancellationToken);
                     frameProgress.Finish();
                     Console.WriteLine($"  {animation.FirstSource.Width}×{animation.FirstSource.Height} → " +
                                       $"{animation.FirstResult.Width}×{animation.FirstResult.Height}, {animation.Frames} frames  " +

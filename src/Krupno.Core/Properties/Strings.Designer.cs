@@ -141,6 +141,15 @@ namespace Krupno.Core.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Could not write the WebP animation: {0}..
+        /// </summary>
+        internal static string Error_WebPWrite {
+            get {
+                return ResourceManager.GetString("Error_WebPWrite", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The model metadata is contradictory: the window must be at most {0} px but at least {1} px..
         /// </summary>
         internal static string Model_ContradictoryMetadata {

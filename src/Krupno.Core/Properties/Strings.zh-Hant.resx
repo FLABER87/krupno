@@ -39,6 +39,9 @@
   <data name="Error_ResultTooLarge" xml:space="preserve">
     <value>結果 {0}×{1} 太大，無法在記憶體中處理。</value>
   </data>
+  <data name="Error_WebPWrite" xml:space="preserve">
+    <value>無法寫入 WebP 動畫：{0}。</value>
+  </data>
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>模型中繼資料互相矛盾：視窗必須不超過 {0} px，但又至少為 {1} px。</value>
   </data>

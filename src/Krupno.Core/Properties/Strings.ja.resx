@@ -39,6 +39,9 @@
   <data name="Error_ResultTooLarge" xml:space="preserve">
     <value>結果 {0}×{1} は大きすぎて、メモリ内で処理できません。</value>
   </data>
+  <data name="Error_WebPWrite" xml:space="preserve">
+    <value>WebP アニメーションを書き込めませんでした：{0}。</value>
+  </data>
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>モデルのメタデータが矛盾しています。ウィンドウは {0} px 以下かつ {1} px 以上である必要があります。</value>
   </data>

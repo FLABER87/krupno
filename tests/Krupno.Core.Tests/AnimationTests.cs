@@ -247,6 +247,170 @@ public sealed class AnimationTests : IDisposable
         Assert.Empty(Directory.GetFiles(_root, "*.tmp"));
     }
 
+    [Fact]
+    public void GifCodesFollowTheDecodersCodeSizeToTheEnd()
+    {
+        // Frames of every length from 1 to 300 pixels with 1, 2, 16 and 256 colors end the LZW stream at every point of the
+        // code size; a strict decoder (codes within the table, the end code reached) must read each one.
+        var random = new Random(7);
+        foreach (int colors in new[] { 1, 2, 16, 256 })
+        {
+            for (int length = 1; length <= 300; length += colors == 256 ? 1 : 3)
+            {
+                var frame = new ImageBuffer(length, 1);
+                for (int x = 0; x < length; x++)
+                {
+                    int c = random.Next(colors);
+                    frame.Pixels[x * 4] = (byte)c;
+                    frame.Pixels[x * 4 + 1] = (byte)(c * 7);
+                    frame.Pixels[x * 4 + 3] = 255;
+                }
+                string path = P($"lzw_{colors}_{length}.gif");
+                using (var writer = Animation.Create(path, AnimationFormat.Gif, length, 1, new AnimationSaveOptions()))
+                {
+                    writer.Add(frame, 10);
+                    writer.Finish();
+                }
+                AssertStrictGif(path);
+            }
+        }
+        // A long run of one color: the codes grow to 12 bits and the table is cleared on the way.
+        var plain = TestImages.Fill(300, 300, 10, 20, 30);
+        using (var writer = Animation.Create(P("plain.gif"), AnimationFormat.Gif, 300, 300, new AnimationSaveOptions()))
+        {
+            writer.Add(plain, 10);
+            writer.Add(TestImages.Noise(300, 300), 10);
+            writer.Finish();
+        }
+        AssertStrictGif(P("plain.gif"));
+    }
+
+    /// <summary>Walks the GIF's blocks and decodes each image's LZW codes the way a strict decoder does.</summary>
+    private static void AssertStrictGif(string path)
+    {
+        var b = File.ReadAllBytes(path);
+        Assert.Equal(0, b[10] & 0x80); // no global color table
+        int pos = 13;
+        while (true)
+        {
+            byte block = b[pos++];
+            if (block == 0x3B)
+                return;
+            if (block == 0x21)
+            {
+                pos++;
+                while (b[pos] != 0)
+                    pos += b[pos] + 1;
+                pos++;
+                continue;
+            }
+            Assert.Equal(0x2C, block);
+            int packed = b[pos + 8];
+            pos += 9;
+            if ((packed & 0x80) != 0)
+                pos += 3 << ((packed & 7) + 1);
+            int minCodeSize = b[pos++];
+            var data = new List<byte>();
+            while (b[pos] != 0)
+            {
+                data.AddRange(b.AsSpan(pos + 1, b[pos]).ToArray());
+                pos += b[pos] + 1;
+            }
+            pos++;
+            DecodeStrictly([.. data], minCodeSize, Path.GetFileName(path));
+        }
+    }
+
+    private static void DecodeStrictly(byte[] data, int minCodeSize, string name)
+    {
+        int clear = 1 << minCodeSize, end = clear + 1, size = minCodeSize + 1, next = clear + 2, bit = 0;
+        bool first = true;
+        while (true)
+        {
+            Assert.True(bit + size <= data.Length * 8, $"{name}: the data ends before the end code");
+            int code = 0;
+            for (int i = 0; i < size; i++, bit++)
+                code |= (data[bit >> 3] >> (bit & 7) & 1) << i;
+            if (code == clear)
+            {
+                size = minCodeSize + 1;
+                next = clear + 2;
+                first = true;
+                continue;
+            }
+            if (code == end)
+                return;
+            Assert.True(first ? code < clear : code <= next, $"{name}: code {code} with the next free one {next}");
+            if (first)
+            {
+                first = false;
+                continue;
+            }
+            if (next < 4096 && ++next == 1 << size && size < 12)
+                size++;
+        }
+    }
+
+    [Fact]
+    public void WebPKeepsItsSourcesKindOfCompression()
+    {
+        using (var writer = Animation.Create(P("lossless.webp"), AnimationFormat.WebP, 24, 16, new AnimationSaveOptions { Quality = 100 }))
+        {
+            writer.Add(Frame(24, 16, 0), 100);
+            writer.Add(Frame(24, 16, 2), 100);
+            writer.Finish();
+        }
+        using (var writer = Animation.Create(P("lossy.webp"), AnimationFormat.WebP, 24, 16, new AnimationSaveOptions { Quality = 80 }))
+        {
+            writer.Add(Frame(24, 16, 0), 100);
+            writer.Add(Frame(24, 16, 2), 100);
+            writer.Finish();
+        }
+        Assert.True(WebPAnimation.AllFramesLossless(File.ReadAllBytes(P("lossless.webp"))));
+        Assert.False(WebPAnimation.AllFramesLossless(File.ReadAllBytes(P("lossy.webp"))));
+
+        using var model = UpscaleModel.Load(TestImages.Model("nearest_red_x4.onnx"), ExecutionDevice.Cpu);
+        var upscaler = new Upscaler(model);
+        AnimationUpscaler.Upscale(upscaler, P("lossless.webp"), P("lossless_x4.webp"), UpscaleOptions.Default);
+        AnimationUpscaler.Upscale(upscaler, P("lossy.webp"), P("lossy_x4.webp"), UpscaleOptions.Default);
+        AnimationUpscaler.Upscale(upscaler, P("lossless.webp"), P("forced_x4.webp"), UpscaleOptions.Default,
+            new AnimationSaveOptions { Quality = 70 });
+        Assert.True(WebPAnimation.AllFramesLossless(File.ReadAllBytes(P("lossless_x4.webp"))));
+        Assert.False(WebPAnimation.AllFramesLossless(File.ReadAllBytes(P("lossy_x4.webp"))));
+        Assert.False(WebPAnimation.AllFramesLossless(File.ReadAllBytes(P("forced_x4.webp"))));
+    }
+
+    [Fact]
+    public void GifWithAHugeCanvasIsRefused()
+    {
+        using (var writer = Animation.Create(P("huge.gif"), AnimationFormat.Gif, 1, 1, new AnimationSaveOptions()))
+        {
+            writer.Add(Frame(1, 1, 0), 10);
+            writer.Add(Frame(1, 1, 0, transparentCorner: true), 10);
+            writer.Finish();
+        }
+        // The logical screen in the header claims 60000×60000.
+        var bytes = File.ReadAllBytes(P("huge.gif"));
+        bytes[6] = bytes[8] = 0x60;
+        bytes[7] = bytes[9] = 0xEA;
+        File.WriteAllBytes(P("huge.gif"), bytes);
+        Assert.Contains("too large", Assert.Throws<NotSupportedException>(() => Animation.Open(P("huge.gif"))).Message);
+    }
+
+    [Fact]
+    public void FirstGifFrameIsLoadedAsShown()
+    {
+        // The second frame of an opaque animation is stored as the changed area only; ImageCodec.Load shows frame one whole,
+        // and a GIF whose first frame is a smaller rectangle gets the canvas around it.
+        using (var writer = Animation.Create(P("two.gif"), AnimationFormat.Gif, 40, 30, new AnimationSaveOptions()))
+        {
+            writer.Add(Frame(40, 30, 0), 10);
+            writer.Add(Frame(40, 30, 3), 10);
+            writer.Finish();
+        }
+        AssertSame(Frame(40, 30, 0), ImageCodec.Load(P("two.gif")).Image);
+    }
+
     private sealed class SyncProgress<T>(Action<T> report) : IProgress<T>
     {
         public void Report(T value) => report(value);

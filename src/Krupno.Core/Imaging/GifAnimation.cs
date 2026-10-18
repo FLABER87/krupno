@@ -70,6 +70,9 @@ internal static class GifAnimation
                     _width = Math.Max(_width, Number(metadata, "/imgdesc/Left") + frame.PixelWidth);
                     _height = Math.Max(_height, Number(metadata, "/imgdesc/Top") + frame.PixelHeight);
                 }
+                // The canvas comes from the header: a broken or hostile one must not allocate gigabytes or overflow.
+                if (!ImageBuffer.CanAllocate(_width, _height))
+                    throw new NotSupportedException(string.Format(Strings.Error_ImageTooLarge, _width, _height));
                 // NETSCAPE2.0: the data block is [3, 1, loop count low, high].
                 if (Query<byte[]>(container, "/appext/Application") is { } application
                     && System.Text.Encoding.ASCII.GetString(application) is "NETSCAPE2.0" or "ANIMEXTS1.0"
@@ -398,7 +401,12 @@ internal static class GifLzw
             current = value;
         }
         if (current >= 0)
+        {
             writer.Write(current, codeSize);
+            // The decoder adds its entry for this last code too (a step behind the encoder), and may widen its codes with it.
+            if (last + 1 >= 1 << codeSize && codeSize < 12)
+                codeSize++;
+        }
         // A clear code before the end, so the decoder's code size is the initial one for it whatever it was before.
         writer.Write(clear, codeSize);
         writer.Write(clear + 1, minCodeSize + 1);

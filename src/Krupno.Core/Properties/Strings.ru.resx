@@ -39,6 +39,9 @@
   <data name="Error_ResultTooLarge" xml:space="preserve">
     <value>Результат {0}×{1} слишком велик для обработки в памяти.</value>
   </data>
+  <data name="Error_WebPWrite" xml:space="preserve">
+    <value>Не удалось записать WebP-анимацию: {0}.</value>
+  </data>
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>Метаданные модели противоречивы: окно должно быть не больше {0} px, но не меньше {1} px.</value>
   </data>

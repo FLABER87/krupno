@@ -80,6 +80,10 @@ public static class ImageCodec
 
     public static LoadedImage Load(string path)
     {
+        // A GIF's first frame as it is shown: it may be stored as a smaller rectangle of the canvas.
+        if (Path.GetExtension(path).Equals(".gif", StringComparison.OrdinalIgnoreCase))
+            return LoadGif(path);
+
         using var stream = File.OpenRead(path);
         BitmapDecoder decoder;
         BitmapFrame frame;
@@ -237,6 +241,20 @@ public static class ImageCodec
         {
             int width = Math.Max(1, (int)Math.Round((double)webp.Width * height / webp.Height));
             return ToDisplayBitmap(Resampler.Resize(webp, width, Math.Max(1, height)), null, convertInPlace: true);
+        }
+    }
+
+    private static LoadedImage LoadGif(string path)
+    {
+        try
+        {
+            using var gif = GifAnimation.Open(path);
+            return new LoadedImage { Image = gif.ReadFrames().First().Image };
+        }
+        catch (Exception ex) when (ex is FileFormatException or ArgumentException or COMException or OverflowException
+                                       or InvalidOperationException)
+        {
+            throw new NotSupportedException(DecodeError(path), ex);
         }
     }
 

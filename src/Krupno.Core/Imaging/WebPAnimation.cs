@@ -32,6 +32,38 @@ internal static unsafe class WebPAnimation
 
     public static AnimationReader Open(string path) => new Reader(path, File.ReadAllBytes(path));
 
+    /// <summary>
+    /// Whether every frame's image is stored as VP8L (lossless) rather than VP8 (lossy), from the RIFF chunks: the top-level
+    /// one of a still image, or the ones inside each ANMF frame.
+    /// </summary>
+    internal static bool AllFramesLossless(ReadOnlySpan<byte> file)
+    {
+        int lossless = 0, lossy = 0;
+        Scan(file.Length >= 12 ? file[12..] : [], ref lossless, ref lossy, frames: true);
+        return lossless > 0 && lossy == 0;
+
+        static void Scan(ReadOnlySpan<byte> chunks, ref int lossless, ref int lossy, bool frames)
+        {
+            while (chunks.Length >= 8)
+            {
+                var fourcc = chunks[..4];
+                long size = BitConverter.ToUInt32(chunks[4..8]);
+                var payload = chunks[8..(int)Math.Min(chunks.Length, 8 + size)];
+                if (fourcc.SequenceEqual("VP8L"u8))
+                    lossless++;
+                else if (fourcc.SequenceEqual("VP8 "u8))
+                    lossy++;
+                else if (frames && fourcc.SequenceEqual("ANMF"u8) && payload.Length > 16)
+                    Scan(payload[16..], ref lossless, ref lossy, frames: false);
+                // Chunks are padded to an even size.
+                long next = 8 + size + (size & 1);
+                if (next >= chunks.Length)
+                    break;
+                chunks = chunks[(int)next..];
+            }
+        }
+    }
+
     /// <summary>The first frame of any WebP, for a still image Windows can't decode.</summary>
     public static ImageBuffer LoadFirstFrame(string path)
     {
@@ -47,6 +79,7 @@ internal static unsafe class WebPAnimation
         private void* _decoder;
         private readonly AnimInfo _info;
         private readonly byte[]? _icc;
+        private readonly bool _lossless;
 
         public Reader(string path, byte[] file)
         {
@@ -63,6 +96,7 @@ internal static unsafe class WebPAnimation
                     throw new NotSupportedException(string.Format(Strings.Error_CannotOpen, Path.GetFileName(path)));
                 _info = info;
                 _icc = ReadIcc();
+                _lossless = AllFramesLossless(file);
             }
             catch
             {
@@ -77,6 +111,7 @@ internal static unsafe class WebPAnimation
         public override int FrameCount => (int)_info.FrameCount;
         public override int? LoopCount => (int)_info.LoopCount;
         public override byte[]? IccProfile => _icc;
+        public override bool IsLossless => _lossless;
 
         public override IEnumerable<AnimationFrame> ReadFrames(CancellationToken cancellationToken = default)
         {
@@ -96,6 +131,8 @@ internal static unsafe class WebPAnimation
         private void Restart()
         {
             WebPAnimDecoderDelete(_decoder);
+            // Not left pointing at the freed decoder if a new one can't be made: Dispose would free it again.
+            _decoder = null;
             _decoder = NewDecoder();
         }
 
@@ -194,7 +231,7 @@ internal sealed unsafe class WebPAnimationWriter : AnimationWriter
         _config = (byte*)NativeMemory.AllocZeroed(WebPNative.StructSize);
         try
         {
-            int quality = Math.Clamp(options.Quality, 1, 100);
+            int quality = Math.Clamp(options.Quality ?? AnimationSaveOptions.DefaultQuality, 1, 100);
             if (WebPNative.WebPConfigInitInternal(_config, 0, quality, WebPNative.EncoderAbi) == 0)
                 throw new InvalidOperationException("libwebp's encoder is not the version Krupno was built for.");
             // Quality 100 is lossless, where "quality" is the effort (75, libwebp's default).
@@ -229,7 +266,7 @@ internal sealed unsafe class WebPAnimationWriter : AnimationWriter
                     throw new OutOfMemoryException();
             }
             if (WebPNative.WebPAnimEncoderAdd(_encoder, picture, _timestamp, _config) == 0)
-                throw new InvalidOperationException($"WebP: {Error()}");
+                throw new InvalidOperationException(string.Format(Strings.Error_WebPWrite, Error()));
         }
         finally
         {
@@ -243,16 +280,20 @@ internal sealed unsafe class WebPAnimationWriter : AnimationWriter
     {
         // A last call without a picture says when the last frame ends.
         if (WebPNative.WebPAnimEncoderAdd(_encoder, null, _timestamp, null) == 0)
-            throw new InvalidOperationException($"WebP: {Error()}");
+            throw new InvalidOperationException(string.Format(Strings.Error_WebPWrite, Error()));
         WebPNative.WebPData data = default;
         if (WebPNative.WebPAnimEncoderAssemble(_encoder, &data) == 0)
-            throw new InvalidOperationException($"WebP: {Error()}");
+            throw new InvalidOperationException(string.Format(Strings.Error_WebPWrite, Error()));
+        // The encoder's own copy of the frames goes before more copies of the file are made.
+        WebPNative.WebPAnimEncoderDelete(_encoder);
+        _encoder = null;
         try
         {
             if (_options.IccProfile is { Length: > 0 } icc)
                 data = WithIcc(data, icc);
             using var file = File.Create(_path);
-            file.Write(new ReadOnlySpan<byte>(data.Bytes, checked((int)data.Size)));
+            using var bytes = new UnmanagedMemoryStream(data.Bytes, (long)data.Size);
+            bytes.CopyTo(file);
         }
         finally
         {
@@ -263,30 +304,28 @@ internal sealed unsafe class WebPAnimationWriter : AnimationWriter
     /// <summary>The assembled file with the source's color profile; the original data is freed.</summary>
     private static WebPNative.WebPData WithIcc(WebPNative.WebPData data, byte[] icc)
     {
-        void* mux = WebPNative.WebPMuxCreateInternal(&data, 1, WebPNative.MuxAbi);
+        // The muxer reads the file in place (no copy), so the original is freed only once the muxer is gone.
+        void* mux = WebPNative.WebPMuxCreateInternal(&data, 0, WebPNative.MuxAbi);
         if (mux == null)
             return data;
-        try
+        WebPNative.WebPData withIcc = default;
+        bool done;
+        fixed (byte* profile = icc)
+        fixed (byte* fourcc = "ICCP"u8)
         {
-            fixed (byte* profile = icc)
-            fixed (byte* fourcc = "ICCP"u8)
-            {
-                var chunk = new WebPNative.WebPData { Bytes = profile, Size = (nuint)icc.Length };
-                WebPNative.WebPData withIcc = default;
-                // WEBP_MUX_OK is 1.
-                if (WebPNative.WebPMuxSetChunk(mux, fourcc, &chunk, 1) != 1 || WebPNative.WebPMuxAssemble(mux, &withIcc) != 1)
-                    return data;
-                WebPNative.WebPFree(data.Bytes);
-                return withIcc;
-            }
+            var chunk = new WebPNative.WebPData { Bytes = profile, Size = (nuint)icc.Length };
+            // WEBP_MUX_OK is 1.
+            done = WebPNative.WebPMuxSetChunk(mux, fourcc, &chunk, 1) == 1 && WebPNative.WebPMuxAssemble(mux, &withIcc) == 1;
         }
-        finally
-        {
-            WebPNative.WebPMuxDelete(mux);
-        }
+        WebPNative.WebPMuxDelete(mux);
+        if (!done)
+            return data;
+        WebPNative.WebPFree(data.Bytes);
+        return withIcc;
     }
 
-    private string Error() => Marshal.PtrToStringUTF8((nint)WebPNative.WebPAnimEncoderGetError(_encoder)) ?? "unknown error";
+    private string Error() => (_encoder == null ? null : Marshal.PtrToStringUTF8((nint)WebPNative.WebPAnimEncoderGetError(_encoder)))
+                              ?? "unknown error";
 
     public override void Dispose()
     {

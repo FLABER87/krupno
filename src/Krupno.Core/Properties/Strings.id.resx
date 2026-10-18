@@ -39,6 +39,9 @@
   <data name="Error_ResultTooLarge" xml:space="preserve">
     <value>Hasil {0}×{1} terlalu besar untuk diproses di memori.</value>
   </data>
+  <data name="Error_WebPWrite" xml:space="preserve">
+    <value>Tidak dapat menulis animasi WebP: {0}.</value>
+  </data>
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>Metadata model saling bertentangan: jendela harus paling besar {0} px tetapi paling kecil {1} px.</value>
   </data>

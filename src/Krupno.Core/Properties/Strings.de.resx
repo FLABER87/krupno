@@ -39,6 +39,9 @@
   <data name="Error_ResultTooLarge" xml:space="preserve">
     <value>Das Ergebnis {0}×{1} ist zu groß, um es im Speicher zu verarbeiten.</value>
   </data>
+  <data name="Error_WebPWrite" xml:space="preserve">
+    <value>Die WebP-Animation konnte nicht geschrieben werden: {0}.</value>
+  </data>
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>Die Metadaten des Modells widersprechen sich: Das Fenster muss höchstens {0} px, aber mindestens {1} px groß sein.</value>
   </data>

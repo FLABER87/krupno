@@ -1412,7 +1412,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                         var frameProgress = new Progress<FrameProgress>(p =>
                             OnProgress(p.Upscale, file, index, files.Count, model!, denoiser, tiles, work, (p.Frame, p.FrameCount)));
                         var animation = await Task.Run(() => AnimationUpscaler.Upscale(upscaler, file.Path, animationOutput, options,
-                            new AnimationSaveOptions { Quality = settings.Quality }, frameProgress, cancellationToken), cancellationToken);
+                            // The quality of an animated WebP follows its source (the JPEG slider is for JPEG only).
+                            new AnimationSaveOptions(), frameProgress, cancellationToken), cancellationToken);
                         Log.Info($"Animation: {animation.Frames} frames, {animation.Upscaled} of them upscaled, the others repeat the one before");
                         await OnSavedAsync(file, animationOutput, animation.FirstResult, loaded);
                         continue;

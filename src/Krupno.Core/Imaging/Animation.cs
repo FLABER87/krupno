@@ -28,6 +28,9 @@ public abstract class AnimationReader : IDisposable
     /// <summary>The ICC profile the frames are in (WebP only), carried over to the result.</summary>
     public virtual byte[]? IccProfile => null;
 
+    /// <summary>Every frame is stored losslessly (WebP's VP8L), so the result can be too.</summary>
+    public virtual bool IsLossless => false;
+
     /// <summary>The frames in order. Each one is a new buffer the caller may keep.</summary>
     public abstract IEnumerable<AnimationFrame> ReadFrames(CancellationToken cancellationToken = default);
 
@@ -47,8 +50,13 @@ public abstract class AnimationWriter : IDisposable
 
 public sealed record AnimationSaveOptions
 {
-    /// <summary>The quality of a WebP animation's lossy frames, 1–100; 100 is lossless.</summary>
-    public int Quality { get; init; } = 95;
+    /// <summary>
+    /// The quality of a WebP animation's frames, 1–100, where 100 is lossless; null keeps the source's kind of compression:
+    /// lossless for a lossless WebP, otherwise <see cref="DefaultQuality"/>.
+    /// </summary>
+    public int? Quality { get; init; }
+
+    public const int DefaultQuality = 95;
 
     /// <summary>The loop count of the source (see <see cref="AnimationReader.LoopCount"/>).</summary>
     public int? LoopCount { get; init; } = 0;

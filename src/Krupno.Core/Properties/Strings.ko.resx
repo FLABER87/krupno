@@ -39,6 +39,9 @@
   <data name="Error_ResultTooLarge" xml:space="preserve">
     <value>결과 크기 {0}×{1}이(가) 너무 커서 메모리에서 처리할 수 없습니다.</value>
   </data>
+  <data name="Error_WebPWrite" xml:space="preserve">
+    <value>WebP 애니메이션을 쓸 수 없습니다: {0}.</value>
+  </data>
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>모델 메타데이터가 모순됩니다. 창은 최대 {0} px이면서 최소 {1} px여야 합니다.</value>
   </data>

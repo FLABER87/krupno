@@ -39,6 +39,9 @@
   <data name="Error_ResultTooLarge" xml:space="preserve">
     <value>Sonuç ({0}×{1}) bellekte işlenemeyecek kadar büyük.</value>
   </data>
+  <data name="Error_WebPWrite" xml:space="preserve">
+    <value>WebP animasyonu yazılamadı: {0}.</value>
+  </data>
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>Model meta verileri çelişkili: pencere en fazla {0} px, ancak en az {1} px olmalı.</value>
   </data>

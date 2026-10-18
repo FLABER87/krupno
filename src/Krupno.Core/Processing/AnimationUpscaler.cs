@@ -35,8 +35,10 @@ public static class AnimationUpscaler
         try
         {
             AnimationResult result;
+            save ??= new AnimationSaveOptions();
+            int quality = save.Quality ?? (reader.IsLossless ? 100 : AnimationSaveOptions.DefaultQuality);
             using (var writer = Animation.Create(tempPath, reader.Format, (int)width, (int)height,
-                       (save ?? new AnimationSaveOptions()) with { LoopCount = reader.LoopCount, IccProfile = reader.IccProfile }))
+                       save with { Quality = quality, LoopCount = reader.LoopCount, IccProfile = reader.IccProfile }))
             {
                 result = Run(upscaler, reader, writer, options, progress, cancellationToken);
             }

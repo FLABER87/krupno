@@ -39,6 +39,9 @@
   <data name="Error_ResultTooLarge" xml:space="preserve">
     <value>Kết quả {0}×{1} quá lớn để xử lý trong bộ nhớ.</value>
   </data>
+  <data name="Error_WebPWrite" xml:space="preserve">
+    <value>Không ghi được ảnh động WebP: {0}.</value>
+  </data>
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>Siêu dữ liệu của mô hình mâu thuẫn: cửa sổ phải tối đa {0} px nhưng tối thiểu {1} px.</value>
   </data>

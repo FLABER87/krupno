@@ -41,6 +41,10 @@
   <data name="Error_ResultTooLarge" xml:space="preserve">
     <value>The result {0}×{1} is too large to process in memory.</value>
   </data>
+  <data name="Error_WebPWrite" xml:space="preserve">
+    <value>Could not write the WebP animation: {0}.</value>
+    <comment>{0} is libwebp's own message, in English.</comment>
+  </data>
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>The model metadata is contradictory: the window must be at most {0} px but at least {1} px.</value>
   </data>
