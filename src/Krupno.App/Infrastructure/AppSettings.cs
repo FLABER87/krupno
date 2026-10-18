@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Krupno.Core.Imaging;
 using Krupno.Core.Inference;
+using Krupno.Core.Processing;
 
 namespace Krupno.App.Infrastructure;
 
@@ -70,6 +71,12 @@ public sealed class AppSettings
 
     /// <summary>"Test-time augmentation" in "Settings": every pass in all 8 orientations, averaged.</summary>
     public bool? TestTimeAugmentation { get; set; }
+
+    /// <summary>"Add the model to the name" in "Settings": "photo_x4_4xBHI_dat2_real.png".</summary>
+    public bool? NameWithModel { get; set; }
+
+    /// <summary>"If the result is already there" in "Settings"; null keeps it and numbers the new one.</summary>
+    public ExistingResult? ExistingResults { get; set; }
 
     /// <summary>The window's language (a culture name from <see cref="UiLanguage.All"/>); null follows Windows.</summary>
     public string? Language { get; set; }

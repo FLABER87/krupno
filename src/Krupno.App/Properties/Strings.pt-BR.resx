@@ -138,11 +138,20 @@
   <data name="Dialog_SelectImages" xml:space="preserve">
     <value>Selecionar imagens</value>
   </data>
+  <data name="Done_AllThere" xml:space="preserve">
+    <value>Todos os resultados já existem</value>
+  </data>
+  <data name="Done_AlreadyThere" xml:space="preserve">
+    <value>O resultado já existe</value>
+  </data>
   <data name="Done_Files" xml:space="preserve">
     <value>Concluído: {0} em {1}</value>
   </data>
   <data name="Done_InTime" xml:space="preserve">
     <value>Concluído em {0} · {1}</value>
+  </data>
+  <data name="Done_LeftOut" xml:space="preserve">
+    <value>já existiam: {0}</value>
   </data>
   <data name="Done_Partial" xml:space="preserve">
     <value>Concluído: {0} de {1}, {2} com falha</value>
@@ -173,6 +182,21 @@
   </data>
   <data name="Error_Title" xml:space="preserve">
     <value>Falha ao ampliar</value>
+  </data>
+  <data name="Existing" xml:space="preserve">
+    <value>Resultado existente</value>
+  </data>
+  <data name="Existing_KeepBoth" xml:space="preserve">
+    <value>Mantê-lo e numerar o novo</value>
+  </data>
+  <data name="Existing_Replace" xml:space="preserve">
+    <value>Substituí-lo pelo novo</value>
+  </data>
+  <data name="Existing_Skip" xml:space="preserve">
+    <value>Mantê-lo e pular a imagem</value>
+  </data>
+  <data name="File_AlreadyThere" xml:space="preserve">
+    <value>Já existe: {0}</value>
   </data>
   <data name="File_Done" xml:space="preserve">
     <value>Concluído: {0}</value>
@@ -254,6 +278,12 @@
   </data>
   <data name="Models_ShowFewer" xml:space="preserve">
     <value>Mostrar menos</value>
+  </data>
+  <data name="NameWithModel" xml:space="preserve">
+    <value>Adicionar o modelo ao nome do arquivo</value>
+  </data>
+  <data name="NameWithModel_Example" xml:space="preserve">
+    <value>Por exemplo, photo.jpg → {0}</value>
   </data>
   <data name="NoModels" xml:space="preserve">
     <value>Ainda não há modelos. Coloque arquivos .onnx na pasta de modelos e atualize a lista.</value>
@@ -359,6 +389,9 @@
   </data>
   <data name="Settings_Processing" xml:space="preserve">
     <value>Processamento</value>
+  </data>
+  <data name="Settings_Results" xml:space="preserve">
+    <value>Resultados</value>
   </data>
   <data name="Settings_ToolTip" xml:space="preserve">
     <value>Configurações (Ctrl+,)</value>

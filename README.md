@@ -45,7 +45,7 @@ Drop images or a folder into the window, click "Select files", paste with Ctrl+V
 - **Scale:** ×2, ×4 and so on, or "Other" for a scale of your own or a width, height or long side in pixels.
 - **Comparison:** a slider or two frames side by side; the mouse wheel zooms, a double click toggles "Fit to window" and 1:1.
 - **A batch** is shown as a strip of thumbnails with each file's status.
-- **Settings** (the gear button, or Ctrl+,): the device and tile size ("Auto" by default), "Seamless tiles", "Test-time augmentation", the language and the update check.
+- **Settings** (the gear button, or Ctrl+,): the device and tile size ("Auto" by default), "Seamless tiles", "Test-time augmentation", the language and the update check. Under "Results": what happens to a result that is already there from an earlier run (by default it is kept and the new one gets a number, `photo_x4 (2).png`; or it is replaced, or the image is skipped), and "Add the model to the file name" (`photo_x4_4xBHI_dat2_real.png`), so the results of different models don't replace each other. The version is at the bottom of the window.
 - **If something fails,** "Copy error details" puts what a bug report needs on the clipboard. The window's logs are in `%LOCALAPPDATA%\Krupno\logs`.
 
 | Keys | Action |
@@ -66,13 +66,14 @@ krupno-cli photo.jpg                               # → photo_x4.png next to th
 krupno-cli photo.jpg -s 2 -f jpg -q 92             # ×2 result as JPEG
 krupno-cli C:\photos -o C:\photos_x4               # a whole folder
 krupno-cli C:\photos -r -o D:\x4 --skip-existing   # subfolders too; only the images without a result
+krupno-cli photo.jpg -m 4xBHI_dat2_real_fp16 --name-model   # → photo_x4_4xBHI_dat2_real.png
 krupno-cli photo.jpg --long-side 3840              # 3840 px on the longer side
 krupno-cli photo.jpg --denoise                     # remove noise first, then ×4
 krupno-cli photo.jpg --denoise -s 1                # only remove noise
 krupno-cli --list-models --list-devices
 ```
 
-`krupno-cli --help` lists every option. A result never replaces a source image. Without `-m`, the default model is used (marked with an asterisk in `--list-models`).
+`krupno-cli --help` lists every option. A result never replaces a source image; one from an earlier run is replaced unless `--no-overwrite` (the new one gets a number) or `--skip-existing` is given. Without `-m`, the default model is used (marked with an asterisk in `--list-models`).
 
 ## Models
 

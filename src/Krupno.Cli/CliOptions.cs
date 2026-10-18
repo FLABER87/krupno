@@ -21,6 +21,9 @@ internal sealed class CliOptions
                                   (default: next to the source / <folder>_upscaled)
           -r, --recursive         also the images in subfolders; their folders are repeated in the output folder
               --skip-existing     leave out images whose result is already there, to resume a batch
+              --no-overwrite      keep a result that is already there and number the new one: photo_x4 (2).png
+              --name-model        add the model to the result's name, and --denoise, --strength and --tta when
+                                  given: photo_x4_4xBHI_dat2_real.png, photo_x4_4xBHI_dat2_real_s70.png
           -m, --model <name|path> model from the catalog or path to an .onnx file
                                   (default: {ModelCatalog.DefaultModelName}; if it is missing, the first one alphabetically)
           -s, --scale <number>    final scale, e.g. 2, 3, 4, 8 or 2.5 (default: the model's own scale)
@@ -59,6 +62,8 @@ internal sealed class CliOptions
     public ImageFileFormat? Format { get; private set; }
     public bool Recursive { get; private set; }
     public bool SkipExisting { get; private set; }
+    public bool NoOverwrite { get; private set; }
+    public bool NameModel { get; private set; }
     public int Quality { get; private set; } = 95;
     public int Tile { get; private set; } = 384;
     public int Padding { get; private set; } = 32;
@@ -70,6 +75,9 @@ internal sealed class CliOptions
     public bool ListDevices { get; private set; }
     public bool InstallAccelerators { get; private set; }
     public bool Help { get; private set; }
+
+    /// <summary>What happens to a result that is already there.</summary>
+    public ExistingResult Existing => SkipExisting ? ExistingResult.Skip : NoOverwrite ? ExistingResult.KeepBoth : ExistingResult.Replace;
 
     public static CliOptions Parse(string[] args)
     {
@@ -100,6 +108,12 @@ internal sealed class CliOptions
                     break;
                 case "--skip-existing":
                     options.SkipExisting = true;
+                    break;
+                case "--no-overwrite":
+                    options.NoOverwrite = true;
+                    break;
+                case "--name-model":
+                    options.NameModel = true;
                     break;
                 case "-m" or "--model":
                     options.Model = Value();
@@ -149,6 +163,8 @@ internal sealed class CliOptions
         }
         if (sizes.Count > 1)
             throw new CliException($"Use only one of -s, --width, --height and --long-side (got {string.Join(", ", sizes)}).");
+        if (options.SkipExisting && options.NoOverwrite)
+            throw new CliException("Use either --skip-existing or --no-overwrite: one leaves an image out, the other numbers its result.");
         return options;
     }
 

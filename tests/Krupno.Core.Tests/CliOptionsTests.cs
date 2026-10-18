@@ -24,6 +24,18 @@ public class CliOptionsTests
         Assert.Equal("auto", options.Device);
     }
 
+    [Fact]
+    public void ExistingResults()
+    {
+        Assert.Equal(ExistingResult.Replace, CliOptions.Parse(["photo.jpg"]).Existing);
+        Assert.Equal(ExistingResult.Skip, CliOptions.Parse(["photo.jpg", "--skip-existing"]).Existing);
+        Assert.Equal(ExistingResult.KeepBoth, CliOptions.Parse(["photo.jpg", "--no-overwrite"]).Existing);
+        var ex = Assert.Throws<CliException>(() => CliOptions.Parse(["photo.jpg", "--skip-existing", "--no-overwrite"]));
+        Assert.Contains("either", ex.Message);
+        Assert.False(CliOptions.Parse(["photo.jpg"]).NameModel);
+        Assert.True(CliOptions.Parse(["photo.jpg", "--name-model"]).NameModel);
+    }
+
     [Theory]
     [InlineData("--width", TargetSide.Width)]
     [InlineData("--height", TargetSide.Height)]

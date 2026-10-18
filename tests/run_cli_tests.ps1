@@ -112,6 +112,12 @@ Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\multi\a.png"
 Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\multi\b.png"
 Copy-Item -LiteralPath "$img\orient6.jpg" "$out\multi\c.jpg"
 Run "multi_pattern"   @("$out\multi\*.png", "$img\orient6.jpg", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\multi_out")
+# --name-model puts the model (and the strength) into the name; --no-overwrite keeps an earlier result and numbers the new one.
+New-Item -ItemType Directory -Force "$out\names" | Out-Null
+Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\names\a.png"
+Run "name_model"      @("$out\names\a.png", "--name-model", "--strength", "70", "-m", "$mod\nearest_red_x4.onnx")
+Run "no_overwrite_1"  @("$out\names\a.png", "--no-overwrite", "-m", "$mod\nearest_red_x4.onnx")
+Run "no_overwrite_2"  @("$out\names\a.png", "--no-overwrite", "-m", "$mod\nearest_red_x4.onnx")
 
 & $Python "$PSScriptRoot\check_outputs.py" $fx $out
 $checkCode = $LASTEXITCODE

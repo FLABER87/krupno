@@ -8,8 +8,8 @@
         Background="{DynamicResource SolidBackgroundFillColorBaseBrush}">
 
     <!-- The settings that are set once and rarely touched; the window's DataContext is the main window's view model, so a
-         choice applies at once, and there is nothing to confirm. Compact enough to fit a laptop at 200% scaling (about 690
-         logical pixels of height) without scrolling: the labels stand beside the lists. -->
+         choice applies at once, and there is nothing to confirm. The labels stand beside the lists to keep it short; on a laptop
+         at 200% scaling (about 690 logical pixels of height) it scrolls, and the version and "Close" below stay in view. -->
     <Window.Resources>
         <Style x:Key="Group" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
@@ -30,9 +30,14 @@
         <Border DockPanel.Dock="Bottom" Padding="24,10,24,12" BorderThickness="0,1,0,0"
                 BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
                 Background="{DynamicResource LayerFillColorDefaultBrush}">
-            <Button IsCancel="True" HorizontalAlignment="Right" MinWidth="110" Padding="16,6">
-                <TextBlock Text="{x:Static p:Strings.Close}" />
-            </Button>
+            <DockPanel>
+                <Button DockPanel.Dock="Right" IsCancel="True" MinWidth="110" Padding="16,6">
+                    <TextBlock Text="{x:Static p:Strings.Close}" />
+                </Button>
+                <!-- The version that is running, what "Update" would replace: here it stays in view when the settings scroll. -->
+                <TextBlock Style="{StaticResource Caption}" Text="{Binding VersionText}" VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+            </DockPanel>
         </Border>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
@@ -83,6 +88,24 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Results: their names, and what happens to one from an earlier run -->
+                <TextBlock Style="{StaticResource SectionHeader}" Text="{x:Static p:Strings.Settings_Results}" Margin="0,16,0,0" />
+                <Border Style="{StaticResource Group}">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="Label" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Style="{StaticResource Label}" Text="{x:Static p:Strings.Existing}" />
+                            <ComboBox Grid.Column="1" ItemsSource="{Binding ExistingResults}" SelectedItem="{Binding SelectedExisting}"
+                                      DisplayMemberPath="Label" AutomationProperties.Name="{x:Static p:Strings.Existing}" />
+                        </Grid>
+                        <CheckBox Content="{x:Static p:Strings.NameWithModel}" IsChecked="{Binding NameWithModel}" Margin="0,10,0,0" />
+                        <TextBlock Style="{StaticResource Caption}" Margin="0,2,0,0" Text="{Binding NameExample}" />
+                    </StackPanel>
+                </Border>
+
                 <!-- General: the language and the update check -->
                 <TextBlock Style="{StaticResource SectionHeader}" Text="{x:Static p:Strings.Settings_General}" Margin="0,16,0,0" />
                 <Border Style="{StaticResource Group}">
@@ -99,13 +122,7 @@
                         <TextBlock Style="{StaticResource Caption}" Margin="0,6,0,0" Text="{x:Static p:Strings.Language_Restart}"
                                    Foreground="{DynamicResource SystemFillColorCautionBrush}"
                                    Visibility="{Binding LanguageNeedsRestart, Converter={StaticResource BoolToVisibility}}" />
-                        <DockPanel Margin="0,12,0,0">
-                            <!-- The version that is running: what "Update" would replace. -->
-                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Caption}" Text="{Binding VersionText}"
-                                       VerticalAlignment="Center" Margin="12,0,0,0"
-                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                            <CheckBox Content="{x:Static p:Strings.CheckForUpdates}" IsChecked="{Binding CheckForUpdates}" />
-                        </DockPanel>
+                        <CheckBox Content="{x:Static p:Strings.CheckForUpdates}" IsChecked="{Binding CheckForUpdates}" Margin="0,12,0,0" />
                         <TextBlock Style="{StaticResource Caption}" Margin="0,2,0,0"
                                    Text="{x:Static p:Strings.CheckForUpdates_Description}" />
                     </StackPanel>

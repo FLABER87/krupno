@@ -13,17 +13,20 @@ internal static class JobPlanner
     /// <param name="inputs">Files, folders and patterns such as "photos\*.jpg" (in the file name only).</param>
     /// <param name="output">-o: a file for a single image, otherwise a folder; null for the defaults.</param>
     /// <param name="suffix">The end of a result's name next to its source: "_x4", "_3840w".</param>
-    public static List<Job> Plan(IReadOnlyList<string> inputs, string? output, ImageFileFormat? format, bool recursive, string suffix) =>
-        Plan(inputs, output, format, recursive, suffix, out _);
+    /// <param name="tag">What follows it, next to the source and in an output folder: "" or "_4xBHI_dat2_real" (see
+    /// <see cref="OutputPaths.SettingsTag"/>).</param>
+    public static List<Job> Plan(IReadOnlyList<string> inputs, string? output, ImageFileFormat? format, bool recursive, string suffix,
+        string tag = "") =>
+        Plan(inputs, output, format, recursive, suffix, tag, out _);
 
     /// <param name="leftOut">How many images found in folders and patterns were left out as results of other images.</param>
     public static List<Job> Plan(IReadOnlyList<string> inputs, string? output, ImageFileFormat? format, bool recursive, string suffix,
-        out int leftOut)
+        string tag, out int leftOut)
     {
         leftOut = 0;
-        string extension = ImageCodec.GetExtension(format ?? ImageFileFormat.Png);
+        string ending = tag + ImageCodec.GetExtension(format ?? ImageFileFormat.Png);
         if (inputs.Count == 1 && !HasWildcard(inputs[0]) && File.Exists(inputs[0]))
-            return [PlanFile(Path.GetFullPath(inputs[0]), output, format, extension, suffix)];
+            return [PlanFile(Path.GetFullPath(inputs[0]), output, format, ending, suffix)];
 
         if (output is not null && File.Exists(output))
             throw new CliException($"-o must be a folder when there is more than one image: \"{output}\" is a file.");
@@ -35,7 +38,7 @@ internal static class JobPlanner
         var index = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         foreach (string input in inputs)
         {
-            foreach (var (file, target, named) in Expand(input, outputDir, recursive, extension, suffix))
+            foreach (var (file, target, named) in Expand(input, outputDir, recursive, ending, suffix))
             {
                 if (index.TryGetValue(OutputPaths.Key(file), out int at))
                     planned[at] = planned[at] with { Named = planned[at].Named || named };
@@ -61,7 +64,7 @@ internal static class JobPlanner
     }
 
     private static IEnumerable<(string File, string Output, bool Named)> Expand(string input, string? outputDir, bool recursive,
-        string extension, string suffix)
+        string ending, string suffix)
     {
         string? root;
         IEnumerable<string> files;
@@ -77,13 +80,13 @@ internal static class JobPlanner
             files = Enumerate(root, pattern, recursive);
             // Patterns keep the results next to their sources, like single files.
             if (outputDir is null)
-                return Ordered(files).Select(f => (f, NextToSource(f, extension, suffix), false));
+                return Ordered(files).Select(f => (f, NextToSource(f, ending, suffix), false));
         }
         else
         {
             string path = Path.GetFullPath(input);
             if (File.Exists(path))
-                return [(path, outputDir is null ? NextToSource(path, extension, suffix) : Target(outputDir, path, extension, suffix), true)];
+                return [(path, outputDir is null ? NextToSource(path, ending, suffix) : Target(outputDir, path, ending, suffix), true)];
             if (!Directory.Exists(path))
                 throw new CliException($"File or folder not found: {path}");
             root = path;
@@ -93,16 +96,16 @@ internal static class JobPlanner
 
         // Subfolders are repeated under the output folder.
         string target = outputDir;
-        return Ordered(files).Select(f => (f, Target(Path.Combine(target, Path.GetRelativePath(root, Path.GetDirectoryName(f)!)), f, extension, suffix), false));
+        return Ordered(files).Select(f => (f, Target(Path.Combine(target, Path.GetRelativePath(root, Path.GetDirectoryName(f)!)), f, ending, suffix), false));
     }
 
-    private static Job PlanFile(string input, string? output, ImageFileFormat? format, string extension, string suffix)
+    private static Job PlanFile(string input, string? output, ImageFileFormat? format, string ending, string suffix)
     {
         if (output is null)
-            return new Job(input, NextToSource(input, extension, suffix));
+            return new Job(input, NextToSource(input, ending, suffix));
 
         if (Directory.Exists(output) || output.EndsWith('\\') || output.EndsWith('/'))
-            return new Job(input, OutputPaths.MakeUnique([input], [Target(Path.GetFullPath(output), input, extension, suffix)])[0]);
+            return new Job(input, OutputPaths.MakeUnique([input], [Target(Path.GetFullPath(output), input, ending, suffix)])[0]);
 
         string path = Path.GetFullPath(output);
         if (string.Equals(OutputPaths.Key(path), OutputPaths.Key(input), StringComparison.OrdinalIgnoreCase))
@@ -128,19 +131,19 @@ internal static class JobPlanner
             .OrderBy(f => Path.GetDirectoryName(f), StringComparer.OrdinalIgnoreCase)
             .ThenBy(f => Path.GetFileName(f), StringComparer.OrdinalIgnoreCase);
 
-    private static string NextToSource(string file, string extension, string suffix) =>
-        Path.Combine(Path.GetDirectoryName(file)!, Path.GetFileNameWithoutExtension(file) + suffix + extension);
+    private static string NextToSource(string file, string ending, string suffix) =>
+        Path.Combine(Path.GetDirectoryName(file)!, Path.GetFileNameWithoutExtension(file) + suffix + ending);
 
     /// <summary>
     /// The result in an output folder keeps the source's name ("a.jpg" → "a.png"); in the source's own folder it gets the suffix,
     /// as next to the source: "a.png" as its result would replace the source or another image there, and a rerun couldn't tell
     /// the earlier results from the sources.
     /// </summary>
-    private static string Target(string folder, string file, string extension, string suffix)
+    private static string Target(string folder, string file, string ending, string suffix)
     {
-        string path = Path.GetFullPath(Path.Combine(folder, Path.GetFileNameWithoutExtension(file) + extension));
+        string path = Path.GetFullPath(Path.Combine(folder, Path.GetFileNameWithoutExtension(file) + ending));
         return string.Equals(OutputPaths.Key(Path.GetDirectoryName(path)!), OutputPaths.Key(Path.GetDirectoryName(file)!), StringComparison.OrdinalIgnoreCase)
-            ? NextToSource(file, extension, suffix)
+            ? NextToSource(file, ending, suffix)
             : path;
     }
 

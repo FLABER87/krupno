@@ -8,6 +8,34 @@ public class OutputPathsTests
 
     private static string In(string name) => Path.Combine(Folder, name);
 
+    [Theory]
+    [InlineData("4xBHI_dat2_real_fp16", false, 100, false, "_4xBHI_dat2_real")]
+    [InlineData("RealESRGAN_x4plus-FP32", false, 100, false, "_RealESRGAN_x4plus")]
+    [InlineData("4x_fp16_model", false, 100, false, "_4x_fp16_model")]
+    [InlineData("4xBHI_realplksr_dysample_real", true, 70, true, "_4xBHI_realplksr_dysample_real_denoise_s70_tta")]
+    [InlineData(null, true, 100, false, "_denoise")]
+    [InlineData(null, false, 100, false, "")]
+    public void SettingsTag(string? model, bool denoise, int strength, bool tta, string expected)
+    {
+        Assert.Equal(expected, OutputPaths.SettingsTag(model, denoise, strength, tta));
+    }
+
+    [Fact]
+    public void KeepExistingNumbersOnlyTheResultsThatAreThere()
+    {
+        var there = new HashSet<string>([In("a_x4.png"), In("a_x4 (2).png"), In("c_x4.png")], StringComparer.OrdinalIgnoreCase);
+        // a's result and its first number are there; b's isn't; c's number 2 is another image's source, 3 another's result.
+        Assert.Equal(
+            [In("a_x4 (3).png"), In("b_x4.png"), In("c_x4 (4).png"), In("c_x4 (3).png")],
+            OutputPaths.KeepExisting([In("a.jpg"), In("b.jpg"), In("c_x4 (2).png"), In("d.jpg")],
+                [In("a_x4.png"), In("b_x4.png"), In("c_x4.png"), In("c_x4 (3).png")], there.Contains));
+        // A number never takes the name another image of the batch gets, numbered or not.
+        Assert.Equal(
+            [In("e (3).png"), In("e (2) (2).png")],
+            OutputPaths.KeepExisting([In("e.jpg"), In("f.jpg")], [In("e.png"), In("e (2).png")],
+                new HashSet<string>([In("e.png"), In("e (2).png")], StringComparer.OrdinalIgnoreCase).Contains));
+    }
+
     [Fact]
     public void DistinctOutputsStayAsTheyAre()
     {

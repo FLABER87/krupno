@@ -438,6 +438,24 @@ namespace Krupno.App.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to All the results are already there.
+        /// </summary>
+        public static string Done_AllThere {
+            get {
+                return ResourceManager.GetString("Done_AllThere", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The result is already there.
+        /// </summary>
+        public static string Done_AlreadyThere {
+            get {
+                return ResourceManager.GetString("Done_AlreadyThere", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Done: {0} in {1}.
         /// </summary>
         public static string Done_Files {
@@ -452,6 +470,15 @@ namespace Krupno.App.Properties {
         public static string Done_InTime {
             get {
                 return ResourceManager.GetString("Done_InTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to already there: {0}.
+        /// </summary>
+        public static string Done_LeftOut {
+            get {
+                return ResourceManager.GetString("Done_LeftOut", resourceCulture);
             }
         }
         
@@ -542,6 +569,51 @@ namespace Krupno.App.Properties {
         public static string Error_Title {
             get {
                 return ResourceManager.GetString("Error_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Existing result.
+        /// </summary>
+        public static string Existing {
+            get {
+                return ResourceManager.GetString("Existing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Keep it, number the new one.
+        /// </summary>
+        public static string Existing_KeepBoth {
+            get {
+                return ResourceManager.GetString("Existing_KeepBoth", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Replace it with the new one.
+        /// </summary>
+        public static string Existing_Replace {
+            get {
+                return ResourceManager.GetString("Existing_Replace", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Keep it, skip the image.
+        /// </summary>
+        public static string Existing_Skip {
+            get {
+                return ResourceManager.GetString("Existing_Skip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Already there: {0}.
+        /// </summary>
+        public static string File_AlreadyThere {
+            get {
+                return ResourceManager.GetString("File_AlreadyThere", resourceCulture);
             }
         }
         
@@ -785,6 +857,24 @@ namespace Krupno.App.Properties {
         public static string Models_ShowFewer {
             get {
                 return ResourceManager.GetString("Models_ShowFewer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Add the model to the file name.
+        /// </summary>
+        public static string NameWithModel {
+            get {
+                return ResourceManager.GetString("NameWithModel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to For example, photo.jpg → {0}.
+        /// </summary>
+        public static string NameWithModel_Example {
+            get {
+                return ResourceManager.GetString("NameWithModel_Example", resourceCulture);
             }
         }
         
@@ -1100,6 +1190,15 @@ namespace Krupno.App.Properties {
         public static string Settings_Processing {
             get {
                 return ResourceManager.GetString("Settings_Processing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Results.
+        /// </summary>
+        public static string Settings_Results {
+            get {
+                return ResourceManager.GetString("Settings_Results", resourceCulture);
             }
         }
         

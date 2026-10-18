@@ -138,11 +138,20 @@
   <data name="Dialog_SelectImages" xml:space="preserve">
     <value>Chọn ảnh</value>
   </data>
+  <data name="Done_AllThere" xml:space="preserve">
+    <value>Đã có tất cả kết quả</value>
+  </data>
+  <data name="Done_AlreadyThere" xml:space="preserve">
+    <value>Đã có kết quả</value>
+  </data>
   <data name="Done_Files" xml:space="preserve">
     <value>Xong: {0} trong {1}</value>
   </data>
   <data name="Done_InTime" xml:space="preserve">
     <value>Xong trong {0} · {1}</value>
+  </data>
+  <data name="Done_LeftOut" xml:space="preserve">
+    <value>đã có sẵn: {0}</value>
   </data>
   <data name="Done_Partial" xml:space="preserve">
     <value>Xong: {0}/{1}, {2} lỗi</value>
@@ -173,6 +182,21 @@
   </data>
   <data name="Error_Title" xml:space="preserve">
     <value>Phóng to không thành công</value>
+  </data>
+  <data name="Existing" xml:space="preserve">
+    <value>Kết quả đã có</value>
+  </data>
+  <data name="Existing_KeepBoth" xml:space="preserve">
+    <value>Giữ lại, đánh số kết quả mới</value>
+  </data>
+  <data name="Existing_Replace" xml:space="preserve">
+    <value>Thay bằng kết quả mới</value>
+  </data>
+  <data name="Existing_Skip" xml:space="preserve">
+    <value>Giữ lại, bỏ qua ảnh</value>
+  </data>
+  <data name="File_AlreadyThere" xml:space="preserve">
+    <value>Đã có: {0}</value>
   </data>
   <data name="File_Done" xml:space="preserve">
     <value>Xong: {0}</value>
@@ -254,6 +278,12 @@
   </data>
   <data name="Models_ShowFewer" xml:space="preserve">
     <value>Ẩn bớt</value>
+  </data>
+  <data name="NameWithModel" xml:space="preserve">
+    <value>Thêm mô hình vào tên tệp</value>
+  </data>
+  <data name="NameWithModel_Example" xml:space="preserve">
+    <value>Ví dụ: photo.jpg → {0}</value>
   </data>
   <data name="NoModels" xml:space="preserve">
     <value>Chưa có mô hình nào. Hãy đặt tệp .onnx vào thư mục mô hình rồi làm mới danh sách.</value>
@@ -359,6 +389,9 @@
   </data>
   <data name="Settings_Processing" xml:space="preserve">
     <value>Xử lý</value>
+  </data>
+  <data name="Settings_Results" xml:space="preserve">
+    <value>Kết quả</value>
   </data>
   <data name="Settings_ToolTip" xml:space="preserve">
     <value>Cài đặt (Ctrl+,)</value>

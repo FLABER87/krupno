@@ -263,5 +263,11 @@ multi = out / "multi_out"
 check("multi_pattern", sorted(p.name for p in multi.iterdir()) == ["a.png", "b.png", "orient6.png"] if multi.exists() else False,
       ", ".join(sorted(p.name for p in multi.iterdir())) if multi.exists() else "folder missing")
 
+# --name-model and --no-overwrite: the second run without overwriting keeps the first result and takes number 2.
+names = out / "names"
+check("names", sorted(p.name for p in names.iterdir()) == ["a.png", "a_x4 (2).png", "a_x4.png", "a_x4_nearest_red_x4_s70.png"]
+      if names.exists() else False, ", ".join(sorted(p.name for p in names.iterdir())) if names.exists() else "folder missing")
+check("no_overwrite_2", "Keeping 1 of 1" in log("no_overwrite_2"), " | ".join(log("no_overwrite_2").splitlines()))
+
 print("ALL OK" if failures == 0 else f"{failures} FAILED")
 sys.exit(1 if failures else 0)

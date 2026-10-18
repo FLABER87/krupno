@@ -138,11 +138,20 @@
   <data name="Dialog_SelectImages" xml:space="preserve">
     <value>Scegli le immagini</value>
   </data>
+  <data name="Done_AllThere" xml:space="preserve">
+    <value>Tutti i risultati sono già presenti</value>
+  </data>
+  <data name="Done_AlreadyThere" xml:space="preserve">
+    <value>Il risultato è già presente</value>
+  </data>
   <data name="Done_Files" xml:space="preserve">
     <value>Fatto: {0} in {1}</value>
   </data>
   <data name="Done_InTime" xml:space="preserve">
     <value>Fatto in {0} · {1}</value>
+  </data>
+  <data name="Done_LeftOut" xml:space="preserve">
+    <value>già presenti: {0}</value>
   </data>
   <data name="Done_Partial" xml:space="preserve">
     <value>Fatto: {0} di {1}, {2} non riusciti</value>
@@ -173,6 +182,21 @@
   </data>
   <data name="Error_Title" xml:space="preserve">
     <value>Ingrandimento non riuscito</value>
+  </data>
+  <data name="Existing" xml:space="preserve">
+    <value>Risultato esistente</value>
+  </data>
+  <data name="Existing_KeepBoth" xml:space="preserve">
+    <value>Mantenerlo e numerare il nuovo</value>
+  </data>
+  <data name="Existing_Replace" xml:space="preserve">
+    <value>Sostituirlo con il nuovo</value>
+  </data>
+  <data name="Existing_Skip" xml:space="preserve">
+    <value>Mantenerlo e saltare l'immagine</value>
+  </data>
+  <data name="File_AlreadyThere" xml:space="preserve">
+    <value>Già presente: {0}</value>
   </data>
   <data name="File_Done" xml:space="preserve">
     <value>Fatto: {0}</value>
@@ -254,6 +278,12 @@
   </data>
   <data name="Models_ShowFewer" xml:space="preserve">
     <value>Mostra meno</value>
+  </data>
+  <data name="NameWithModel" xml:space="preserve">
+    <value>Aggiungi il modello al nome del file</value>
+  </data>
+  <data name="NameWithModel_Example" xml:space="preserve">
+    <value>Ad esempio, photo.jpg → {0}</value>
   </data>
   <data name="NoModels" xml:space="preserve">
     <value>Ancora nessun modello. Metti i file .onnx nella cartella dei modelli e aggiorna l'elenco.</value>
@@ -359,6 +389,9 @@
   </data>
   <data name="Settings_Processing" xml:space="preserve">
     <value>Elaborazione</value>
+  </data>
+  <data name="Settings_Results" xml:space="preserve">
+    <value>Risultati</value>
   </data>
   <data name="Settings_ToolTip" xml:space="preserve">
     <value>Impostazioni (Ctrl+,)</value>
