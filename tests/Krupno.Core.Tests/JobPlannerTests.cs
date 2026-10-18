@@ -47,6 +47,22 @@ public sealed class JobPlannerTests : IDisposable
     }
 
     [Fact]
+    public void AnAnimationGoesToAFileOfItsOwnFormat()
+    {
+        using (var writer = Animation.Create(P("photos/anim.gif"), AnimationFormat.Gif, 2, 2, new AnimationSaveOptions()))
+        {
+            writer.Add(TestImages.Fill(2, 2, 10, 20, 30), 100);
+            writer.Add(TestImages.Fill(2, 2, 40, 50, 60), 100);
+            writer.Finish();
+        }
+        AssertJobs([(P("photos/anim.gif"), P("big.gif"))], Plan(["photos/anim.gif"], "big.gif"));
+        AssertJobs([(P("photos/anim.gif"), P("big.GIF"))], Plan(["photos/anim.gif"], "big.GIF"));
+        Assert.Throws<CliException>(() => Plan(["photos/anim.gif"], "big.png"));
+        Assert.Throws<CliException>(() => Plan(["photos/anim.gif"], "big.webp"));
+        Assert.Throws<CliException>(() => Plan(["photos/anim.gif"], "big"));
+    }
+
+    [Fact]
     public void FolderTakesItsOwnImages()
     {
         AssertJobs(

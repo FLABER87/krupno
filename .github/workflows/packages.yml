@@ -1,11 +1,12 @@
-# Package managers, once a release of Krupno is published (not a model release):
+# Package managers, once a release of Krupno is published (not a model release, and not a pre-release, which Scoop and
+# WinGet users would get as an update):
 # - Scoop: bucket/krupno.json gets the new version and the ZIP's SHA-256 from the release's SHA256SUMS.txt, on a branch
 #   with a pull request to merge. GitHub Actions may create the pull request only with "Allow GitHub Actions to create and
 #   approve pull requests" in the repository's settings; without it the branch is still pushed, and the log has its link.
 # - WinGet: a pull request to microsoft/winget-pkgs with the new installer (FLABER87.Krupno), through the user's fork,
 #   turned on by the WINGET_TOKEN secret: a classic token with the public_repo scope. The first version of the package was
 #   submitted by hand; this only updates it.
-# A manual run takes the tag of a published release.
+# A manual run takes the tag of a published release, a pre-release too: that one is chosen by hand.
 name: Packages
 
 on:
@@ -27,7 +28,7 @@ env:
 jobs:
   scoop:
     name: Scoop manifest
-    if: startsWith(github.event.release.tag_name || inputs.tag, 'v')
+    if: startsWith(github.event.release.tag_name || inputs.tag, 'v') && !github.event.release.prerelease
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
@@ -63,7 +64,7 @@ jobs:
 
   winget:
     name: WinGet manifest
-    if: startsWith(github.event.release.tag_name || inputs.tag, 'v')
+    if: startsWith(github.event.release.tag_name || inputs.tag, 'v') && !github.event.release.prerelease
     runs-on: windows-latest
     env:
       WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}

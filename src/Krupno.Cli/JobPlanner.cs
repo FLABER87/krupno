@@ -115,12 +115,16 @@ internal static class JobPlanner
         string path = Path.GetFullPath(output);
         if (string.Equals(OutputPaths.Key(path), OutputPaths.Key(input), StringComparison.OrdinalIgnoreCase))
             throw new CliException("The output file is the source image itself; choose another name.");
-        // An animation is saved in its own format, so a name with another extension would be misleading.
-        if (Animation.Detect(input) is { } animation
-            && !Path.GetExtension(path).Equals(Animation.GetExtension(animation), StringComparison.OrdinalIgnoreCase))
+        // An animation is saved in its own format, so a name with another extension would be misleading. Its own extension is
+        // not a still image's format, so the check below is not for it.
+        if (Animation.Detect(input) is { } animation)
         {
-            throw new CliException($"\"{Path.GetFileName(input)}\" is an animation, and its result is one too: name the output " +
-                                   $"{Animation.GetExtension(animation)}.");
+            if (!Path.GetExtension(path).Equals(Animation.GetExtension(animation), StringComparison.OrdinalIgnoreCase))
+            {
+                throw new CliException($"\"{Path.GetFileName(input)}\" is an animation, and its result is one too: name the output " +
+                                       $"{Animation.GetExtension(animation)}.");
+            }
+            return new Job(input, path);
         }
         // An unknown extension would get PNG data under a misleading name; a name without an extension stays PNG.
         if (format is null && Path.GetExtension(path) is { Length: > 0 } given && ImageCodec.FormatFromExtension(path) is null)

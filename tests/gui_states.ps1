@@ -1,11 +1,11 @@
 ﻿# Screenshots of the Krupno.exe window in its main states: empty, ready to start, processing, result, batch, error,
-# light theme, the settings window, "Remove noise", results that are already there, an animated GIF. Checks that the states are reached; the screenshots (tests/out/gui) are
-# reviewed by a human.
+# light theme, the settings window, "Remove noise", results that are already there, an animated GIF, operations DirectML leaves
+# to the CPU. Checks that the states are reached; the screenshots (tests/out/gui) are reviewed by a human.
 # The color scenario also checks pixels: a Display P3 image must be shown converted to sRGB, as Windows decodes it.
 # Requires a Release build, real models in models/ and the fixture images (python tests\make_fixtures.py).
-#   powershell -File tests\gui_states.ps1 [-Scenario single,batch,error,light,color,settings,denoise,existing,animation] [-Image <file>] [-Batch <folder>]
+#   powershell -File tests\gui_states.ps1 [-Scenario single,batch,error,light,color,settings,denoise,existing,animation,cpunodes] [-Image <file>] [-Batch <folder>]
 param(
-    [string[]]$Scenario = @("single", "batch", "error", "light", "color", "settings", "denoise", "existing", "animation"),
+    [string[]]$Scenario = @("single", "batch", "error", "light", "color", "settings", "denoise", "existing", "animation", "cpunodes"),
     [string]$Exe = "$PSScriptRoot\..\src\Krupno.App\bin\Release\net10.0-windows10.0.19041.0\win-x64\Krupno.exe",
     [string]$Image = "$PSScriptRoot\fixtures\images\big_1500x1000.png",
     [string]$Batch = "$PSScriptRoot\fixtures\images",
@@ -30,8 +30,9 @@ Assert-Model $SlowModel
 # The inputs are copied to the output folder: by default the window saves the result next to the original.
 $data = "$Out\data"
 if (Test-Path -LiteralPath $data) { Remove-Item -LiteralPath $data -Recurse -Force }
-New-Item -ItemType Directory -Force "$data\single", "$data\batch", "$data\broken", "$data\color", "$data\existing", "$data\animated" | Out-Null
+New-Item -ItemType Directory -Force "$data\single", "$data\batch", "$data\broken", "$data\color", "$data\existing", "$data\animated", "$data\cpu" | Out-Null
 Copy-Item -LiteralPath "$PSScriptRoot\fixtures\images\noise_300x200.png", "$PSScriptRoot\fixtures\images\icc_60x40.png" "$data\existing\"
+Copy-Item -LiteralPath "$PSScriptRoot\fixtures\images\noise_300x200.png" "$data\cpu\"
 Copy-Item -LiteralPath $Image "$data\single\"
 Get-ChildItem -LiteralPath $Batch -File | Where-Object { $_.Extension -match '^\.(png|jpe?g|bmp|tiff?)$' } | Copy-Item -Destination "$data\batch\"
 Copy-Item -LiteralPath "$PSScriptRoot\fixtures\broken\broken.png" "$data\broken\"
@@ -265,7 +266,49 @@ try {
                         WaitFor $w "^Done" | Out-Null; Shot $h "18-denoise-done"
                     } finally { Close $p }
                 }
-                default { throw "unknown scenario (available: single, batch, error, light, color, settings, denoise)" }
+                "cpunodes" {
+                    # DirectML has no bicubic Resize, so cubic_x2.onnx (from tests/fixtures/models, put next to the app for
+                    # this) runs partly on the CPU, and the window logs which operations. Then "Remove noise" at ×1 runs the
+                    # denoiser alone in the same window: what the upscaler said in the first run must not come back in the
+                    # second. The note is shown only while the run lasts, so the log is checked.
+                    Assert-Model $DenoiseModel
+                    $cubic = Join-Path (Split-Path $Exe) "models\cubic_x2.onnx"
+                    $copied = -not (Test-Path -LiteralPath $cubic)
+                    if ($copied) { Copy-Item -LiteralPath "$PSScriptRoot\fixtures\models\cubic_x2.onnx" $cubic }
+                    try {
+                        Settings "cubic_x2" ', "Scale": 0, "CustomScaleMode": "Scale", "CustomScaleValue": "1"'
+                        $p = Launch @("$data\cpu\noise_300x200.png")
+                        try {
+                            $w = $AE::FromHandle($p.MainWindowHandle)
+                            Invoke-Named $w "^Upscale "
+                            WaitFor $w "^Done" | Out-Null
+                            $box = FindName $w "^Remove noise$"
+                            $toggle = $null
+                            if (-not $box -or -not $box.TryGetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern, [ref]$toggle)) {
+                                throw "the 'Remove noise' checkbox is missing"
+                            }
+                            $toggle.Toggle()
+                            Invoke-Named $w "^Upscale "
+                            # "Done" of the first run may still be up, so the log says when the second one has saved its result.
+                            $log = Get-ChildItem "$env:LOCALAPPDATA\Krupno\logs\krupno-*-$($p.Id).log" | Select-Object -First 1
+                            if (-not $log) { throw "the window's log is missing" }
+                            $deadline = (Get-Date).AddSeconds(120)
+                            do {
+                                Start-Sleep -Milliseconds 300
+                                $stream = New-Object IO.FileStream $log.FullName, "Open", "Read", "ReadWrite"
+                                try { $text = (New-Object IO.StreamReader $stream).ReadToEnd() } finally { $stream.Dispose() }
+                                $runs = $text -split "Run started"
+                            } while (-not ($runs.Count -eq 3 -and $runs[2] -match "Saved ") -and (Get-Date) -lt $deadline)
+                            if ($runs.Count -ne 3 -or $runs[2] -notmatch "Saved ") { throw "the log doesn't have two finished runs" }
+                            if ($runs[1] -notmatch "these operations run on the CPU[^\r\n]*Resize") { throw "the first run doesn't say Resize runs on the CPU" }
+                            if ($runs[2] -match "on the CPU") { throw "the run with the denoiser alone repeats the upscaler's operations on the CPU" }
+                            "  first run: " + ([regex]::Match($runs[1], "these operations run on the CPU[^\r\n]*")).Value
+                        } finally { Close $p }
+                    } finally {
+                        if ($copied) { Remove-Item -LiteralPath $cubic -ErrorAction SilentlyContinue }
+                    }
+                }
+                default { throw "unknown scenario (available: single, batch, error, light, color, settings, denoise, existing, animation, cpunodes)" }
             }
             "OK   $name"
         } catch {

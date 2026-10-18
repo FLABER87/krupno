@@ -91,6 +91,94 @@ public sealed class AnimationTests : IDisposable
     }
 
     [Fact]
+    public void RepeatedGifFramesAreShownForAsLongAsBefore()
+    {
+        // Browsers show a delay of 0 or 10 ms as 100 ms, so a repeated frame that short stays a frame of its own: the two last
+        // 200 ms, one of their sum would last 20 ms. So does one whose sum doesn't fit in a delay (655.35 s); others are merged.
+        ImageBuffer a = Frame(40, 30, 0), b = Frame(40, 30, 2);
+        using (var writer = Animation.Create(P("repeat.gif"), AnimationFormat.Gif, 40, 30, new AnimationSaveOptions()))
+        {
+            writer.Add(a, 10);
+            writer.Add(a, 10);
+            writer.Add(b, 0);
+            writer.Add(b, 0);
+            writer.Add(a, 50);
+            writer.Add(a, 10);
+            writer.Add(b, 600_000);
+            writer.Add(b, 600_000);
+            writer.Add(a, 20);
+            writer.Add(a, 30);
+            // 25 ms is stored as 20, so the two last 40 ms; one of 50 ms would be stored as 50.
+            writer.Add(b, 25);
+            writer.Add(b, 25);
+            writer.Finish();
+        }
+
+        var frames = ReadAll(P("repeat.gif"), out var reader);
+        using (reader)
+        {
+            Assert.Equal([10, 10, 0, 0, 50, 10, 600_000, 600_000, 50, 20, 20], frames.Select(f => f.Duration));
+            for (int i = 0; i < frames.Count; i++)
+                AssertSame(i is 2 or 3 or 6 or 7 or 9 or 10 ? b : a, frames[i].Image);
+        }
+
+        // A repeated frame of its own leaves the canvas as the one before it: with more than 256 colors that one is dithered,
+        // and a pixel of the source's own colors would stand out.
+        var noise = TestImages.Noise(40, 30, seed: 5);
+        using (var writer = Animation.Create(P("repeat_noise.gif"), AnimationFormat.Gif, 40, 30, new AnimationSaveOptions()))
+        {
+            writer.Add(noise, 10);
+            writer.Add(noise, 10);
+            writer.Finish();
+        }
+        AssertStrictGif(P("repeat_noise.gif"));
+        var noisy = ReadAll(P("repeat_noise.gif"), out var noiseReader);
+        noiseReader.Dispose();
+        Assert.Equal(2, noisy.Count);
+        Assert.False(noisy[0].Image.Pixels.AsSpan(0, 4).SequenceEqual(noise.Pixels.AsSpan(0, 4)), "the first pixel kept its color");
+        Assert.True(noisy[0].Image.Pixels.AsSpan().SequenceEqual(noisy[1].Image.Pixels), "the repeated frame differs");
+
+        // The same before a transparent frame, after a frame stored as the area it changed: the repeat isn't quantized again
+        // over the whole canvas, which could give it other colors, but waits as well and then clears the canvas.
+        var changed = TestImages.Noise(40, 30, seed: 5);
+        changed.Pixels[(10 * 40 + 10) * 4] ^= 0xFF;
+        using (var writer = Animation.Create(P("repeat_before_transparent.gif"), AnimationFormat.Gif, 40, 30, new AnimationSaveOptions()))
+        {
+            writer.Add(changed, 100);
+            writer.Add(noise, 10);
+            writer.Add(noise, 10);
+            writer.Add(Frame(40, 30, 0, transparentCorner: true), 100);
+            writer.Finish();
+        }
+        AssertStrictGif(P("repeat_before_transparent.gif"));
+        var beforeTransparent = ReadAll(P("repeat_before_transparent.gif"), out var transparentReader);
+        transparentReader.Dispose();
+        Assert.Equal([100, 10, 10, 100], beforeTransparent.Select(f => f.Duration));
+        Assert.True(beforeTransparent[1].Image.Pixels.AsSpan().SequenceEqual(beforeTransparent[2].Image.Pixels), "the repeated frame differs");
+        AssertSame(Frame(40, 30, 0, transparentCorner: true), beforeTransparent[3].Image);
+    }
+
+    [Fact]
+    public void GifLoopCountAfterAnotherApplicationExtension()
+    {
+        // NETSCAPE2.0 needn't be the first application extension: an XMP packet (as Photoshop writes one) may come before it.
+        using (var writer = Animation.Create(P("loop.gif"), AnimationFormat.Gif, 40, 30, new AnimationSaveOptions { LoopCount = 0 }))
+        {
+            writer.Add(Frame(40, 30, 0), 100);
+            writer.Add(Frame(40, 30, 2), 100);
+            writer.Finish();
+        }
+        var bytes = File.ReadAllBytes(P("loop.gif"));
+        // After the header and the logical screen (no global color table) comes the writer's NETSCAPE2.0 block.
+        Assert.Equal("NETSCAPE2.0", System.Text.Encoding.ASCII.GetString(bytes, 16, 11));
+        byte[] xmp = [0x21, 0xFF, 0x0B, .. "XMP DataXMP"u8, 3, (byte)'<', (byte)'x', (byte)'>', 0];
+        File.WriteAllBytes(P("loop.gif"), [.. bytes[..13], .. xmp, .. bytes[13..]]);
+
+        using var reader = Animation.Open(P("loop.gif"));
+        Assert.Equal((2, 0), (reader.FrameCount, reader.LoopCount));
+    }
+
+    [Fact]
     public void GifWithManyColorsIsDitheredCloseToTheOriginal()
     {
         var image = new ImageBuffer(64, 64);
