@@ -11,7 +11,7 @@
          so an outdated DirectML.dll from System32 is never picked up. -->
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
-    <Version>0.2.4</Version>
+    <Version>0.2.5</Version>
     <Product>Krupno</Product>
     <!-- The languages the window is translated into (src/Krupno.App/Infrastructure/UiLanguage.cs): the self-contained
          publish takes WPF's own translations for them (the text box menu, for example) and leaves out the rest. -->

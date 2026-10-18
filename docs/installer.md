@@ -65,7 +65,6 @@ Releases are built by the `.github/workflows/release.yml` workflow. To release a
 1. Bump `<Version>` in `Directory.Build.props`.
 2. Push a `v<version>` tag.
 3. The workflow builds the installer and the ZIP and creates a draft release. Publish it manually on GitHub.
-
 4. Once the release is published, `.github/workflows/packages.yml` updates the package managers (see below).
 
 Code signing through SignPath Foundation is already built into the workflow. It is turned on by the setup described in [installer/signpath/README.md](../installer/signpath/README.md).
