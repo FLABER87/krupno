@@ -138,11 +138,20 @@
   <data name="Dialog_SelectImages" xml:space="preserve">
     <value>選取影像</value>
   </data>
+  <data name="Done_AllThere" xml:space="preserve">
+    <value>所有結果皆已存在</value>
+  </data>
+  <data name="Done_AlreadyThere" xml:space="preserve">
+    <value>結果已存在</value>
+  </data>
   <data name="Done_Files" xml:space="preserve">
     <value>完成：{0}，耗時 {1}</value>
   </data>
   <data name="Done_InTime" xml:space="preserve">
     <value>完成，耗時 {0} · {1}</value>
+  </data>
+  <data name="Done_LeftOut" xml:space="preserve">
+    <value>已存在而略過：{0}</value>
   </data>
   <data name="Done_Partial" xml:space="preserve">
     <value>完成：{0}/{1}，{2} 個失敗</value>
@@ -173,6 +182,21 @@
   </data>
   <data name="Error_Title" xml:space="preserve">
     <value>放大失敗</value>
+  </data>
+  <data name="Existing" xml:space="preserve">
+    <value>已有結果</value>
+  </data>
+  <data name="Existing_KeepBoth" xml:space="preserve">
+    <value>保留，為新結果編號</value>
+  </data>
+  <data name="Existing_Replace" xml:space="preserve">
+    <value>以新結果取代</value>
+  </data>
+  <data name="Existing_Skip" xml:space="preserve">
+    <value>保留，略過該影像</value>
+  </data>
+  <data name="File_AlreadyThere" xml:space="preserve">
+    <value>已存在：{0}</value>
   </data>
   <data name="File_Done" xml:space="preserve">
     <value>完成：{0}</value>
@@ -254,6 +278,12 @@
   </data>
   <data name="Models_ShowFewer" xml:space="preserve">
     <value>顯示較少</value>
+  </data>
+  <data name="NameWithModel" xml:space="preserve">
+    <value>在檔名中加入模型</value>
+  </data>
+  <data name="NameWithModel_Example" xml:space="preserve">
+    <value>例如：photo.jpg → {0}</value>
   </data>
   <data name="NoModels" xml:space="preserve">
     <value>尚無模型。請將 .onnx 檔案放入模型資料夾，然後重新整理清單。</value>
@@ -359,6 +389,9 @@
   </data>
   <data name="Settings_Processing" xml:space="preserve">
     <value>處理</value>
+  </data>
+  <data name="Settings_Results" xml:space="preserve">
+    <value>結果</value>
   </data>
   <data name="Settings_ToolTip" xml:space="preserve">
     <value>設定 (Ctrl+,)</value>

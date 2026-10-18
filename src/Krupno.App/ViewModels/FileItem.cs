@@ -20,6 +20,7 @@ public sealed class FileItem(string path) : ObservableObject
     private FileState _state;
     private string? _outputPath;
     private string? _error;
+    private bool _skipped;
 
     public string Path { get; } = path;
     public string Name { get; } = System.IO.Path.GetFileName(path);
@@ -55,6 +56,17 @@ public sealed class FileItem(string path) : ObservableObject
         set => SetProperty(ref _outputPath, value);
     }
 
+    /// <summary>Done without a run: its result was already there, and "Skip the image" is chosen for that.</summary>
+    public bool Skipped
+    {
+        get => _skipped;
+        set
+        {
+            if (SetProperty(ref _skipped, value))
+                OnPropertyChanged(nameof(ToolTip));
+        }
+    }
+
     public string? Error
     {
         get => _error;
@@ -67,7 +79,7 @@ public sealed class FileItem(string path) : ObservableObject
 
     public string ToolTip => State switch
     {
-        FileState.Done => $"{Name}\n{string.Format(Strings.File_Done, System.IO.Path.GetFileName(OutputPath))}",
+        FileState.Done => $"{Name}\n{string.Format(Skipped ? Strings.File_AlreadyThere : Strings.File_Done, System.IO.Path.GetFileName(OutputPath))}",
         FileState.Error => $"{Name}\n{Error}",
         FileState.Processing => $"{Name}\n{Strings.File_Processing}",
         _ => Name,

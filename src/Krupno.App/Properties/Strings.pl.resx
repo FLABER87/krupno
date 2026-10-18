@@ -138,11 +138,20 @@
   <data name="Dialog_SelectImages" xml:space="preserve">
     <value>Wybierz obrazy</value>
   </data>
+  <data name="Done_AllThere" xml:space="preserve">
+    <value>Wszystkie wyniki już istnieją</value>
+  </data>
+  <data name="Done_AlreadyThere" xml:space="preserve">
+    <value>Wynik już istnieje</value>
+  </data>
   <data name="Done_Files" xml:space="preserve">
     <value>Gotowe: {0} w {1}</value>
   </data>
   <data name="Done_InTime" xml:space="preserve">
     <value>Gotowe w {0} · {1}</value>
+  </data>
+  <data name="Done_LeftOut" xml:space="preserve">
+    <value>już istniały: {0}</value>
   </data>
   <data name="Done_Partial" xml:space="preserve">
     <value>Gotowe: {0} z {1}, nieudane: {2}</value>
@@ -173,6 +182,21 @@
   </data>
   <data name="Error_Title" xml:space="preserve">
     <value>Nie udało się powiększyć</value>
+  </data>
+  <data name="Existing" xml:space="preserve">
+    <value>Istniejący wynik</value>
+  </data>
+  <data name="Existing_KeepBoth" xml:space="preserve">
+    <value>Zachować, nowy ponumerować</value>
+  </data>
+  <data name="Existing_Replace" xml:space="preserve">
+    <value>Zastąpić nowym</value>
+  </data>
+  <data name="Existing_Skip" xml:space="preserve">
+    <value>Zachować, pominąć obraz</value>
+  </data>
+  <data name="File_AlreadyThere" xml:space="preserve">
+    <value>Już istnieje: {0}</value>
   </data>
   <data name="File_Done" xml:space="preserve">
     <value>Gotowe: {0}</value>
@@ -254,6 +278,12 @@
   </data>
   <data name="Models_ShowFewer" xml:space="preserve">
     <value>Pokaż mniej</value>
+  </data>
+  <data name="NameWithModel" xml:space="preserve">
+    <value>Dodawaj model do nazwy pliku</value>
+  </data>
+  <data name="NameWithModel_Example" xml:space="preserve">
+    <value>Na przykład photo.jpg → {0}</value>
   </data>
   <data name="NoModels" xml:space="preserve">
     <value>Brak modeli. Umieść pliki .onnx w folderze modeli i odśwież listę.</value>
@@ -359,6 +389,9 @@
   </data>
   <data name="Settings_Processing" xml:space="preserve">
     <value>Przetwarzanie</value>
+  </data>
+  <data name="Settings_Results" xml:space="preserve">
+    <value>Wyniki</value>
   </data>
   <data name="Settings_ToolTip" xml:space="preserve">
     <value>Ustawienia (Ctrl+,)</value>

@@ -107,12 +107,17 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
     // Next to the source, the name says what was asked for: "_x4", "_x2.5", "_3840w".
     string suffix = options.Target?.Suffix
         ?? "_x" + (options.Scale > 0 ? options.Scale : UpscaleModel.Inspect(modelPath).Scale).ToString("0.##", CultureInfo.InvariantCulture);
-    var jobs = JobPlanner.Plan(options.Inputs, options.Output, options.Format, options.Recursive, suffix, out int leftOut);
+    // --name-model: and how it was made, "_4xBHI_dat2_real_s70". At a scale of 1 or less with --denoise the upscaler doesn't run.
+    string tag = options.NameModel
+        ? OutputPaths.SettingsTag(options.Denoise && options.Target is null && options.Scale is > 0 and <= 1 ? null : Path.GetFileNameWithoutExtension(modelPath),
+            options.Denoise, options.Strength, options.TestTimeAugmentation)
+        : "";
+    var jobs = JobPlanner.Plan(options.Inputs, options.Output, options.Format, options.Recursive, suffix, tag, out int leftOut);
     if (leftOut > 0)
         Console.WriteLine($"Leaving out {leftOut} of {jobs.Count + leftOut} images: they are results of other images in this command.");
     if (jobs.Count == 0)
         throw new CliException($"No supported images found in {string.Join(", ", options.Inputs.Select(i => $"\"{i}\""))}.");
-    if (options.SkipExisting)
+    if (options.Existing == ExistingResult.Skip)
     {
         int planned = jobs.Count;
         jobs.RemoveAll(job => File.Exists(job.Output));
@@ -120,6 +125,14 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
             Console.WriteLine($"Skipping {planned - jobs.Count} of {planned} images: their results are already there.");
         if (jobs.Count == 0)
             return 0;
+    }
+    else if (options.Existing == ExistingResult.KeepBoth)
+    {
+        var outputs = OutputPaths.KeepExisting(jobs.Select(j => j.Input).ToList(), jobs.Select(j => j.Output).ToList(), File.Exists);
+        int numbered = jobs.Where((job, i) => !string.Equals(job.Output, outputs[i], StringComparison.OrdinalIgnoreCase)).Count();
+        jobs = jobs.Select((job, i) => job with { Output = outputs[i] }).ToList();
+        if (numbered > 0)
+            Console.WriteLine($"Keeping {numbered} of {jobs.Count} results that are already there: the new ones get a number.");
     }
 
     using var keepAwake = new KeepAwake();

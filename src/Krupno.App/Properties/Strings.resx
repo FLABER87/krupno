@@ -139,6 +139,12 @@
   <data name="Dialog_SelectImages" xml:space="preserve">
     <value>Select images</value>
   </data>
+  <data name="Done_AllThere" xml:space="preserve">
+    <value>All the results are already there</value>
+  </data>
+  <data name="Done_AlreadyThere" xml:space="preserve">
+    <value>The result is already there</value>
+  </data>
   <data name="Done_Files" xml:space="preserve">
     <value>Done: {0} in {1}</value>
     <comment>{0} is the number of files (3 files), {1} the time.</comment>
@@ -146,6 +152,10 @@
   <data name="Done_InTime" xml:space="preserve">
     <value>Done in {0} · {1}</value>
     <comment>{0} is the time, {1} the file size.</comment>
+  </data>
+  <data name="Done_LeftOut" xml:space="preserve">
+    <value>already there: {0}</value>
+    <comment>After "Saved next to the originals ·"; {0} is the number of images left out because their results are already there.</comment>
   </data>
   <data name="Done_Partial" xml:space="preserve">
     <value>Done: {0} of {1}, {2} failed</value>
@@ -177,6 +187,25 @@
   </data>
   <data name="Error_Title" xml:space="preserve">
     <value>Upscaling failed</value>
+  </data>
+  <data name="Existing" xml:space="preserve">
+    <value>Existing result</value>
+    <comment>A label beside the list of what to do with a result from an earlier run.</comment>
+  </data>
+  <data name="Existing_KeepBoth" xml:space="preserve">
+    <value>Keep it, number the new one</value>
+    <comment>The new result gets a number: photo_x4 (2).png.</comment>
+  </data>
+  <data name="Existing_Replace" xml:space="preserve">
+    <value>Replace it with the new one</value>
+  </data>
+  <data name="Existing_Skip" xml:space="preserve">
+    <value>Keep it, skip the image</value>
+    <comment>The image whose result is already there is not upscaled again.</comment>
+  </data>
+  <data name="File_AlreadyThere" xml:space="preserve">
+    <value>Already there: {0}</value>
+    <comment>{0} is the result's file name.</comment>
   </data>
   <data name="File_Done" xml:space="preserve">
     <value>Done: {0}</value>
@@ -259,6 +288,13 @@
   </data>
   <data name="Models_ShowFewer" xml:space="preserve">
     <value>Show fewer</value>
+  </data>
+  <data name="NameWithModel" xml:space="preserve">
+    <value>Add the model to the file name</value>
+  </data>
+  <data name="NameWithModel_Example" xml:space="preserve">
+    <value>For example, photo.jpg → {0}</value>
+    <comment>Keep photo.jpg as it is; {0} is the name its result gets, such as photo_x4_4xBHI_dat2_real.png.</comment>
   </data>
   <data name="NoModels" xml:space="preserve">
     <value>No models yet. Put .onnx files in the models folder and refresh the list.</value>
@@ -366,6 +402,10 @@
   <data name="Settings_Processing" xml:space="preserve">
     <value>Processing</value>
     <comment>A group in "Settings": device, tiles, TTA.</comment>
+  </data>
+  <data name="Settings_Results" xml:space="preserve">
+    <value>Results</value>
+    <comment>A section of "Settings": the names of the results, and what happens to one from an earlier run.</comment>
   </data>
   <data name="Settings_ToolTip" xml:space="preserve">
     <value>Settings (Ctrl+,)</value>

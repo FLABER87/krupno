@@ -138,11 +138,20 @@
   <data name="Dialog_SelectImages" xml:space="preserve">
     <value>Choisir des images</value>
   </data>
+  <data name="Done_AllThere" xml:space="preserve">
+    <value>Tous les résultats existent déjà</value>
+  </data>
+  <data name="Done_AlreadyThere" xml:space="preserve">
+    <value>Le résultat existe déjà</value>
+  </data>
   <data name="Done_Files" xml:space="preserve">
     <value>Terminé : {0} en {1}</value>
   </data>
   <data name="Done_InTime" xml:space="preserve">
     <value>Terminé en {0} · {1}</value>
+  </data>
+  <data name="Done_LeftOut" xml:space="preserve">
+    <value>déjà présents : {0}</value>
   </data>
   <data name="Done_Partial" xml:space="preserve">
     <value>Terminé : {0} sur {1}, {2} en échec</value>
@@ -173,6 +182,21 @@
   </data>
   <data name="Error_Title" xml:space="preserve">
     <value>L'agrandissement a échoué</value>
+  </data>
+  <data name="Existing" xml:space="preserve">
+    <value>Résultat existant</value>
+  </data>
+  <data name="Existing_KeepBoth" xml:space="preserve">
+    <value>Le garder et numéroter le nouveau</value>
+  </data>
+  <data name="Existing_Replace" xml:space="preserve">
+    <value>Le remplacer par le nouveau</value>
+  </data>
+  <data name="Existing_Skip" xml:space="preserve">
+    <value>Le garder et ignorer l'image</value>
+  </data>
+  <data name="File_AlreadyThere" xml:space="preserve">
+    <value>Déjà présent : {0}</value>
   </data>
   <data name="File_Done" xml:space="preserve">
     <value>Terminé : {0}</value>
@@ -254,6 +278,12 @@
   </data>
   <data name="Models_ShowFewer" xml:space="preserve">
     <value>Afficher moins</value>
+  </data>
+  <data name="NameWithModel" xml:space="preserve">
+    <value>Ajouter le modèle au nom du fichier</value>
+  </data>
+  <data name="NameWithModel_Example" xml:space="preserve">
+    <value>Par exemple, photo.jpg → {0}</value>
   </data>
   <data name="NoModels" xml:space="preserve">
     <value>Aucun modèle pour l'instant. Placez des fichiers .onnx dans le dossier des modèles et actualisez la liste.</value>
@@ -359,6 +389,9 @@
   </data>
   <data name="Settings_Processing" xml:space="preserve">
     <value>Traitement</value>
+  </data>
+  <data name="Settings_Results" xml:space="preserve">
+    <value>Résultats</value>
   </data>
   <data name="Settings_ToolTip" xml:space="preserve">
     <value>Paramètres (Ctrl+,)</value>

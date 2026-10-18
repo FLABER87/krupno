@@ -139,7 +139,7 @@ public sealed class JobPlannerTests : IDisposable
             [(P("photos/b.png"), P("photos/b_x4 (png).png")), (P("photos/b_x4.png"), P("photos/b_x4_x4.png"))],
             Plan(["photos/b.png", "photos/b_x4.png"]));
         // Found by a pattern, the same file is an earlier result and is left out.
-        var jobs = JobPlanner.Plan([P("photos/*.png")], null, null, false, "_x4", out int leftOut);
+        var jobs = JobPlanner.Plan([P("photos/*.png")], null, null, false, "_x4", "", out int leftOut);
         Assert.Equal(1, leftOut);
         AssertJobs([(P("photos/b.png"), P("photos/b_x4.png"))], jobs);
     }
@@ -187,6 +187,33 @@ public sealed class JobPlannerTests : IDisposable
                 (P("photos/b.png"), P("photos/b_x4 (png).png")),
             ],
             Plan(["photos/*.*"]));
+    }
+
+    [Fact]
+    public void ModelTagFollowsTheSuffix()
+    {
+        // --name-model: next to the source after the scale, in an output folder after the source's name.
+        Assert.Equal(P("photos/a_x4_4xBHI_dat2_real.png"),
+            JobPlanner.Plan([P("photos/a.jpg")], null, null, false, "_x4", "_4xBHI_dat2_real").Single().Output);
+        Assert.Equal(P("out/a_4xBHI_dat2_real.png"),
+            JobPlanner.Plan([P("photos/a.jpg")], P("out") + Path.DirectorySeparatorChar, null, false, "_x4", "_4xBHI_dat2_real").Single().Output);
+        // A result named with the model is known as one: a pattern leaves it out, but not one of another model.
+        File.WriteAllBytes(P("photos/b_x4_4xBHI_dat2_real.png"), []);
+        File.WriteAllBytes(P("photos/b_x4_RealESRGAN_x4plus.png"), []);
+        var jobs = JobPlanner.Plan([P("photos/*.png")], null, null, false, "_x4", "_4xBHI_dat2_real", out int leftOut);
+        Assert.Equal(1, leftOut);
+        Assert.Equal([P("photos/b.png"), P("photos/b_x4_RealESRGAN_x4plus.png")], jobs.Select(j => j.Input));
+    }
+
+    [Fact]
+    public void NumberedResultsAreResultsToo()
+    {
+        // --no-overwrite left "b_x4 (2).png" from an earlier run: "*.png" must not upscale it again.
+        File.WriteAllBytes(P("photos/b_x4.png"), []);
+        File.WriteAllBytes(P("photos/b_x4 (2).png"), []);
+        var jobs = JobPlanner.Plan([P("photos/*.png")], null, null, false, "_x4", "", out int leftOut);
+        Assert.Equal(2, leftOut);
+        Assert.Equal([P("photos/b.png")], jobs.Select(j => j.Input));
     }
 
     [Fact]

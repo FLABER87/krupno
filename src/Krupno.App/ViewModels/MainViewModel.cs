@@ -98,6 +98,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private Option<int> _selectedTile;
     private bool _seamlessTiles;
     private bool _testTimeAugmentation;
+    private bool _nameWithModel;
+    private Option<ExistingResult> _selectedExisting;
     private bool _checkForUpdates;
     private readonly (bool Enabled, string SetAt)? _installerUpdateChoice;
     /// <summary>
@@ -190,6 +192,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _selectedTile = TileSizes.FirstOrDefault(t => t.Value == _settings.TileSize) ?? TileSizes[0];
         _seamlessTiles = _settings.SeamlessTiles == true;
         _testTimeAugmentation = _settings.TestTimeAugmentation == true;
+        _nameWithModel = _settings.NameWithModel == true;
+        // An earlier result stays unless the user chooses otherwise: it may have taken an hour of DAT2.
+        ExistingResults =
+        [
+            new(ExistingResult.KeepBoth, Strings.Existing_KeepBoth), new(ExistingResult.Replace, Strings.Existing_Replace),
+            new(ExistingResult.Skip, Strings.Existing_Skip),
+        ];
+        _selectedExisting = ExistingResults.FirstOrDefault(e => e.Value == _settings.ExistingResults) ?? ExistingResults[0];
         // The user's own choice in the window, else the choice of the installer of Krupno 0.2.4 or earlier, else on; such an
         // installation that turned the check off after the user's choice wins over it.
         _installerUpdateChoice = UpdateCheck.InstallerChoice();
@@ -619,6 +629,48 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>"Add the model to the name" in "Settings": "photo_x4_4xBHI_dat2_real.png", see <see cref="NameTag"/>.</summary>
+    public bool NameWithModel
+    {
+        get => _nameWithModel;
+        set
+        {
+            if (SetProperty(ref _nameWithModel, value))
+            {
+                OnPropertyChanged(nameof(NameExample));
+                SaveSettings();
+            }
+        }
+    }
+
+    /// <summary>What a run does with a result that is already there from an earlier one.</summary>
+    public IReadOnlyList<Option<ExistingResult>> ExistingResults { get; }
+
+    public Option<ExistingResult> SelectedExisting
+    {
+        get => _selectedExisting;
+        set
+        {
+            if (value is not null && SetProperty(ref _selectedExisting, value))
+                SaveSettings();
+        }
+    }
+
+    /// <summary>
+    /// Under "Add the model to the name": the name a "photo.jpg" would get with the current choices (×4 while "Other" holds no
+    /// valid number).
+    /// </summary>
+    public string NameExample
+    {
+        get
+        {
+            var (scale, target) = ScaleChoice ?? (4, null);
+            string tag = NameTag(scale, target, SelectedModel?.Name, Denoise, Strength, TestTimeAugmentation);
+            return string.Format(Strings.NameWithModel_Example,
+                Path.GetFileName(BuildOutputPath("photo.jpg", null, scale, target, SelectedFormat.Value, tag)));
+        }
+    }
+
     /// <summary>
     /// "Check for updates" in "Settings" (see UpdateCheck). Turned on, it checks right away; turned off, the notice goes, and so
     /// does a download "Update" started.
@@ -649,7 +701,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>"Krupno 0.2.2" next to "Check for updates" in "Settings".</summary>
+    /// <summary>"Krupno 0.2.2" at the bottom of "Settings", next to "Close".</summary>
     public string VersionText => $"Krupno {UpdateCheck.Own.ToString(3)}";
 
     public IReadOnlyList<Option<string?>> Languages { get; }
@@ -1205,14 +1257,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             Padding: SeamlessTiles ? SeamlessPadding : UpscaleOptions.Default.TilePadding, Strength: Strength,
             Tta: TestTimeAugmentation, Denoiser: Denoise ? _denoiserEntry : null,
             Format: SelectedFormat.Value, Quality: JpegQuality, Folder: OutputFolder);
+        string tag = NameTag(settings.Scale, settings.Target, modelItem.Name, settings.Denoiser is not null, settings.Strength, settings.Tta);
+        var existing = SelectedExisting.Value;
         // All names up front: a result must not overwrite a queued source ("photo.png" → "photo_x4.png" while
         // "photo_x4.png" waits in the queue) or another result ("photo.jpg" and "photo.png" → "photo_x4.png").
-        var outputs = OutputPaths.MakeUnique(files.Select(f => f.Path).ToList(),
-            files.Select(f => BuildOutputPath(f.Path, settings.Folder, settings.Scale, settings.Target, settings.Format)).ToList());
+        var sources = files.Select(f => f.Path).ToList();
+        var outputs = OutputPaths.MakeUnique(sources,
+            files.Select(f => BuildOutputPath(f.Path, settings.Folder, settings.Scale, settings.Target, settings.Format, tag)).ToList());
         foreach (var file in files)
         {
             file.State = FileState.Pending;
             file.Error = null;
+            file.Skipped = false;
         }
 
         IsBusy = true;
@@ -1230,7 +1286,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var cancellationToken = _cts.Token;
         var total = Stopwatch.StartNew();
         Stopwatch? work = null;
-        int succeeded = 0, failed = 0;
+        int succeeded = 0, failed = 0, skipped = 0;
         string? firstError = null;
         long lastBytes = 0;
         // The previous file's result while it is written in the background, see BatchSaving.
@@ -1263,12 +1319,24 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 }
             }
 
-            var model = await GetModelAsync();
-            runModel = model;
-            var denoiser = settings.Denoiser is { } denoiserEntry ? await GetDenoiserAsync(denoiserEntry, deviceOption.Value) : null;
-            runDenoiser = denoiser;
+            // A result from an earlier run: it gets a number, or its image is left out, as chosen in "Settings".
+            var skip = new bool[files.Count];
+            if (existing == ExistingResult.KeepBoth)
+                outputs = await Task.Run(() => OutputPaths.KeepExisting(sources, outputs, File.Exists));
+            else if (existing == ExistingResult.Skip)
+                skip = await Task.Run(() => outputs.Select(File.Exists).ToArray());
+
+            // With every image left out, the model isn't even loaded.
+            UpscaleModel? model = null, denoiser = null;
+            if (skip.Contains(false))
+            {
+                model = await GetModelAsync();
+                runModel = model;
+                denoiser = settings.Denoiser is { } denoiserEntry ? await GetDenoiserAsync(denoiserEntry, deviceOption.Value) : null;
+                runDenoiser = denoiser;
+            }
             Log.Info("Run started\n" + DescribeRun());
-            var upscaler = new Upscaler(model, denoiser);
+            var upscaler = model is null ? null : new Upscaler(model, denoiser);
             var options = new UpscaleOptions
             {
                 Scale = settings.Scale, Target = settings.Target, TileSize = settings.Tile, TilePadding = settings.Padding,
@@ -1280,6 +1348,19 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 cancellationToken.ThrowIfCancellationRequested();
                 var file = files[i];
                 int index = i;
+                if (skip[index])
+                {
+                    // Its earlier result stays, and is shown as this file's result.
+                    file.OutputPath = outputs[index];
+                    file.Skipped = true;
+                    file.State = FileState.Done;
+                    _lastDone = file;
+                    skipped++;
+                    Log.Info($"File {index + 1} of {files.Count}: {file.Path}, left out: {outputs[index]} is already there");
+                    if (CurrentFile == file)
+                        _ = ShowPreviewAsync(file);
+                    continue;
+                }
                 file.State = FileState.Processing;
                 _suppressPreview = true;
                 CurrentFile = file;
@@ -1307,13 +1388,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                     }
 
                     // The format's size limit, before minutes of work rather than after.
-                    var (outputWidth, outputHeight) = upscaler.OutputSize(loaded.Image.Width, loaded.Image.Height, options);
+                    var (outputWidth, outputHeight) = upscaler!.OutputSize(loaded.Image.Width, loaded.Image.Height, options);
                     ImageCodec.EnsureCanSave(settings.Format, outputWidth, outputHeight);
 
                     var tiles = new TileProgress();
                     work ??= Stopwatch.StartNew();
                     var progress = new Progress<UpscaleProgress>(p =>
-                        OnProgress(p, file, index, files.Count, model, denoiser, tiles, work));
+                        OnProgress(p, file, index, files.Count, model!, denoiser, tiles, work));
                     var result = await upscaler.UpscaleAsync(loaded.Image, options, progress, cancellationToken);
 
                     // One save at a time (see BatchSaving): the previous file is finished first.
@@ -1344,8 +1425,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 await pendingSave;
 
             string elapsed = Text.Seconds(total.Elapsed);
-            Log.Info($"Run finished in {Text.Seconds(total.Elapsed, Log.Culture)}: {succeeded} of {Text.Files(files.Count, Log.Culture)} done");
-            if (succeeded == 0)
+            Log.Info($"Run finished in {Text.Seconds(total.Elapsed, Log.Culture)}: {succeeded} of {Text.Files(files.Count, Log.Culture)} done" +
+                     (skipped > 0 ? $", {skipped} left out as their results are already there" : ""));
+            if (succeeded == 0 && skipped == 0)
             {
                 // Every file of the batch failed: that is not a success, whatever the count.
                 ErrorDetail = Plurals.Format(Strings.Error_NoneUpscaled, files.Count, null, firstError);
@@ -1355,7 +1437,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             }
             else
             {
-                if (files.Count == 1)
+                if (files.Count == 1 && skipped == 1)
+                {
+                    DoneTitle = Strings.Done_AlreadyThere;
+                    DoneSubtitle = Path.GetFileName(_lastDone!.OutputPath)!;
+                }
+                else if (files.Count == 1)
                 {
                     DoneTitle = string.Format(Strings.Done_InTime, elapsed, Text.Bytes(lastBytes));
                     DoneSubtitle = After is { } after
@@ -1364,10 +1451,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 }
                 else
                 {
-                    DoneTitle = failed == 0
-                        ? string.Format(Strings.Done_Files, Text.Files(succeeded), elapsed)
+                    DoneTitle = succeeded == 0 && failed == 0 ? Strings.Done_AllThere
+                        : failed == 0 ? string.Format(Strings.Done_Files, Text.Files(succeeded), elapsed)
                         : string.Format(Strings.Done_Partial, succeeded, files.Count, failed);
-                    DoneSubtitle = settings.Folder ?? Strings.Done_SavedNextToOriginals;
+                    DoneSubtitle = (settings.Folder ?? Strings.Done_SavedNextToOriginals) +
+                                   (skipped > 0 ? " · " + string.Format(Strings.Done_LeftOut, skipped) : "");
                 }
                 State = PanelState.Done;
                 TaskbarState = failed > 0 ? TaskbarItemProgressState.Error : TaskbarItemProgressState.None;
@@ -1731,6 +1819,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private void OnModelSettingsChanged()
     {
+        OnPropertyChanged(nameof(NameExample));
         SaveSettings();
         InvalidateResult();
         if (IsBusy)
@@ -1748,6 +1837,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private void OnOutputSettingsChanged()
     {
         OnPropertyChanged(nameof(SizePreview));
+        OnPropertyChanged(nameof(NameExample));
         OnPropertyChanged(nameof(UpscaleButtonText));
         SaveSettings();
         InvalidateResult();
@@ -1810,6 +1900,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _settings.TileSize = SelectedTile.Value;
         _settings.SeamlessTiles = SeamlessTiles;
         _settings.TestTimeAugmentation = TestTimeAugmentation;
+        _settings.NameWithModel = NameWithModel;
+        _settings.ExistingResults = SelectedExisting.Value;
         _settings.Language = SelectedLanguage.Value;
         _settings.Save();
     }
@@ -2338,13 +2430,24 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _toastTimer.Start();
     }
 
-    /// <summary>The name says what was asked for: "photo_x4.png", "photo_x2.5.png", "photo_3840w.png" (see ScaleTarget.Suffix).</summary>
-    private static string BuildOutputPath(string input, string? folder, double scale, ScaleTarget? target, ImageFileFormat format)
+    /// <summary>
+    /// The name says what was asked for: "photo_x4.png", "photo_x2.5.png", "photo_3840w.png" (see ScaleTarget.Suffix), and with
+    /// "Add the model to the name" how: "photo_x4_4xBHI_dat2_real.png" (<paramref name="tag"/>, see <see cref="NameTag"/>).
+    /// </summary>
+    private static string BuildOutputPath(string input, string? folder, double scale, ScaleTarget? target, ImageFileFormat format,
+        string tag)
     {
-        string directory = folder ?? Path.GetDirectoryName(input)!;
+        string directory = folder ?? Path.GetDirectoryName(input) ?? "";
         string suffix = target?.Suffix ?? "_x" + scale.ToString("0.##", CultureInfo.InvariantCulture);
-        return Path.Combine(directory, Path.GetFileNameWithoutExtension(input) + suffix + ImageCodec.GetExtension(format));
+        return Path.Combine(directory, Path.GetFileNameWithoutExtension(input) + suffix + tag + ImageCodec.GetExtension(format));
     }
+
+    /// <summary>
+    /// What "Add the model to the name" adds (see <see cref="OutputPaths.SettingsTag"/>): the model, unless only the noise is
+    /// removed (a scale of 1 or less with "Remove noise", where the upscaler doesn't run), and the settings that change the result.
+    /// </summary>
+    private string NameTag(double scale, ScaleTarget? target, string? model, bool denoise, int strength, bool tta) =>
+        NameWithModel ? OutputPaths.SettingsTag(denoise && target is null && scale <= 1 ? null : model, denoise, strength, tta) : "";
 
     private static string DefaultCustomValue(CustomScaleMode mode) => mode switch
     {

@@ -1,11 +1,11 @@
 ﻿# Screenshots of the Krupno.exe window in its main states: empty, ready to start, processing, result, batch, error,
-# light theme, the settings window, "Remove noise". Checks that the states are reached; the screenshots (tests/out/gui) are
+# light theme, the settings window, "Remove noise", results that are already there. Checks that the states are reached; the screenshots (tests/out/gui) are
 # reviewed by a human.
 # The color scenario also checks pixels: a Display P3 image must be shown converted to sRGB, as Windows decodes it.
 # Requires a Release build, real models in models/ and the fixture images (python tests\make_fixtures.py).
-#   powershell -File tests\gui_states.ps1 [-Scenario single,batch,error,light,color,settings,denoise] [-Image <file>] [-Batch <folder>]
+#   powershell -File tests\gui_states.ps1 [-Scenario single,batch,error,light,color,settings,denoise,existing][-Image <file>] [-Batch <folder>]
 param(
-    [string[]]$Scenario = @("single", "batch", "error", "light", "color", "settings", "denoise"),
+    [string[]]$Scenario = @("single", "batch", "error", "light", "color", "settings", "denoise", "existing"),
     [string]$Exe = "$PSScriptRoot\..\src\Krupno.App\bin\Release\net10.0-windows10.0.19041.0\win-x64\Krupno.exe",
     [string]$Image = "$PSScriptRoot\fixtures\images\big_1500x1000.png",
     [string]$Batch = "$PSScriptRoot\fixtures\images",
@@ -30,7 +30,8 @@ Assert-Model $SlowModel
 # The inputs are copied to the output folder: by default the window saves the result next to the original.
 $data = "$Out\data"
 if (Test-Path -LiteralPath $data) { Remove-Item -LiteralPath $data -Recurse -Force }
-New-Item -ItemType Directory -Force "$data\single", "$data\batch", "$data\broken", "$data\color" | Out-Null
+New-Item -ItemType Directory -Force "$data\single", "$data\batch", "$data\broken", "$data\color", "$data\existing" | Out-Null
+Copy-Item -LiteralPath "$PSScriptRoot\fixtures\images\noise_300x200.png", "$PSScriptRoot\fixtures\images\icc_60x40.png" "$data\existing\"
 Copy-Item -LiteralPath $Image "$data\single\"
 Get-ChildItem -LiteralPath $Batch -File | Where-Object { $_.Extension -match '^\.(png|jpe?g|bmp|tiff?)$' } | Copy-Item -Destination "$data\batch\"
 Copy-Item -LiteralPath "$PSScriptRoot\fixtures\broken\broken.png" "$data\broken\"
@@ -102,6 +103,39 @@ try {
                         Invoke-Named $w "^Side by side$"; Shot $h "05-side"
                         Invoke-Named $w "^Actual size$"; Shot $h "06-side-1to1"
                     } finally { Close $p }
+                }
+                "existing" {
+                    # With the model in the name, a second run keeps the first result and numbers its own; with "Skip" a third
+                    # run leaves the image out, and in a batch says how many were left out.
+                    $image = "$data\existing\noise_300x200.png"
+                    $named = "$data\existing\noise_300x200_x4_$Model"
+                    foreach ($run in 1, 2) {
+                        Settings $Model ', "NameWithModel": true'
+                        $p = Launch @($image)
+                        try {
+                            $w = $AE::FromHandle($p.MainWindowHandle)
+                            Invoke-Named $w "^Upscale "
+                            WaitFor $w "^Done" | Out-Null
+                        } finally { Close $p }
+                    }
+                    foreach ($file in "$named.png", "$named (2).png") {
+                        if (-not (Test-Path -LiteralPath $file)) { throw "$file is missing" }
+                    }
+                    Settings $Model ', "NameWithModel": true, "ExistingResults": "Skip"'
+                    $p = Launch @($image)
+                    try {
+                        $w = $AE::FromHandle($p.MainWindowHandle); $h = $p.MainWindowHandle
+                        Invoke-Named $w "^Upscale "
+                        WaitFor $w "^The result is already there" 30 | Out-Null; Shot $h "19-existing-skipped"
+                    } finally { Close $p }
+                    if (Test-Path -LiteralPath "$named (3).png") { throw "the skipped image was upscaled again" }
+                    $p = Launch @($image, "$data\existing\icc_60x40.png")
+                    try {
+                        $w = $AE::FromHandle($p.MainWindowHandle); $h = $p.MainWindowHandle
+                        Invoke-Named $w "^Upscale "
+                        "  " + (WaitFor $w "already there: 1"); Shot $h "20-existing-batch"
+                    } finally { Close $p }
+                    if (-not (Test-Path -LiteralPath "$data\existing\icc_60x40_x4_$Model.png")) { throw "the other image of the batch was not upscaled" }
                 }
                 "batch" {
                     Settings $Model
@@ -183,7 +217,8 @@ try {
                             $dialog = @($w.FindAll($Tree::Descendants, $windows)) | Where-Object { $_.Current.Name -eq "Settings" } | Select-Object -First 1
                         } while (-not $dialog -and (Get-Date) -lt $deadline)
                         if (-not $dialog) { throw "the settings window did not open" }
-                        foreach ($element in "^Device$", "^Tile size$", "^Language$", "^Check for updates$") {
+                        foreach ($element in "^Device$", "^Tile size$", "^Existing result$", "^Add the model to the file name$", "^Language$",
+                                 "^Check for updates$") {
                             if (-not (FindName $dialog $element)) { throw "'$element' is missing from the settings window" }
                         }
                         Shot ([IntPtr]$dialog.Current.NativeWindowHandle) "15-settings"

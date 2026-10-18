@@ -3,7 +3,10 @@ using Krupno.App.Infrastructure;
 
 namespace Krupno.App;
 
-/// <summary>"Settings": the device, tiles, TTA, language and update check, opened with the gear button in the panel or Ctrl+,.</summary>
+/// <summary>
+/// "Settings": the device, tiles, TTA, the results' names, language and update check, opened with the gear button in the panel
+/// or Ctrl+,.
+/// </summary>
 public partial class SettingsWindow : Window
 {
     public SettingsWindow()
