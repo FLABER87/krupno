@@ -75,8 +75,8 @@ public sealed class AppSettings
     public string? Language { get; set; }
 
     /// <summary>
-    /// "Check for updates" in "Settings", once the user has changed it there; until then null, and the installer's choice applies
-    /// (see <see cref="UpdateCheck.Decide"/>).
+    /// "Check for updates" in "Settings", once the user has changed it there; until then null: on, unless the installer of
+    /// Krupno 0.2.4 or earlier turned it off (see <see cref="UpdateCheck.Decide"/>).
     /// </summary>
     public bool? CheckForUpdates { get; set; }
 

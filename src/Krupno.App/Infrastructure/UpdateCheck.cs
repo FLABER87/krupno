@@ -11,14 +11,18 @@ namespace Krupno.App.Infrastructure;
 /// answers with a redirect to that release's tag (".../releases/tag/v0.3.0"): not the GitHub API, which allows an address
 /// 60 requests an hour without a token. Nothing else is sent, the redirect isn't followed, and nothing is downloaded: that
 /// waits for the user's "Update" (<see cref="UpdateInstall"/>). Only a tag of the form vX.Y.Z is a release of Krupno: the
-/// models are released too (models-v2), and are published without being marked as the latest. Off with "Check for updates"
-/// in "Settings", or with the installer's task (see <see cref="Decide"/>).
+/// models are released too (models-v2), and are published without being marked as the latest. On by default, off with
+/// "Check for updates" in "Settings" (see <see cref="Decide"/>).
 /// </summary>
 internal static partial class UpdateCheck
 {
     public const string LatestUrl = "https://github.com/FLABER87/krupno/releases/latest";
 
-    /// <summary>The installer's choice: HKCU (installed for the current user) or HKLM (for all users), Software\Krupno.</summary>
+    /// <summary>
+    /// The choice of the installer's "Check for new versions" task, which Krupno 0.2.4 and earlier had: HKCU (installed for the
+    /// current user) or HKLM (for all users), Software\Krupno. Later installers neither write nor remove it, so a check turned
+    /// off there stays off until the user turns it on in "Settings".
+    /// </summary>
     private const string RegistryKey = @"Software\Krupno";
     private const string RegistryValue = "CheckForUpdates";
     /// <summary>When that installation made it: tells a newer installation's choice from one the user has already overridden.</summary>
@@ -80,8 +84,8 @@ internal static partial class UpdateCheck
     public static string ReleasePage(Version version) => $"https://github.com/FLABER87/krupno/releases/tag/v{version.ToString(3)}";
 
     /// <summary>
-    /// Whether the installer's "Check for new versions" task was ticked, and when that installation ran. Null without an
-    /// installer (the portable ZIP, a build).
+    /// Whether the task of the installer of Krupno 0.2.4 or earlier was ticked, and when that installation ran. Null without
+    /// such an installation (installed by a later installer only, the portable ZIP, a build).
     /// </summary>
     public static (bool Enabled, string SetAt)? InstallerChoice()
     {
@@ -102,10 +106,10 @@ internal static partial class UpdateCheck
 
     /// <summary>
     /// Whether to check: the user's own choice in the window (<paramref name="choice"/>, made while installation
-    /// <paramref name="choiceSetAt"/> was the last one), else the installer's, else on. An installation since then that turned
-    /// the check off wins, and the user's choice is dropped: <paramref name="choice"/> and <paramref name="choiceSetAt"/> come
-    /// back as they are to be saved. So clearing the installer's checkbox always turns the check off, and the user can still
-    /// turn it on in the window afterwards.
+    /// <paramref name="choiceSetAt"/> was the last one), else the old installer's (<see cref="InstallerChoice"/>), else on. An
+    /// installation since then that turned the check off wins, and the user's choice is dropped: <paramref name="choice"/> and
+    /// <paramref name="choiceSetAt"/> come back as they are to be saved. So clearing the old installer's checkbox always turned
+    /// the check off, and the user can still turn it on in the window afterwards.
     /// </summary>
     internal static bool Decide(ref bool? choice, ref string? choiceSetAt, (bool Enabled, string SetAt)? installer)
     {

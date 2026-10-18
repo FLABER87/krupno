@@ -140,7 +140,6 @@ Name: "models\denoise"; Description: "{cm:ModelDenoise}"; Types: full
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 Name: "path"; Description: "{cm:TaskPath}"; GroupDescription: "{cm:GroupCommandLine}"
 Name: "contextmenu"; Description: "{cm:TaskContextMenu}"; GroupDescription: "{cm:GroupExplorer}"
-Name: "updatecheck"; Description: "{cm:TaskUpdateCheck}"; GroupDescription: "{cm:GroupUpdates}"
 
 [Files]
 Source: "{#AppDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: app
@@ -177,13 +176,6 @@ Root: HKA; Subkey: "{#FolderVerb}"; ValueType: string; ValueData: "{cm:ContextMe
 Root: HKA; Subkey: "{#FolderVerb}"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\Krupno.exe,0"; Tasks: contextmenu
 Root: HKA; Subkey: "{#FolderVerb}"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Document"; Tasks: contextmenu
 Root: HKA; Subkey: "{#FolderVerb}\command"; ValueType: string; ValueData: """{app}\Krupno.exe"" ""%1"""; Tasks: contextmenu
-; The update check (src/Krupno.App/Infrastructure/UpdateCheck.cs) as chosen here: the app's default until the user changes
-; "Check for updates" in the window. With its time: a check turned off in an installation stays off even if the user had
-; turned it on in the window before, and the user can turn it on there again afterwards. An update from the app keeps the
-; time of the installation before it (InstallStamp).
-Root: HKA; Subkey: "Software\Krupno"; ValueType: dword; ValueName: "CheckForUpdates"; ValueData: 1; Flags: uninsdeletekey; Tasks: updatecheck
-Root: HKA; Subkey: "Software\Krupno"; ValueType: dword; ValueName: "CheckForUpdates"; ValueData: 0; Flags: uninsdeletekey; Tasks: not updatecheck
-Root: HKA; Subkey: "Software\Krupno"; ValueType: string; ValueName: "CheckForUpdatesSetAt"; ValueData: "{code:InstallStamp}"; Flags: uninsdeletekey
 
 [UninstallDelete]
 ; The accelerators' compiled models: up to 2 GB, and the app compiles them again when needed.
@@ -343,17 +335,6 @@ end;
 function UpdatingFromApp: Boolean;
 begin
   Result := ExpandConstant('{param:UPDATE|0}') = '1';
-end;
-
-// When this installation made its update check choice (the [Registry] entries): the app tells a check turned off in this
-// installation from one turned off in an earlier one, after which the user may have turned it on in the window again. An
-// update from the app makes no choice of its own (the tasks are the previous installation's), so it keeps that one's time:
-// otherwise a check the user turned on in the window would be turned off by every update.
-function InstallStamp(Param: String): String;
-begin
-  if UpdatingFromApp and RegQueryStringValue(HKA, 'Software\Krupno', 'CheckForUpdatesSetAt', Result) and (Result <> '') then
-    Exit;
-  Result := GetDateTimeString('yyyy-mm-dd hh:nn:ss', '-', ':');
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);

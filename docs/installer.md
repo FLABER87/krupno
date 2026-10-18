@@ -9,8 +9,9 @@ By default the app is installed for the current user, to `%LOCALAPPDATA%\Program
 Optional tasks:
 - a desktop shortcut;
 - the install folder in PATH, so `krupno-cli` can be run from any console;
-- an "Upscale with Krupno" item in the Explorer context menu for images and folders, for a selection of up to 15 items (Explorer's limit for such items). Explorer starts Krupno.exe for each selected item; every one after the first hands its file to the window already open, so the whole selection lands in one queue;
-- checking for new versions at startup (ticked by default; see [Updates](../README.md#updates)). The choice goes to `HKCU\Software\Krupno` (`HKLM` for all users) as the app's default. Clearing it in a later installation turns the check off even if it was turned on in the window; an update installed from the window keeps the earlier choice.
+- an "Upscale with Krupno" item in the Explorer context menu for images and folders, for a selection of up to 15 items (Explorer's limit for such items). Explorer starts Krupno.exe for each selected item; every one after the first hands its file to the window already open, so the whole selection lands in one queue.
+
+The update check is not a task: it is on by default and turned off in the app's "Settings" (see [Updates](../README.md#updates)). The installer of Krupno 0.2.4 and earlier had a task for it, which wrote its choice to `HKCU\Software\Krupno` (`HKLM` for all users); later installers leave that value as it is, so a check turned off there stays off until it is turned on in "Settings".
 
 ## Models
 
