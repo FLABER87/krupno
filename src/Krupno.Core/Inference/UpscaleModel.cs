@@ -31,6 +31,14 @@ public sealed class UpscaleModel : IDisposable
     /// </summary>
     private static readonly ConcurrentDictionary<(string Path, long Length, DateTime WriteTime), Lazy<ModelInfo>> InfoCache = new();
 
+    /// <summary>
+    /// The operations DirectML can't run, by model file, GPU and window (0×0: a session whose input stays dynamic), see
+    /// <see cref="CreateGpuSession"/>. A session built again for the same window (the next image of that size, the next run, after
+    /// the sessions were released) goes straight to the one that runs them on the CPU, without the probe and without asking which.
+    /// </summary>
+    private static readonly ConcurrentDictionary<(string Path, long Length, DateTime WriteTime, int Adapter, int Width, int Height), string>
+        CpuNodesCache = new();
+
     /// <summary>The sessions by window, with when each was last used: above the capacity the least recently used one goes.</summary>
     private readonly Dictionary<(int Width, int Height), (InferenceSession Session, long LastUse)> _sessions = [];
     /// <summary>Guards the sessions and the tile limit; held only briefly, never while a session is built.</summary>
@@ -40,6 +48,7 @@ public sealed class UpscaleModel : IDisposable
     private readonly bool _allowCpuFallback;
     private (ExecutionDevice Device, int Tile)? _tileLimit;
     private bool _gpuSessionCreated;
+    private string? _cpuNodes;
     private int _sessionCapacity = DefaultSessionCapacity;
     private long _uses;
     private bool _disposed;
@@ -61,6 +70,14 @@ public sealed class UpscaleModel : IDisposable
 
     /// <summary>Why DirectML failed to start and we fell back to CPU.</summary>
     public string? FallbackReason { get; private set; }
+
+    /// <summary>
+    /// The operations of the model that run on the CPU while the rest runs on DirectML, by type ("Resize", "Resize ×2, GridSample"),
+    /// for one of its windows so far; null if DirectML runs the whole model, or the model doesn't run on DirectML. DirectML has no
+    /// kernel for them (a bicubic Resize, for one), and ONNX Runtime quietly gives them to its CPU provider: the data then goes
+    /// between the GPU and the CPU around them, and a run can be tens of times slower.
+    /// </summary>
+    public string? CpuNodes => Device.Kind == DeviceKind.Gpu ? _cpuNodes : null;
 
     /// <summary>
     /// Why the accelerator couldn't compile the model for the cache (see <see cref="CompiledModels"/>): it then builds its engine
@@ -347,8 +364,7 @@ public sealed class UpscaleModel : IDisposable
         {
             try
             {
-                using var gpuOptions = CreateOptions(gpu: true, shape);
-                var session = new InferenceSession(Info.Path, gpuOptions);
+                var session = CreateGpuSession(shape);
                 _gpuSessionCreated = true;
                 return session;
             }
@@ -399,6 +415,43 @@ public sealed class UpscaleModel : IDisposable
     }
 
     /// <summary>
+    /// A DirectML session. ONNX Runtime gives any operation DirectML can't run to its CPU provider without a word, so the session is
+    /// first created with that forbidden ("session.disable_cpu_ep_fallback"): if DirectML takes the whole model, as it does every
+    /// model Krupno ships, that is the session, at no extra cost. If it doesn't, a session that records where each node went says
+    /// which operations are left (<see cref="NodePlacement"/>), and the session is created again with them on the CPU: such a model
+    /// keeps working as before, only slower, and <see cref="CpuNodes"/> says why. Errors of DirectML itself (it doesn't start, out
+    /// of memory) come from the first attempt as they did.
+    /// </summary>
+    private InferenceSession CreateGpuSession((int Width, int Height)? shape)
+    {
+        var file = new FileInfo(Info.Path);
+        var (width, height) = shape ?? (0, 0);
+        var key = (file.FullName.ToUpperInvariant(), file.Length, file.LastWriteTimeUtc, Device.AdapterIndex, width, height);
+        if (!CpuNodesCache.TryGetValue(key, out string? cpuNodes))
+        {
+            using var wholeOptions = CreateOptions(gpu: true, shape, refuseCpuNodes: true);
+            try
+            {
+                return new InferenceSession(Info.Path, wholeOptions);
+            }
+            catch (OnnxRuntimeException ex) when (CompiledModels.CpuFallbackRefused(ex))
+            {
+                using var placementOptions = CreateOptions(gpu: true, shape);
+                // Which ones is only for the message: if ONNX Runtime can't tell, its error says what happened.
+                cpuNodes = NodePlacement.CpuOperators(Info.Path, placementOptions) is { Count: > 0 } operators
+                    ? NodePlacement.Describe(operators)
+                    : ex.Message;
+                CpuNodesCache[key] = cpuNodes;
+            }
+        }
+
+        using var options = CreateOptions(gpu: true, shape);
+        var session = new InferenceSession(Info.Path, options);
+        _cpuNodes = cpuNodes;
+        return session;
+    }
+
+    /// <summary>
     /// "DirectML doesn't work here" is a reason to move to the CPU; running out of video memory is not: the caller shrinks the tile.
     /// The two can't be told apart by the exception type, so once DirectML has created a session for this model, a later failure
     /// is never treated as "doesn't work", and on the first attempt an out-of-memory message is recognized by its text.
@@ -423,7 +476,9 @@ public sealed class UpscaleModel : IDisposable
         || message.Contains("could not be allocated", StringComparison.OrdinalIgnoreCase)
         || message.Contains("not enough memory", StringComparison.OrdinalIgnoreCase);
 
-    private SessionOptions CreateOptions(bool gpu, (int Width, int Height)? shape)
+    /// <param name="refuseCpuNodes">On DirectML: fail if any operation would go to the CPU, see <see cref="CreateGpuSession"/>.
+    /// An accelerator's sessions always do.</param>
+    private SessionOptions CreateOptions(bool gpu, (int Width, int Height)? shape, bool refuseCpuNodes = false)
     {
         var options = new SessionOptions
         {
@@ -448,6 +503,8 @@ public sealed class UpscaleModel : IDisposable
                 options.EnableMemoryPattern = false;
                 options.ExecutionMode = ExecutionMode.ORT_SEQUENTIAL;
                 options.AppendExecutionProvider_DML(Device.AdapterIndex);
+                if (refuseCpuNodes)
+                    options.AddSessionConfigEntry("session.disable_cpu_ep_fallback", "1");
             }
             else if (Device.Kind == DeviceKind.Accelerator)
             {

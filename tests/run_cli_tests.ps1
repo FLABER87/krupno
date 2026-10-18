@@ -43,6 +43,8 @@ foreach ($dev in "auto", "cpu") {
     Run "big_red_$tag"     @("$img\big_1500x1000.png", "-m", "$mod\nearest_red_x4.onnx", "-d", $dev, "-o", "$out\big_red_$tag.png")
     Run "big_fixed_$tag"   @("$img\big_1500x1000.png", "-m", "$mod\fixed64_x2.onnx", "-d", $dev, "-o", "$out\big_fixed_$tag.png")
     Run "noise_probe_$tag" @("$img\noise_300x200.png", "-m", "$mod\probe_x3.onnx", "-d", $dev, "-o", "$out\noise_probe_$tag.png")
+    # A bicubic Resize, which DirectML can't run: on the GPU that node runs on the CPU, and the output says so.
+    Run "noise_cubic_$tag" @("$img\noise_300x200.png", "-m", "$mod\cubic_x2.onnx", "-d", $dev, "-o", "$out\noise_cubic_$tag.png")
 }
 Run "big_red_notile"  @("$img\big_1500x1000.png", "-m", "$mod\nearest_red_x4.onnx", "-t", "0", "-o", "$out\big_red_notile.png")
 Run "alpha_red"       @("$img\alpha_257x129.png", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\alpha_red.png")

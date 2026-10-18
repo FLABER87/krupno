@@ -291,6 +291,9 @@
   <data name="NonCommercial_ToolTip" xml:space="preserve">
     <value>CC BY-NC-SA 授權：僅限非商業用途</value>
   </data>
+  <data name="Note_CpuNodes" xml:space="preserve">
+    <value>DirectML 無法執行模型的一部分，這部分改在 CPU 上執行，速度會慢很多</value>
+  </data>
   <data name="Note_DirectMLUnavailable" xml:space="preserve">
     <value>無法使用 DirectML，改用 CPU 執行</value>
   </data>

@@ -50,6 +50,35 @@ def resize_model(path, scale, dims, keep, meta=None, half=False):
     onnx.save(model, str(path))
 
 
+def cubic_model(path, scale, keep, meta):
+    """out = nearest_upscale(x, scale) * keep, as resize_model, plus a bicubic upscale of x times zero. DirectML has no bicubic
+    Resize, so ONNX Runtime runs that one node on the CPU and the rest on DirectML, while the result stays exactly known."""
+    import onnx
+    from onnx import TensorProto, helper, numpy_helper
+
+    x = helper.make_tensor_value_info("input", TensorProto.FLOAT, [1, 3, "height", "width"])
+    y = helper.make_tensor_value_info("output", TensorProto.FLOAT, [1, 3, None, None])
+    inits = [
+        numpy_helper.from_array(np.array([1, 1, scale, scale], np.float32), "scales"),
+        numpy_helper.from_array(np.array(keep, np.float32).reshape(1, 3, 1, 1), "keep"),
+        numpy_helper.from_array(np.zeros((1, 1, 1, 1), np.float32), "zero"),
+    ]
+    nodes = [
+        helper.make_node("Resize", ["input", "", "scales"], ["up"], mode="nearest",
+                         coordinate_transformation_mode="asymmetric", nearest_mode="floor"),
+        helper.make_node("Mul", ["up", "keep"], ["kept"]),
+        helper.make_node("Resize", ["input", "", "scales"], ["bicubic"], mode="cubic"),
+        helper.make_node("Mul", ["bicubic", "zero"], ["nothing"]),
+        helper.make_node("Add", ["kept", "nothing"], ["output"]),
+    ]
+    graph = helper.make_graph(nodes, "g", [x], [y], inits)
+    model = helper.make_model(graph, opset_imports=[helper.make_opsetid("", 17)])
+    model.ir_version = 9
+    helper.set_model_props(model, meta)
+    onnx.checker.check_model(model)
+    onnx.save(model, str(path))
+
+
 def swap_red_blue_model(path, meta):
     """out = x with red and blue swapped (a 1×1 convolution), at the same size. Unlike keeping channels, it doesn't commute with
     a model that keeps only some of them, so a result shows which of the two ran first."""
@@ -165,6 +194,8 @@ if args.models:
     # swapping red and blue shows that it ran before the upscaler (with nearest_red_x4).
     resize_model(m / "drop_red_x1.onnx", 1, [1, 3, "height", "width"], [0, 1, 1], {"krupno.scale": "1", "krupno.name": "Drop red x1"})
     swap_red_blue_model(m / "swap_rb_x1.onnx", {"krupno.scale": "1", "krupno.name": "Swap red and blue x1"})
+    # A node DirectML can't run (a bicubic Resize): on DirectML it runs on the CPU, and Krupno says so.
+    cubic_model(m / "cubic_x2.onnx", 2, [1, 0, 1], {"krupno.scale": "2", "krupno.name": "Cubic x2"})
 
 img = root / "images"
 img.mkdir(parents=True, exist_ok=True)

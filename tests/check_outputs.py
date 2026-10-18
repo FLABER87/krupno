@@ -92,6 +92,7 @@ for device in ("gpu", "cpu"):
     expect_nearest("big_1500x1000.png", f"big_red_{device}.png", 4, [1, 0, 0])
     expect_nearest("big_1500x1000.png", f"big_fixed_{device}.png", 2, [0, 1, 0])
     expect_nearest("noise_300x200.png", f"noise_probe_{device}.png", 3, [0, 0, 1])
+    expect_nearest("noise_300x200.png", f"noise_cubic_{device}.png", 2, [1, 0, 1])
 expect_nearest("big_1500x1000.png", "big_red_notile.png", 4, [1, 0, 0])
 expect_nearest("noise_300x200.png", "noise_legacy.png", 2, [1, 1, 1])
 expect_nearest("noise_300x200.png", "noise_half.png", 2, [1, 1, 0])
@@ -100,6 +101,17 @@ expect_model("big_fixed_cpu", "fixed64_x2 (×2)")
 expect_model("noise_probe_cpu", "probe_x3 (×3)")
 expect_model("noise_legacy", "Legacy x2 (×2, Test)")
 expect_model("noise_half", "half_x2 (×2), fp16")
+
+# An operation DirectML can't run (the bicubic Resize of cubic_x2.onnx): on DirectML the run says that it goes to the CPU, by
+# name, once; on the CPU, where DirectML doesn't start (-CheckFallback) and with a model DirectML runs whole, nothing is said.
+CPU_NODES = "operations run on the CPU"
+text = log("noise_cubic_gpu")
+on_directml = "Device: CPU" not in text and "DirectML is unavailable" not in text
+lines = [line.strip() for line in text.splitlines() if CPU_NODES in line]
+check("noise_cubic_gpu.log", (len(lines) == 1 and lines[0].endswith(": Resize")) if on_directml else not lines,
+      lines[0] if lines else f"nothing said{'' if on_directml else ' (not on DirectML)'}")
+for label in ("noise_cubic_cpu", "noise_red_gpu", "big_red_gpu"):
+    check(f"{label}.log", CPU_NODES not in log(label), "nothing said about operations on the CPU")
 
 # Alpha: RGB is exact, alpha is Lanczos (compared approximately with Pillow's Lanczos).
 # Under fully transparent pixels (columns 0 and 1 of the fixture) the color is filled from the nearest visible pixel

@@ -153,6 +153,7 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
     Console.WriteLine($"Device: {model.Device}");
 
     int failed = 0;
+    bool cpuNodesReported = false, denoiserCpuNodesReported = false;
     // The previous file's result while it is written in the background (see BatchSaving), and its "[i/n] " prefix.
     Task? pendingSave = null;
     string pendingPrefix = "";
@@ -227,9 +228,21 @@ static int Run(CliOptions options, CancellationToken cancellationToken)
         Console.WriteLine($"Done: {jobs.Count - failed} of {jobs.Count} in {stopwatch.Elapsed.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture)} s");
     return failed == 0 ? 0 : 1;
 
-    // After the first file: what became of the device, which is known once the sessions are made.
+    // After each file: what became of the device, which is known once the sessions are made. The fallbacks are said after the
+    // first file; the operations DirectML leaves to the CPU are found per window, so they may first show up with a later image
+    // of another size.
     void ReportDevice(int i)
     {
+        if (model.CpuNodes is { } cpuNodes && !cpuNodesReported)
+        {
+            cpuNodesReported = true;
+            Console.WriteLine($"  DirectML can't run all of the model, so these operations run on the CPU, which can be many times slower: {cpuNodes}");
+        }
+        if (denoiser?.CpuNodes is { } denoiserCpuNodes && !denoiserCpuNodesReported)
+        {
+            denoiserCpuNodesReported = true;
+            Console.WriteLine($"  DirectML can't run all of the noise removal model, so these operations run on the CPU, which can be many times slower: {denoiserCpuNodes}");
+        }
         if (i != 0)
             return;
         if (model.FallbackReason is { } reason)

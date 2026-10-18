@@ -291,6 +291,9 @@
   <data name="NonCommercial_ToolTip" xml:space="preserve">
     <value>Licenza CC BY-NC-SA: solo uso non commerciale</value>
   </data>
+  <data name="Note_CpuNodes" xml:space="preserve">
+    <value>DirectML non può eseguire parte del modello: quella parte gira sulla CPU, molto più lentamente</value>
+  </data>
   <data name="Note_DirectMLUnavailable" xml:space="preserve">
     <value>DirectML non è disponibile, esecuzione sulla CPU</value>
   </data>

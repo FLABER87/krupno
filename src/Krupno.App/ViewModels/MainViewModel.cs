@@ -148,8 +148,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private TaskbarItemProgressState _taskbarState;
     private FileItem? _lastDone;
     private string? _errorReport;
-    /// <summary>The fallback to the CPU and an accelerator that can't compile the model are logged once per run.</summary>
+    /// <summary>
+    /// The fallback to the CPU, operations DirectML leaves to the CPU and an accelerator that can't compile the model are logged
+    /// once per run.
+    /// </summary>
     private bool _fallbackReported;
+    private bool _cpuNodesReported;
+    private bool _denoiserCpuNodesReported;
     private bool _compileFailureReported;
     private bool _denoiserCompileFailureReported;
     /// <summary>When files last came from outside the window, see <see cref="OpenExternalAsync"/>.</summary>
@@ -1298,6 +1303,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         bool finished = false;
         ErrorReport = null;
         _fallbackReported = false;
+        _cpuNodesReported = false;
+        _denoiserCpuNodesReported = false;
         _compileFailureReported = false;
         _denoiserCompileFailureReported = false;
 
@@ -1541,9 +1548,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                     : $"\nNoise removal: {denoiserEntry.Name} · {denoiserEntry.Path}";
                 if (runDenoiser?.FallbackReason is { } denoiserReason && runModel?.FallbackReason is null)
                     modelLine += $" (DirectML is unavailable for it, on the CPU: {denoiserReason})";
+                if (runDenoiser?.CpuNodes is { } denoiserCpuNodes)
+                    modelLine += $" (on the CPU: {denoiserCpuNodes})";
             }
             string device = runModel?.Device.ToString() ?? deviceOption.Label;
-            string fallback = runModel?.FallbackReason is { } reason ? $"; DirectML is unavailable: {reason}" : "";
+            string fallback = runModel?.FallbackReason is { } reason ? $"; DirectML is unavailable: {reason}"
+                : runModel?.CpuNodes is { } cpuNodes ? $"; on the CPU: {cpuNodes}"
+                : "";
             string tile = $"{(settings.Tile == 0 ? "no tiling" : $"tile {settings.Tile} px")}, overlap {settings.Padding} px" +
                           (settings.Tta ? ", TTA" : "");
             string format = settings.Format == ImageFileFormat.Jpeg ? $"JPEG {settings.Quality}" : settings.Format.ToString().ToUpperInvariant();
@@ -1629,6 +1640,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (!_fallbackReported)
                 Log.Warning($"DirectML is unavailable, running on the CPU: {reason}");
             _fallbackReported = true;
+        }
+        // DirectML runs the model, but ONNX Runtime has quietly given some of its operations to the CPU: much slower too.
+        if ((model.CpuNodes ?? denoiser?.CpuNodes) is not null)
+            ProgressNote ??= Strings.Note_CpuNodes;
+        if (model.CpuNodes is { } cpuNodes && !_cpuNodesReported)
+        {
+            _cpuNodesReported = true;
+            Log.Warning($"DirectML can't run all of the model, so these operations run on the CPU, which can be many times slower: {cpuNodes}");
+        }
+        if (denoiser?.CpuNodes is { } denoiserCpuNodes && !_denoiserCpuNodesReported)
+        {
+            _denoiserCpuNodesReported = true;
+            Log.Warning("DirectML can't run all of the noise removal model, so these operations run on the CPU, which can be many times " +
+                        $"slower: {denoiserCpuNodes}");
         }
         if (model.CompileFailure is { } compileFailure && !_compileFailureReported)
         {
