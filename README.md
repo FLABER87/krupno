@@ -4,6 +4,13 @@
 
 **Krupno** is an AI image upscaler for Windows. It enlarges photos and other images ×2, ×4 or to any size with neural networks, in a window (`Krupno.exe`) or from the command line (`krupno-cli.exe`).
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/split-dark.jpg">
+  <img src="docs/images/split-light.jpg" alt="The Krupno window comparing a 300×200 photo of a fox with its ×4 result: pixelated on the left of the slider, detailed fur and whiskers on the right">
+</picture>
+
+*A 300×200 photo (AI-generated) upscaled ×4 with "Photo, maximum detail": the original on the left of the slider, the result on the right.*
+
 - Runs on any DirectX 12 GPU (NVIDIA, AMD or Intel, integrated ones included) and falls back to the CPU. On Windows 11 24H2 and later it can also use the GPU and NPU vendors' accelerators, such as NVIDIA TensorRT-RTX and Intel OpenVINO.
 - Large images are processed in tiles that fit in video memory, without visible seams.
 - Keeps transparency, EXIF rotation and color profiles. Reads PNG, JPEG, TIFF, BMP, GIF, WebP and HEIC; writes PNG, JPEG, TIFF and BMP.
@@ -27,6 +34,11 @@ Uninstalling keeps your settings, logs and own models in `%LOCALAPPDATA%\Krupno`
 ## Window
 
 Drop images or a folder into the window, click "Select files", paste with Ctrl+V or use "Upscale with Krupno" in Explorer. Then pick a model, a scale and a format, and click "Upscale".
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/side-dark.jpg">
+  <img src="docs/images/side-light.jpg" alt="The same photo side by side, zoomed in on the eye: the original's pixels on the left, the result's fur and whiskers on the right">
+</picture>
 
 - **Strength** (10–100%) blends the network's result with a plain resize, to tone down the textures a model invents and its oversharpening.
 - **Remove noise** runs a separate model on the image before upscaling, to clean camera noise and grain that the upscaler would keep or turn into invented texture. It is slower and smooths fine texture as well, so it is off by default. With "Other" set to a scale of 1, it only removes the noise. It needs the SCUNet model, which the installer offers.
