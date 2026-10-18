@@ -287,12 +287,12 @@ def frames(path):
     return result, durations, image.info.get("loop")
 
 
-for name, loop_expected in (("anim.gif", 0), ("anim.webp", 2)):
+for name, source, loop_expected in (("anim.gif", "anim.gif", 0), ("anim.webp", "anim.webp", 2), ("named.gif", "anim.gif", 0)):
     path = out / "anim" / name
     if not path.exists():
         check(f"anim/{name}", False, "file missing")
         continue
-    src, src_durations, _ = frames(fixtures / "animated" / name)
+    src, src_durations, _ = frames(fixtures / "animated" / source)
     got, got_durations, loop = frames(path)
     problems = [] if len(got) == len(src) else [f"{len(got)} frames instead of {len(src)}"]
     for i, (s, g) in enumerate(zip(src, got)):

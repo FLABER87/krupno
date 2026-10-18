@@ -204,7 +204,7 @@ public class UpscalerTests
             // The noise removal is the first of two passes, and only its reports say so.
             Assert.All(progress.Reports, p => Assert.Equal(2, p.PassCount));
             Assert.All(progress.Reports, p => Assert.Equal(p.Pass == 1, p.Denoising));
-            Assert.Contains(progress.Reports, p => p.Pass == 2 && p.Region is not null);
+            Assert.Contains(progress.Reports, p => p.Pass == 2 && p.Region is not null && p.Message is null);
             if (testTimeAugmentation)
                 Assert.Contains(progress.Reports, p => p.Denoising && p.Round == 8);
         }
@@ -223,6 +223,8 @@ public class UpscalerTests
         if (scale < 1)
             expected = Resampler.Resize(expected, 60, 40);
         Assert.Null(TestImages.Difference(expected, result));
+        // The window counts a report without a message and not marked as noise removal as the upscaler's: with none, what the
+        // upscaler said about its operations on the CPU in an earlier run isn't shown for this one.
         Assert.All(progress.Reports.Where(p => p.Message is null), p => Assert.True(p.Denoising && p.PassCount == 1));
     }
 

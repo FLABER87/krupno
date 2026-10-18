@@ -114,11 +114,12 @@ Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\multi\a.png"
 Copy-Item -LiteralPath "$img\noise_300x200.png" "$out\multi\b.png"
 Copy-Item -LiteralPath "$img\orient6.jpg" "$out\multi\c.jpg"
 Run "multi_pattern"   @("$out\multi\*.png", "$img\orient6.jpg", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\multi_out")
-# Animations: frame by frame into the same format, with the durations and the loop count; -o with a still image's
-# extension is refused for one.
+# Animations: frame by frame into the same format, with the durations and the loop count; -o takes a name with the
+# animation's own extension and refuses a still image's.
 New-Item -ItemType Directory -Force "$out\anim" | Out-Null
 Run "anim_gif"        @("$fx\animated\anim.gif", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\anim\")
 Run "anim_webp"       @("$fx\animated\anim.webp", "-m", "$mod\nearest_red_x4.onnx", "-q", "100", "-o", "$out\anim\")
+Run "anim_gif_name"   @("$fx\animated\anim.gif", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\anim\named.gif")
 Run "anim_png_name"   @("$fx\animated\anim.gif", "-m", "$mod\nearest_red_x4.onnx", "-o", "$out\anim\anim.png") -Expect 1
 # --name-model puts the model (and the strength) into the name; --no-overwrite keeps an earlier result and numbers the new one.
 New-Item -ItemType Directory -Force "$out\names" | Out-Null

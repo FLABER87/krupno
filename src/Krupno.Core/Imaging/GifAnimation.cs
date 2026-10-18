@@ -73,13 +73,7 @@ internal static class GifAnimation
                 // The canvas comes from the header: a broken or hostile one must not allocate gigabytes or overflow.
                 if (!ImageBuffer.CanAllocate(_width, _height))
                     throw new NotSupportedException(string.Format(Strings.Error_ImageTooLarge, _width, _height));
-                // NETSCAPE2.0: the data block is [3, 1, loop count low, high].
-                if (Query<byte[]>(container, "/appext/Application") is { } application
-                    && System.Text.Encoding.ASCII.GetString(application) is "NETSCAPE2.0" or "ANIMEXTS1.0"
-                    && Query<byte[]>(container, "/appext/Data") is { Length: >= 4 } data && data[0] >= 3 && data[1] == 1)
-                {
-                    _loopCount = data[2] | data[3] << 8;
-                }
+                _loopCount = ReadLoopCount(container);
             }
             catch (Exception ex) when (ex is FileFormatException or ArgumentException or System.Runtime.InteropServices.COMException
                                            or OverflowException)
@@ -92,6 +86,23 @@ internal static class GifAnimation
                 _stream.Dispose();
                 throw;
             }
+        }
+
+        /// <summary>
+        /// The loop count of the NETSCAPE2.0 application extension, whose data block is [3, 1, loop count low, high]. It needn't
+        /// be the first application extension: an XMP packet or another program's block may come before it.
+        /// </summary>
+        private static int? ReadLoopCount(BitmapMetadata? container)
+        {
+            for (int i = 0; i < 64 && Query<byte[]>(container, $"/[{i}]appext/Application") is { } application; i++)
+            {
+                if (System.Text.Encoding.ASCII.GetString(application) is "NETSCAPE2.0" or "ANIMEXTS1.0"
+                    && Query<byte[]>(container, $"/[{i}]appext/Data") is { Length: >= 4 } data && data[0] >= 3 && data[1] == 1)
+                {
+                    return data[2] | data[3] << 8;
+                }
+            }
+            return null;
         }
 
         public override AnimationFormat Format => AnimationFormat.Gif;
@@ -202,7 +213,7 @@ internal static class GifAnimation
 /// <summary>
 /// Writes an animated GIF. Each frame gets a palette of its own (see <see cref="ColorQuantizer"/>), and only the area that
 /// changed since the previous frame is stored. Pixels with alpha below 128 are transparent. A frame identical to the one
-/// before it only makes that one last longer.
+/// before it only makes that one last longer, where that shows the two for as long (see <see cref="CanLengthen"/>).
 /// </summary>
 internal sealed class GifAnimationWriter : AnimationWriter
 {
@@ -245,7 +256,7 @@ internal sealed class GifAnimationWriter : AnimationWriter
     {
         if (frame.Width != _width || frame.Height != _height)
             throw new ArgumentException("Every frame must be the size of the animation.", nameof(frame));
-        if (_pending is not null && _pending.Pixels.AsSpan().SequenceEqual(frame.Pixels))
+        if (_pending is not null && CanLengthen(_pendingDuration, duration) && _pending.Pixels.AsSpan().SequenceEqual(frame.Pixels))
         {
             _pendingDuration += duration;
             return;
@@ -265,6 +276,18 @@ internal sealed class GifAnimationWriter : AnimationWriter
         _file.Flush();
     }
 
+    /// <summary>The delay a frame of this many milliseconds gets: hundredths of a second, as many as 16 bits hold.</summary>
+    private static int Delay(int duration) => Math.Clamp((int)Math.Round(duration / 10.0), 0, ushort.MaxValue);
+
+    /// <summary>
+    /// Whether a repeated frame can only lengthen the one before it without changing how long the two are shown. Browsers show
+    /// a delay of 0 or 1 hundredth as 100 ms, so two such frames last 200 ms, and one of their sum (20 ms, or 0) much less.
+    /// The sum's delay must also be the sum of their delays: rounded the same (25 ms is stored as 20, 50 ms as 50) and within
+    /// the 16 bits of a delay.
+    /// </summary>
+    private static bool CanLengthen(int duration, int next) =>
+        Delay(duration) > 1 && Delay(next) > 1 && Delay(duration + next) == Delay(duration) + Delay(next);
+
     private static bool IsTransparent(ImageBuffer frame)
     {
         var pixels = frame.Pixels;
@@ -281,15 +304,22 @@ internal sealed class GifAnimationWriter : AnimationWriter
     private void WriteFrame(ImageBuffer frame, int duration, bool nextTransparent)
     {
         bool transparent = IsTransparent(frame);
-        var (left, top, width, height) = _previous is null || transparent || nextTransparent || _previousDisposal == 2
-            ? (0, 0, _width, _height)
-            : ChangedArea(_previous, frame);
         int disposal = nextTransparent ? 2 : 1;
+        // A frame that only waits (the one before it again, too short to lengthen it, still on the canvas) is transparent: the
+        // canvas stays as that one left it, in its quantized colors, which the frame quantized again could differ from. A pixel
+        // will do, or before a transparent frame the whole canvas, which its disposal then clears.
+        bool waits = _previous is not null && _previousDisposal == 1 && _previous.Pixels.AsSpan().SequenceEqual(frame.Pixels);
+        var (left, top, width, height) = waits ? (0, 0, nextTransparent ? _width : 1, nextTransparent ? _height : 1)
+            : _previous is null || transparent || nextTransparent || _previousDisposal == 2 ? (0, 0, _width, _height)
+            : ChangedArea(_previous, frame);
 
         var region = new byte[width * height * 4];
-        for (int y = 0; y < height; y++)
-            Buffer.BlockCopy(frame.Pixels, ((top + y) * _width + left) * 4, region, y * width * 4, width * 4);
-        var (palette, indices, transparentIndex) = ColorQuantizer.Quantize(region, width, height, transparent);
+        if (!waits)
+        {
+            for (int y = 0; y < height; y++)
+                Buffer.BlockCopy(frame.Pixels, ((top + y) * _width + left) * 4, region, y * width * 4, width * 4);
+        }
+        var (palette, indices, transparentIndex) = ColorQuantizer.Quantize(region, width, height, transparent || waits);
 
         int colors = palette.Length / 3 + (transparentIndex >= 0 ? 1 : 0);
         int bits = 1;
@@ -297,7 +327,7 @@ internal sealed class GifAnimationWriter : AnimationWriter
             bits++;
 
         // Graphic control extension: disposal, transparency, delay in hundredths of a second.
-        int delay = Math.Clamp((int)Math.Round(duration / 10.0), 0, ushort.MaxValue);
+        int delay = Delay(duration);
         _file.Write([0x21, 0xF9, 4, (byte)(disposal << 2 | (transparentIndex >= 0 ? 1 : 0)), (byte)delay, (byte)(delay >> 8),
             (byte)Math.Max(0, transparentIndex), 0]);
         // Image descriptor with a local color table of 2^bits entries.
@@ -321,7 +351,7 @@ internal sealed class GifAnimationWriter : AnimationWriter
         _previousDisposal = disposal;
     }
 
-    /// <summary>The smallest rectangle around the pixels that differ (at least one pixel, for a frame that only waits).</summary>
+    /// <summary>The smallest rectangle around the pixels that differ (at least one pixel).</summary>
     private (int Left, int Top, int Width, int Height) ChangedArea(ImageBuffer before, ImageBuffer after)
     {
         var a = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, uint>(before.Pixels.AsSpan());

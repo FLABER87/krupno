@@ -157,6 +157,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool _denoiserCpuNodesReported;
     private bool _compileFailureReported;
     private bool _denoiserCompileFailureReported;
+    /// <summary>
+    /// The upscaler has run in this run. Until then what it says about its operations on the CPU may be left from an earlier
+    /// run: with "Remove noise" and no enlargement only the denoiser runs.
+    /// </summary>
+    private bool _upscalerRan;
     /// <summary>When files last came from outside the window, see <see cref="OpenExternalAsync"/>.</summary>
     private DateTime _lastExternalOpen = DateTime.MinValue;
 
@@ -1307,6 +1312,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _denoiserCpuNodesReported = false;
         _compileFailureReported = false;
         _denoiserCompileFailureReported = false;
+        _upscalerRan = false;
 
         try
         {
@@ -1553,7 +1559,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             }
             string device = runModel?.Device.ToString() ?? deviceOption.Label;
             string fallback = runModel?.FallbackReason is { } reason ? $"; DirectML is unavailable: {reason}"
-                : runModel?.CpuNodes is { } cpuNodes ? $"; on the CPU: {cpuNodes}"
+                : _upscalerRan && runModel?.CpuNodes is { } cpuNodes ? $"; on the CPU: {cpuNodes}"
                 : "";
             string tile = $"{(settings.Tile == 0 ? "no tiling" : $"tile {settings.Tile} px")}, overlap {settings.Padding} px" +
                           (settings.Tta ? ", TTA" : "");
@@ -1642,9 +1648,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _fallbackReported = true;
         }
         // DirectML runs the model, but ONNX Runtime has quietly given some of its operations to the CPU: much slower too.
-        if ((model.CpuNodes ?? denoiser?.CpuNodes) is not null)
+        // The upscaler's pass reports its tiles without a message, the denoiser's are marked: only then is the upscaler's answer this run's.
+        _upscalerRan |= !p.Denoising && p.Message is null;
+        string? modelCpuNodes = _upscalerRan ? model.CpuNodes : null;
+        if ((modelCpuNodes ?? denoiser?.CpuNodes) is not null)
             ProgressNote ??= Strings.Note_CpuNodes;
-        if (model.CpuNodes is { } cpuNodes && !_cpuNodesReported)
+        if (modelCpuNodes is { } cpuNodes && !_cpuNodesReported)
         {
             _cpuNodesReported = true;
             Log.Warning($"DirectML can't run all of the model, so these operations run on the CPU, which can be many times slower: {cpuNodes}");
