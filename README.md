@@ -18,8 +18,7 @@ Get the latest version from [Releases](https://github.com/FLABER87/krupno/releas
 - **Installer** (`Krupno-<version>-setup-x64.exe`, recommended). By default it installs Krupno for the current user, to `%LOCALAPPDATA%\Programs\Krupno`, without administrator rights; "for all users" installs it to Program Files. .NET comes with it, so nothing else needs to be installed. During setup you pick the [models](#models) to download, and optionally:
   - a desktop shortcut;
   - the install folder in PATH, so `krupno-cli` runs from any console;
-  - "Upscale with Krupno" in the Explorer context menu of images and folders;
-  - the check for new versions at startup (ticked by default, see [Updates](#updates)).
+  - "Upscale with Krupno" in the Explorer context menu of images and folders.
 - **Portable ZIP** (`Krupno-<version>-win-x64.zip`): unpack it and run `Krupno.exe`. It comes without models: download them from the [models-v4](https://github.com/FLABER87/krupno/releases/tag/models-v4) release into its `models` folder or into `%LOCALAPPDATA%\Krupno\models`.
 
 The files are not code-signed yet, so Windows SmartScreen may warn on the first launch ("More info" → "Run anyway"). Each release has a `SHA256SUMS.txt` to check the downloads against.
@@ -98,7 +97,7 @@ At startup the window asks github.com which release of Krupno is the latest: one
 - in an installed copy, "Update" downloads the new installer, checks it against the release's `SHA256SUMS.txt` and installs it in the same mode (for you or for all users), keeping your models and choices;
 - the portable ZIP links to the release page instead.
 
-Nothing is downloaded until you click "Update". To turn the check off, clear "Check for new versions" during installation or "Check for updates" in "Settings".
+Nothing is downloaded until you click "Update". To turn the check off, clear "Check for updates" in "Settings".
 
 ## Building
 

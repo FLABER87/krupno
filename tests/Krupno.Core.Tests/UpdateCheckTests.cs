@@ -76,7 +76,7 @@ public class UpdateCheckTests
             return check;
         }
 
-        // No installer (the portable ZIP): on, unless the user turned it off.
+        // No choice of the installer of 0.2.4 or earlier (a later installer, the portable ZIP): on, unless the user turned it off.
         Assert.True(Decide(null, null, null, out _, out _));
         Assert.False(Decide(false, null, null, out _, out _));
         // The installer's choice, until the user makes one.

@@ -190,8 +190,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _selectedTile = TileSizes.FirstOrDefault(t => t.Value == _settings.TileSize) ?? TileSizes[0];
         _seamlessTiles = _settings.SeamlessTiles == true;
         _testTimeAugmentation = _settings.TestTimeAugmentation == true;
-        // The user's own choice in the window, else the installer's, else on (the portable ZIP); a newer installation that
-        // turned the check off wins over the user's choice.
+        // The user's own choice in the window, else the choice of the installer of Krupno 0.2.4 or earlier, else on; such an
+        // installation that turned the check off after the user's choice wins over it.
         _installerUpdateChoice = UpdateCheck.InstallerChoice();
         bool? updateChoice = _settings.CheckForUpdates;
         string? updateChoiceSetAt = _settings.CheckForUpdatesSetAt;
@@ -631,7 +631,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (!SetProperty(ref _checkForUpdates, value))
                 return;
             OnPropertyChanged(nameof(SettingsSummary));
-            // Kept as the user's own choice from now on: it overrides the installer's, until an installation turns it off.
+            // Kept as the user's own choice from now on: it overrides the old installer's.
             _settings.CheckForUpdates = value;
             _settings.CheckForUpdatesSetAt = _installerUpdateChoice?.SetAt;
             SaveSettings();
