@@ -1,5 +1,5 @@
 {
-    "version": "0.2.4",
+    "version": "0.2.5",
     "description": "AI image upscaler: enlarges photos and other images ×2, ×4 or to any size with neural networks, in a window or from the command line.",
     "homepage": "https://github.com/FLABER87/krupno",
     "license": "MIT",
@@ -11,11 +11,11 @@
     "architecture": {
         "64bit": {
             "url": [
-                "https://github.com/FLABER87/krupno/releases/download/v0.2.4/Krupno-0.2.4-win-x64.zip",
+                "https://github.com/FLABER87/krupno/releases/download/v0.2.5/Krupno-0.2.5-win-x64.zip",
                 "https://github.com/FLABER87/krupno/releases/download/models-v4/4xBHI_realplksr_dysample_real.onnx"
             ],
             "hash": [
-                "b78e9ad2544f9560e468974e4532d187c0f04a71cdf6c974239cca7a5bed14c4",
+                "03d2aa3bfb6f65249ad19236827496c88a797fdb85875b28bd363d9d32df6f08",
                 "4c5a800d7c8afbbb533724185a0f9784ca79e8813d6d6cd190ff5092c297a697"
             ],
             "extract_dir": "Krupno"
