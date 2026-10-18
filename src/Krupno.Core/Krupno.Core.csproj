@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.AI.MachineLearning" />
+    <PackageReference Include="Imazen.WebP.NativeRuntime.win-x64" />
   </ItemGroup>
 
   <ItemGroup>

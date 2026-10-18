@@ -7,6 +7,9 @@
          Windows 11 24H2+ the catalog of the GPU and NPU vendors' execution providers. Microsoft.ML.OnnxRuntime.DirectML
          stopped at 1.24.4. -->
     <PackageVersion Include="Microsoft.Windows.AI.MachineLearning" Version="2.4.89" />
+    <!-- libwebp (BSD-3-Clause) for animated WebP, and still WebP where Windows has no codec for it: the native libraries
+         only (libwebp, libwebpdemux, libwebpmux, libsharpyuv), called through Imaging/WebPNative.cs. -->
+    <PackageVersion Include="Imazen.WebP.NativeRuntime.win-x64" Version="1.6.1" />
   </ItemGroup>
   <ItemGroup>
     <!-- Unit tests only (tests/Krupno.Core.Tests). -->

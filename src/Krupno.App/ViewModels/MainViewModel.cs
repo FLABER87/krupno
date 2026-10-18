@@ -1259,11 +1259,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             Format: SelectedFormat.Value, Quality: JpegQuality, Folder: OutputFolder);
         string tag = NameTag(settings.Scale, settings.Target, modelItem.Name, settings.Denoiser is not null, settings.Strength, settings.Tta);
         var existing = SelectedExisting.Value;
-        // All names up front: a result must not overwrite a queued source ("photo.png" → "photo_x4.png" while
-        // "photo_x4.png" waits in the queue) or another result ("photo.jpg" and "photo.png" → "photo_x4.png").
         var sources = files.Select(f => f.Path).ToList();
-        var outputs = OutputPaths.MakeUnique(sources,
-            files.Select(f => BuildOutputPath(f.Path, settings.Folder, settings.Scale, settings.Target, settings.Format, tag)).ToList());
+        string[] outputs = [];
+        AnimationFormat?[] animations = [];
         foreach (var file in files)
         {
             file.State = FileState.Pending;
@@ -1318,6 +1316,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                         string.Format(Strings.Error_OutputFolder, ex.Message), ex);
                 }
             }
+
+            // An animated GIF or WebP stays an animation in its own format, so the names wait for a look at the files.
+            animations = await Task.Run(() => sources.Select(Animation.Detect).ToArray());
+            // All names up front: a result must not overwrite a queued source ("photo.png" → "photo_x4.png" while
+            // "photo_x4.png" waits in the queue) or another result ("photo.jpg" and "photo.png" → "photo_x4.png").
+            outputs = OutputPaths.MakeUnique(sources, files.Select((f, i) =>
+                BuildOutputPath(f.Path, settings.Folder, settings.Scale, settings.Target, settings.Format, tag, animations[i])).ToList());
 
             // A result from an earlier run: it gets a number, or its image is left out, as chosen in "Settings".
             var skip = new bool[files.Count];
@@ -1389,10 +1394,30 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
                     // The format's size limit, before minutes of work rather than after.
                     var (outputWidth, outputHeight) = upscaler!.OutputSize(loaded.Image.Width, loaded.Image.Height, options);
-                    ImageCodec.EnsureCanSave(settings.Format, outputWidth, outputHeight);
+                    if (animations[index] is { } animationFormat)
+                        Animation.EnsureCanSave(animationFormat, outputWidth, outputHeight);
+                    else
+                        ImageCodec.EnsureCanSave(settings.Format, outputWidth, outputHeight);
 
                     var tiles = new TileProgress();
                     work ??= Stopwatch.StartNew();
+                    if (animations[index] is not null)
+                    {
+                        // One save at a time (see BatchSaving): the previous file is finished before the animation writes its own,
+                        // frame by frame. The preview stays on the first frame, and shows its result at the end.
+                        if (pendingSave is not null)
+                            await pendingSave;
+                        pendingSave = null;
+                        string animationOutput = outputs[index];
+                        var frameProgress = new Progress<FrameProgress>(p =>
+                            OnProgress(p.Upscale, file, index, files.Count, model!, denoiser, tiles, work, (p.Frame, p.FrameCount)));
+                        var animation = await Task.Run(() => AnimationUpscaler.Upscale(upscaler, file.Path, animationOutput, options,
+                            // The quality of an animated WebP follows its source (the JPEG slider is for JPEG only).
+                            new AnimationSaveOptions(), frameProgress, cancellationToken), cancellationToken);
+                        Log.Info($"Animation: {animation.Frames} frames, {animation.Upscaled} of them upscaled, the others repeat the one before");
+                        await OnSavedAsync(file, animationOutput, animation.FirstResult, loaded);
+                        continue;
+                    }
                     var progress = new Progress<UpscaleProgress>(p =>
                         OnProgress(p, file, index, files.Count, model!, denoiser, tiles, work));
                     var result = await upscaler.UpscaleAsync(loaded.Image, options, progress, cancellationToken);
@@ -1591,8 +1616,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <param name="frame">For an animation: the frame being upscaled and how many there are.</param>
     private void OnProgress(UpscaleProgress p, FileItem file, int index, int count, UpscaleModel model, UpscaleModel? denoiser,
-        TileProgress tiles, Stopwatch work)
+        TileProgress tiles, Stopwatch work, (int Number, int Count)? frame = null)
     {
         // The session is created lazily, and DirectML may have just fallen back to the CPU: say so, the run is much slower then.
         // The denoiser has sessions of its own, so it may fall back by itself.
@@ -1618,6 +1644,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         if (p.Message is { } message)
         {
+            // The stages of an animation's later frames are the first one's again.
+            if (frame is { Number: > 1 } && !p.IsWarning)
+                return;
             // A warning stays visible for the rest of the run; a stage ("Resizing to …") only replaces the detail line.
             if (p.IsWarning)
             {
@@ -1642,7 +1671,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 Tiles = TileOverlay.Empty;
         }
 
-        double fraction = Math.Clamp((index + p.Fraction) / count, 0, 1);
+        double fileFraction = frame is { } f ? (f.Number - 1 + p.Fraction) / Math.Max(1, f.Count) : p.Fraction;
+        double fraction = Math.Clamp((index + fileFraction) / count, 0, 1);
         IsProgressIndeterminate = false;
         TaskbarState = TaskbarItemProgressState.Normal;
         ProgressValue = fraction;
@@ -1654,6 +1684,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             : "";
 
         string tileText = p.TileCount > 0 ? string.Format(Strings.Progress_Tile, p.Tile, p.TileCount) : "";
+        if (frame is { } current)
+            tileText = string.Format(Strings.Progress_Frame, current.Number, current.Count) + (tileText.Length > 0 ? " · " + tileText : "");
         if (p.RoundCount > 1)
             tileText += " · " + string.Format(Strings.Progress_Orientation, p.Round, p.RoundCount);
         string pass = p.Denoising ? " · " + Strings.Progress_Denoising
@@ -2434,12 +2466,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     /// The name says what was asked for: "photo_x4.png", "photo_x2.5.png", "photo_3840w.png" (see ScaleTarget.Suffix), and with
     /// "Add the model to the name" how: "photo_x4_4xBHI_dat2_real.png" (<paramref name="tag"/>, see <see cref="NameTag"/>).
     /// </summary>
+    /// <param name="animation">An animation keeps its own format, whatever <paramref name="format"/> the still images get.</param>
     private static string BuildOutputPath(string input, string? folder, double scale, ScaleTarget? target, ImageFileFormat format,
-        string tag)
+        string tag, AnimationFormat? animation = null)
     {
         string directory = folder ?? Path.GetDirectoryName(input) ?? "";
         string suffix = target?.Suffix ?? "_x" + scale.ToString("0.##", CultureInfo.InvariantCulture);
-        return Path.Combine(directory, Path.GetFileNameWithoutExtension(input) + suffix + tag + ImageCodec.GetExtension(format));
+        string extension = animation is { } a ? Animation.GetExtension(a) : ImageCodec.GetExtension(format);
+        return Path.Combine(directory, Path.GetFileNameWithoutExtension(input) + suffix + tag + extension);
     }
 
     /// <summary>

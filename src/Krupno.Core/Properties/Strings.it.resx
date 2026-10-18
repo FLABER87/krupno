@@ -18,6 +18,9 @@
   <data name="Error_AcceleratorUnsupported" xml:space="preserve">
     <value>{0} non può eseguire questo modello per intero: non tutte le sue operazioni sono supportate. Scegli la GPU tramite DirectML o la CPU.</value>
   </data>
+  <data name="Error_AnimationSizeLimit" xml:space="preserve">
+    <value>{0} non può contenere un'animazione con un lato superiore a {1} px, e il risultato è {2}×{3}. Scegli una scala più piccola.</value>
+  </data>
   <data name="Error_CannotOpen" xml:space="preserve">
     <value>Impossibile aprire «{0}»: il file è danneggiato o non è un'immagine.</value>
   </data>
@@ -35,6 +38,9 @@
   </data>
   <data name="Error_ResultTooLarge" xml:space="preserve">
     <value>Il risultato {0}×{1} è troppo grande per essere elaborato in memoria.</value>
+  </data>
+  <data name="Error_WebPWrite" xml:space="preserve">
+    <value>Impossibile scrivere l'animazione WebP: {0}.</value>
   </data>
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>I metadati del modello sono contraddittori: la finestra deve essere al massimo {0} px ma almeno {1} px.</value>

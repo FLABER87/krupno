@@ -14,6 +14,7 @@
 - Runs on any DirectX 12 GPU (NVIDIA, AMD or Intel, integrated ones included) and falls back to the CPU. On Windows 11 24H2 and later it can also use the GPU and NPU vendors' accelerators, such as NVIDIA TensorRT-RTX and Intel OpenVINO.
 - Large images are processed in tiles that fit in video memory, without visible seams.
 - Keeps transparency, EXIF rotation and color profiles. Reads PNG, JPEG, TIFF, BMP, GIF, WebP and HEIC; writes PNG, JPEG, TIFF and BMP.
+- Upscales animated GIF and WebP frame by frame into an animation of the same format, with the same timing.
 - Works offline: apart from an update check you can turn off, it sends nothing over the network.
 - The window speaks 16 languages.
 - Needs Windows 10 1903 or later, x64.
@@ -71,6 +72,7 @@ krupno-cli photo.jpg -m 4xBHI_dat2_real_fp16 --name-model   # → photo_x4_4xBHI
 krupno-cli photo.jpg --long-side 3840              # 3840 px on the longer side
 krupno-cli photo.jpg --denoise                     # remove noise first, then ×4
 krupno-cli photo.jpg --denoise -s 1                # only remove noise
+krupno-cli cat.gif -s 2                            # → cat_x2.gif, every frame ×2
 krupno-cli --list-models --list-devices
 ```
 

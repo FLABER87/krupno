@@ -1,11 +1,11 @@
 ﻿# Screenshots of the Krupno.exe window in its main states: empty, ready to start, processing, result, batch, error,
-# light theme, the settings window, "Remove noise", results that are already there. Checks that the states are reached; the screenshots (tests/out/gui) are
+# light theme, the settings window, "Remove noise", results that are already there, an animated GIF. Checks that the states are reached; the screenshots (tests/out/gui) are
 # reviewed by a human.
 # The color scenario also checks pixels: a Display P3 image must be shown converted to sRGB, as Windows decodes it.
 # Requires a Release build, real models in models/ and the fixture images (python tests\make_fixtures.py).
-#   powershell -File tests\gui_states.ps1 [-Scenario single,batch,error,light,color,settings,denoise,existing][-Image <file>] [-Batch <folder>]
+#   powershell -File tests\gui_states.ps1 [-Scenario single,batch,error,light,color,settings,denoise,existing,animation] [-Image <file>] [-Batch <folder>]
 param(
-    [string[]]$Scenario = @("single", "batch", "error", "light", "color", "settings", "denoise", "existing"),
+    [string[]]$Scenario = @("single", "batch", "error", "light", "color", "settings", "denoise", "existing", "animation"),
     [string]$Exe = "$PSScriptRoot\..\src\Krupno.App\bin\Release\net10.0-windows10.0.19041.0\win-x64\Krupno.exe",
     [string]$Image = "$PSScriptRoot\fixtures\images\big_1500x1000.png",
     [string]$Batch = "$PSScriptRoot\fixtures\images",
@@ -30,12 +30,13 @@ Assert-Model $SlowModel
 # The inputs are copied to the output folder: by default the window saves the result next to the original.
 $data = "$Out\data"
 if (Test-Path -LiteralPath $data) { Remove-Item -LiteralPath $data -Recurse -Force }
-New-Item -ItemType Directory -Force "$data\single", "$data\batch", "$data\broken", "$data\color", "$data\existing" | Out-Null
+New-Item -ItemType Directory -Force "$data\single", "$data\batch", "$data\broken", "$data\color", "$data\existing", "$data\animated" | Out-Null
 Copy-Item -LiteralPath "$PSScriptRoot\fixtures\images\noise_300x200.png", "$PSScriptRoot\fixtures\images\icc_60x40.png" "$data\existing\"
 Copy-Item -LiteralPath $Image "$data\single\"
 Get-ChildItem -LiteralPath $Batch -File | Where-Object { $_.Extension -match '^\.(png|jpe?g|bmp|tiff?)$' } | Copy-Item -Destination "$data\batch\"
 Copy-Item -LiteralPath "$PSScriptRoot\fixtures\broken\broken.png" "$data\broken\"
 Copy-Item -Path "$PSScriptRoot\fixtures\color\*.png" "$data\color\"
+Copy-Item -Path "$PSScriptRoot\fixtures\animated\*" "$data\animated\"
 $single = Join-Path "$data\single" (Split-Path $Image -Leaf)
 
 # The middle pixel of an image file as Windows' own color-managed decoding gives it (WIC converts the ICC profile to sRGB),
@@ -103,6 +104,24 @@ try {
                         Invoke-Named $w "^Side by side$"; Shot $h "05-side"
                         Invoke-Named $w "^Actual size$"; Shot $h "06-side-1to1"
                     } finally { Close $p }
+                }
+                "animation" {
+                    # An animated GIF stays one, whatever format is chosen for still images: the result is a .gif with every frame.
+                    Settings $Model ', "Format": "Jpeg"'
+                    $p = Launch @("$data\animated\anim.gif")
+                    try {
+                        $w = $AE::FromHandle($p.MainWindowHandle); $h = $p.MainWindowHandle
+                        Invoke-Named $w "^Upscale "
+                        WaitFor $w "^Done" | Out-Null; Shot $h "21-animation-done"
+                    } finally { Close $p }
+                    $result = "$data\animated\anim_x4.gif"
+                    if (-not (Test-Path -LiteralPath $result)) { throw "$result is missing" }
+                    Add-Type -AssemblyName PresentationCore
+                    $stream = [IO.File]::OpenRead($result)
+                    try {
+                        $decoder = New-Object System.Windows.Media.Imaging.GifBitmapDecoder $stream, "PreservePixelFormat", "OnLoad"
+                        if ($decoder.Frames.Count -ne 4) { throw "the result has $($decoder.Frames.Count) frames instead of 4" }
+                    } finally { $stream.Dispose() }
                 }
                 "existing" {
                     # With the model in the name, a second run keeps the first result and numbers its own; with "Skip" a third

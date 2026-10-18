@@ -18,6 +18,9 @@
   <data name="Error_AcceleratorUnsupported" xml:space="preserve">
     <value>{0} bu modelin tamamını çalıştıramıyor: işlemlerinin hepsini desteklemiyor. DirectML üzerinden GPU'yu veya CPU'yu seçin.</value>
   </data>
+  <data name="Error_AnimationSizeLimit" xml:space="preserve">
+    <value>{0} biçimi, bir kenarı {1} px'den büyük animasyonları desteklemez; sonuç ise {2}×{3}. Daha küçük bir ölçek seçin.</value>
+  </data>
   <data name="Error_CannotOpen" xml:space="preserve">
     <value>Dosya açılamıyor: "{0}". Dosya bozuk veya bir görüntü değil.</value>
   </data>
@@ -35,6 +38,9 @@
   </data>
   <data name="Error_ResultTooLarge" xml:space="preserve">
     <value>Sonuç ({0}×{1}) bellekte işlenemeyecek kadar büyük.</value>
+  </data>
+  <data name="Error_WebPWrite" xml:space="preserve">
+    <value>WebP animasyonu yazılamadı: {0}.</value>
   </data>
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>Model meta verileri çelişkili: pencere en fazla {0} px, ancak en az {1} px olmalı.</value>

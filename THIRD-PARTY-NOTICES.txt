@@ -26,6 +26,13 @@ Microsoft.Windows.AI.MachineLearning.Projection.dll, onnxruntime.dll, Microsoft.
   are not shipped with Krupno: Windows downloads them, when asked to, under their vendors' terms
   (https://learn.microsoft.com/windows/ai/new-windows-ml/supported-execution-providers).
 
+libwebp (libwebp.dll, libwebpdemux.dll, libwebpmux.dll, libsharpyuv.dll), for animated and other WebP images
+  Copyright (c) 2010, Google Inc. BSD 3-Clause License, with Google's additional patent grant.
+  https://chromium.googlesource.com/webm/libwebp
+  licenses\libwebp-COPYING.txt, licenses\libwebp-PATENTS.txt
+  The libraries are built by Imazen LLC: https://www.nuget.org/packages/Imazen.WebP.NativeRuntime.win-x64
+  (the package: MIT License, https://github.com/imazen/libwebp-net).
+
 C#/WinRT and the Windows SDK projection for .NET (WinRT.Runtime.dll, Microsoft.Windows.SDK.NET.dll)
   Copyright (c) Microsoft Corporation. WinRT.Runtime: MIT License, https://github.com/microsoft/CsWinRT;
   the projection: Windows SDK license terms, https://aka.ms/WinSDKLicenseURL

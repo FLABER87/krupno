@@ -19,6 +19,10 @@
     <value>{0} can't run this whole model: it doesn't support all of its operations. Choose the GPU through DirectML or the CPU.</value>
     <comment>{0} is the device, such as "Snapdragon X Elite NPU · QNN".</comment>
   </data>
+  <data name="Error_AnimationSizeLimit" xml:space="preserve">
+    <value>{0} can't hold an animation larger than {1} px on a side, and the result is {2}×{3}. Choose a smaller scale.</value>
+    <comment>{0} is GIF or WebP, {1} the largest side it can hold, {2}×{3} the size of the result.</comment>
+  </data>
   <data name="Error_CannotOpen" xml:space="preserve">
     <value>Cannot open "{0}": the file is corrupt or is not an image.</value>
   </data>
@@ -36,6 +40,10 @@
   </data>
   <data name="Error_ResultTooLarge" xml:space="preserve">
     <value>The result {0}×{1} is too large to process in memory.</value>
+  </data>
+  <data name="Error_WebPWrite" xml:space="preserve">
+    <value>Could not write the WebP animation: {0}.</value>
+    <comment>{0} is libwebp's own message, in English.</comment>
   </data>
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>The model metadata is contradictory: the window must be at most {0} px but at least {1} px.</value>

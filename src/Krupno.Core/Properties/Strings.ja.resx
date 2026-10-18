@@ -18,6 +18,9 @@
   <data name="Error_AcceleratorUnsupported" xml:space="preserve">
     <value>{0} ではこのモデル全体を実行できません。モデルの演算の一部またはすべてをサポートしていません。DirectML 経由の GPU か CPU を選択してください。</value>
   </data>
+  <data name="Error_AnimationSizeLimit" xml:space="preserve">
+    <value>{0} では 1 辺が {1} px を超えるアニメーションを保存できませんが、結果は {2}×{3} です。倍率を小さくしてください。</value>
+  </data>
   <data name="Error_CannotOpen" xml:space="preserve">
     <value>「{0}」を開けません。ファイルが壊れているか、画像ではありません。</value>
   </data>
@@ -35,6 +38,9 @@
   </data>
   <data name="Error_ResultTooLarge" xml:space="preserve">
     <value>結果 {0}×{1} は大きすぎて、メモリ内で処理できません。</value>
+  </data>
+  <data name="Error_WebPWrite" xml:space="preserve">
+    <value>WebP アニメーションを書き込めませんでした：{0}。</value>
   </data>
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>モデルのメタデータが矛盾しています。ウィンドウは {0} px 以下かつ {1} px 以上である必要があります。</value>

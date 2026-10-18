@@ -18,6 +18,9 @@
   <data name="Error_AcceleratorUnsupported" xml:space="preserve">
     <value>{0} 無法完整執行此模型：不支援其中部分或全部運算。請選擇透過 DirectML 的 GPU 或 CPU。</value>
   </data>
+  <data name="Error_AnimationSizeLimit" xml:space="preserve">
+    <value>{0} 無法儲存任一邊超過 {1} px 的動畫，而結果為 {2}×{3}。請選擇較小的倍率。</value>
+  </data>
   <data name="Error_CannotOpen" xml:space="preserve">
     <value>無法開啟「{0}」：檔案已損毀或不是影像。</value>
   </data>
@@ -35,6 +38,9 @@
   </data>
   <data name="Error_ResultTooLarge" xml:space="preserve">
     <value>結果 {0}×{1} 太大，無法在記憶體中處理。</value>
+  </data>
+  <data name="Error_WebPWrite" xml:space="preserve">
+    <value>無法寫入 WebP 動畫：{0}。</value>
   </data>
   <data name="Model_ContradictoryMetadata" xml:space="preserve">
     <value>模型中繼資料互相矛盾：視窗必須不超過 {0} px，但又至少為 {1} px。</value>

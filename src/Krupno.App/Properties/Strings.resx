@@ -336,6 +336,10 @@
   <data name="Progress_File" xml:space="preserve">
     <value>File {0} of {1}</value>
   </data>
+  <data name="Progress_Frame" xml:space="preserve">
+    <value>frame {0} of {1}</value>
+    <comment>A frame of an animated GIF or WebP; lowercase like "tile {0} of {1}", which may follow it.</comment>
+  </data>
   <data name="Progress_Orientation" xml:space="preserve">
     <value>orientation {0} of {1}</value>
   </data>

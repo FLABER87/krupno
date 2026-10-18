@@ -56,7 +56,7 @@ function Publish-App {
     Write-Host "Published to $AppDir"
 }
 
-# .NET, ONNX Runtime and DirectML licenses, taken from the exact NuGet packages that went into the build.
+# .NET, ONNX Runtime and DirectML licenses, taken from the exact NuGet packages that went into the build, and libwebp's.
 function Copy-RuntimeLicenses {
     $assets = Get-Content -Raw -Encoding UTF8 "$buildDir\obj\Krupno.App\project.assets.json" | ConvertFrom-Json
     $packages = $assets.project.restore.packagesPath
@@ -85,6 +85,8 @@ function Copy-RuntimeLicenses {
         $source = Join-Path $packages "$($id.ToLowerInvariant())\$($versions[$id])\$file"
         Copy-Item -LiteralPath $source -Destination (Join-Path $target $name)
     }
+    # libwebp's license and patent grant, kept in installer\licenses: its package holds only the libraries.
+    Copy-Item -Path "$PSScriptRoot\licenses\libwebp-*.txt" -Destination $target
 }
 
 function Find-Iscc {

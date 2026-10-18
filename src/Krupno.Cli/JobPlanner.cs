@@ -24,9 +24,11 @@ internal static class JobPlanner
         string tag, out int leftOut)
     {
         leftOut = 0;
-        string ending = tag + ImageCodec.GetExtension(format ?? ImageFileFormat.Png);
+        string extension = ImageCodec.GetExtension(format ?? ImageFileFormat.Png);
+        // An animation stays one, in its own format, whatever the format of the still images.
+        string Ending(string file) => tag + (Animation.Detect(file) is { } animation ? Animation.GetExtension(animation) : extension);
         if (inputs.Count == 1 && !HasWildcard(inputs[0]) && File.Exists(inputs[0]))
-            return [PlanFile(Path.GetFullPath(inputs[0]), output, format, ending, suffix)];
+            return [PlanFile(Path.GetFullPath(inputs[0]), output, format, Ending, suffix)];
 
         if (output is not null && File.Exists(output))
             throw new CliException($"-o must be a folder when there is more than one image: \"{output}\" is a file.");
@@ -38,7 +40,7 @@ internal static class JobPlanner
         var index = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         foreach (string input in inputs)
         {
-            foreach (var (file, target, named) in Expand(input, outputDir, recursive, ending, suffix))
+            foreach (var (file, target, named) in Expand(input, outputDir, recursive, Ending, suffix))
             {
                 if (index.TryGetValue(OutputPaths.Key(file), out int at))
                     planned[at] = planned[at] with { Named = planned[at].Named || named };
@@ -67,7 +69,7 @@ internal static class JobPlanner
     }
 
     private static IEnumerable<(string File, string Output, bool Named)> Expand(string input, string? outputDir, bool recursive,
-        string ending, string suffix)
+        Func<string, string> ending, string suffix)
     {
         string? root;
         IEnumerable<string> files;
@@ -102,7 +104,7 @@ internal static class JobPlanner
         return Ordered(files).Select(f => (f, Target(Path.Combine(target, Path.GetRelativePath(root, Path.GetDirectoryName(f)!)), f, ending, suffix), false));
     }
 
-    private static Job PlanFile(string input, string? output, ImageFileFormat? format, string ending, string suffix)
+    private static Job PlanFile(string input, string? output, ImageFileFormat? format, Func<string, string> ending, string suffix)
     {
         if (output is null)
             return new Job(input, NextToSource(input, ending, suffix));
@@ -113,6 +115,13 @@ internal static class JobPlanner
         string path = Path.GetFullPath(output);
         if (string.Equals(OutputPaths.Key(path), OutputPaths.Key(input), StringComparison.OrdinalIgnoreCase))
             throw new CliException("The output file is the source image itself; choose another name.");
+        // An animation is saved in its own format, so a name with another extension would be misleading.
+        if (Animation.Detect(input) is { } animation
+            && !Path.GetExtension(path).Equals(Animation.GetExtension(animation), StringComparison.OrdinalIgnoreCase))
+        {
+            throw new CliException($"\"{Path.GetFileName(input)}\" is an animation, and its result is one too: name the output " +
+                                   $"{Animation.GetExtension(animation)}.");
+        }
         // An unknown extension would get PNG data under a misleading name; a name without an extension stays PNG.
         if (format is null && Path.GetExtension(path) is { Length: > 0 } given && ImageCodec.FormatFromExtension(path) is null)
             throw new CliException($"Unknown output format \"{given}\": use .png, .jpg, .tif or .bmp, or set it with -f.");
@@ -134,17 +143,17 @@ internal static class JobPlanner
             .OrderBy(f => Path.GetDirectoryName(f), StringComparer.OrdinalIgnoreCase)
             .ThenBy(f => Path.GetFileName(f), StringComparer.OrdinalIgnoreCase);
 
-    private static string NextToSource(string file, string ending, string suffix) =>
-        Path.Combine(Path.GetDirectoryName(file)!, Path.GetFileNameWithoutExtension(file) + suffix + ending);
+    private static string NextToSource(string file, Func<string, string> ending, string suffix) =>
+        Path.Combine(Path.GetDirectoryName(file)!, Path.GetFileNameWithoutExtension(file) + suffix + ending(file));
 
     /// <summary>
     /// The result in an output folder keeps the source's name ("a.jpg" → "a.png"); in the source's own folder it gets the suffix,
     /// as next to the source: "a.png" as its result would replace the source or another image there, and a rerun couldn't tell
     /// the earlier results from the sources.
     /// </summary>
-    private static string Target(string folder, string file, string ending, string suffix)
+    private static string Target(string folder, string file, Func<string, string> ending, string suffix)
     {
-        string path = Path.GetFullPath(Path.Combine(folder, Path.GetFileNameWithoutExtension(file) + ending));
+        string path = Path.GetFullPath(Path.Combine(folder, Path.GetFileNameWithoutExtension(file) + ending(file)));
         return string.Equals(OutputPaths.Key(Path.GetDirectoryName(path)!), OutputPaths.Key(Path.GetDirectoryName(file)!), StringComparison.OrdinalIgnoreCase)
             ? NextToSource(file, ending, suffix)
             : path;
