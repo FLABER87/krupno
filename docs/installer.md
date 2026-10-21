@@ -34,7 +34,7 @@ The installer speaks the same languages as the window and picks the one Windows 
 
 The wizard's own text comes from Inno Setup's messages files: twelve come with Inno Setup, and the Indonesian, Vietnamese and both Chinese ones, which it doesn't install, are kept in `installer/languages` (taken from the `is-6_7_1` tag of [jrsoftware/issrc](https://github.com/jrsoftware/issrc), to match the Inno Setup version the release uses). Two of those lacked the download and verification messages of Inno Setup 6.5+ that the model download shows; Krupno adds them at the end of the file's `[Messages]`. A missing message would fall back to English with a compiler warning, and CI fails on any warning of the installer script.
 Krupno's own text (installation types, components, tasks, the Explorer item) is in `installer/messages.iss`; the model names there are the ones the window shows.
-CI compiles the script without output on every push (`ISCC /O-`), so a broken language or message shows up before a release, and `LocalizationTests` checks that the installer has the window's languages and every message in each of them.
+CI compiles the script without output on every pull request and push to main (`ISCC /O-`), so a broken language or message shows up before a release, and `LocalizationTests` checks that the installer has the window's languages and every message in each of them.
 
 ## Updating from the window
 
