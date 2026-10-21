@@ -1,14 +1,19 @@
-﻿# The README screenshots in docs/images: the window comparing a small photo with its ×4 result, in both themes. split-*.jpg
-# is the slider on the face, side-*.jpg the two frames zoomed in on the eye. The photo (fixtures/readme/fox.jpg, 300×200)
-# is AI-generated and downscaled, small enough for its pixels to show at the README's size.
-# Requires a Release build and "Photo, maximum detail" in models/. The script moves the mouse to set the divider and zoom,
-# so don't touch the mouse during the run (about 40 s).
+﻿# The README screenshots in docs/images: the window comparing a small photo with its ×4 result, in both themes. split-*.webp
+# is an animation of the slider swept across the face, side-*.jpg the two frames zoomed in on the eye. The photo
+# (fixtures/readme/fox.jpg, 300×200) is AI-generated and downscaled, small enough for its pixels to show at the README's size.
+# Requires a Release build, "Photo, maximum detail" in models/ and Python with Pillow (tools/make_animation.py encodes the
+# animation; its frames stay in tests/out/readme). The script moves the mouse to set the divider and zoom, so don't touch
+# the mouse during the run (about a minute). The images are as large as the window on the screen: at 100% display scaling
+# it is about 1240 pixels wide, at 150% it is 1860 and the JPEGs are scaled down to 1800.
 #   powershell -File tests\readme_screenshot.ps1
+#   powershell -File tests\readme_screenshot.ps1 -Themes dark      (one theme again)
 param(
     [string]$Exe = "$PSScriptRoot\..\src\Krupno.App\bin\Release\net10.0-windows10.0.19041.0\win-x64\Krupno.exe",
     [string]$Image = "$PSScriptRoot\fixtures\readme\fox.jpg",
     [string]$Model = "4xBHI_dat2_real_fp16",
     [string]$Out = "$PSScriptRoot\..\docs\images",
+    [string]$Frames = "$PSScriptRoot\out\readme",
+    [string[]]$Themes = @("light", "dark"),
     # The window in DIPs, and the width of the saved images in pixels.
     [int]$Width = 1240,
     [int]$Height = 700,
@@ -33,6 +38,8 @@ namespace KrupnoUi {
             SetCursorPos(x, y); Thread.Sleep(150);
             mouse_event(0x2, 0, 0, 0, UIntPtr.Zero); Thread.Sleep(80); mouse_event(0x4, 0, 0, 0, UIntPtr.Zero);
         }
+        public static void Down(int x, int y) { SetCursorPos(x, y); Thread.Sleep(150); mouse_event(0x2, 0, 0, 0, UIntPtr.Zero); }
+        public static void Up() { mouse_event(0x4, 0, 0, 0, UIntPtr.Zero); }
         public static void Wheel(int x, int y, int notches) {
             SetCursorPos(x, y); Thread.Sleep(150);
             for (int i = 0; i < notches; i++) { mouse_event(0x800, 0, 0, 120, UIntPtr.Zero); Thread.Sleep(120); }
@@ -71,17 +78,67 @@ function Image-Rect($Root) {
     return $best
 }
 
-# The window as it is drawn (without the invisible resize borders), scaled down and saved.
-function Save-Window([IntPtr]$h, [string]$Name) {
-    # The cursor off the window, so nothing shows a hover state.
-    [KrupnoUi.Shot]::SetCursorPos(0, 0) | Out-Null
-    Start-Sleep -Seconds 1
+# The window as it is drawn, without the invisible resize borders.
+function Capture-Frame([IntPtr]$h) {
     $shot = Capture $h
     $frame = [KrupnoUi.Shot]::Frame($h)
     $visible = New-Object System.Drawing.Rectangle ($frame.L - $shot.Left), ($frame.T - $shot.Top), ($frame.R - $frame.L), ($frame.B - $frame.T)
     $cropped = $shot.Bitmap.Clone($visible, $shot.Bitmap.PixelFormat); $shot.Bitmap.Dispose()
+    return $cropped
+}
+
+# The window scaled down and saved.
+function Save-Window([IntPtr]$h, [string]$Name) {
+    # The cursor off the window, so nothing shows a hover state.
+    [KrupnoUi.Shot]::SetCursorPos(0, 0) | Out-Null
+    Start-Sleep -Seconds 1
+    $cropped = Capture-Frame $h
     Save-Jpeg $cropped "$Out\$Name.jpg"; $cropped.Dispose()
     "  $Name.jpg"
+}
+
+# Where the divider goes, as a fraction of the picture's width, and how long each frame shows, in ms: a pause on the
+# face, then right to show more of the original, left to show more of the result and back, with smoothstep easing. The
+# last leg ends where the first frame is, so its last frame is left out and the loop goes on smoothly.
+function Sweep-Plan {
+    $plan = @(@{ At = 0.49; Ms = 1200 })
+    foreach ($leg in @(@(0.49, 0.78, 18), @(0.78, 0.22, 34), @(0.22, 0.49, 16))) {
+        $from, $to, $count = $leg
+        for ($k = 1; $k -le $count; $k++) {
+            $t = $k / $count
+            $plan += @{ At = $from + ($to - $from) * $t * $t * (3 - 2 * $t); Ms = 40 }
+        }
+        $plan[-1].Ms = 500
+    }
+    return $plan[0..($plan.Count - 2)]
+}
+
+# The slider animation: the divider is held with the mouse button and moved step by step, one frame per step, then
+# tools/make_animation.py turns the frames into $Name.webp. $r is the picture's rectangle while it fits the window; the
+# divider stays where it is on the screen when the picture is zoomed.
+function Save-Sweep([IntPtr]$h, $r, [string]$Name) {
+    $dir = Join-Path $Frames $Name
+    Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force $dir | Out-Null
+    $y = [int]($r.Top + 0.3 * $r.Height)
+    $lines = @()
+    [KrupnoUi.Shot]::Down([int]($r.Left + 0.49 * $r.Width), $y)
+    try {
+        foreach ($step in Sweep-Plan) {
+            [KrupnoUi.Shot]::SetCursorPos([int]($r.Left + $step.At * $r.Width), $y) | Out-Null
+            Start-Sleep -Milliseconds 100
+            # A click elsewhere or another window coming to the front ends the drag, and the rest would be still frames.
+            if ([KrupnoUi.Win]::GetForegroundWindow() -ne $h) { throw "the Krupno window lost the focus during the sweep; run the script again without touching the mouse" }
+            $file = "{0:D3}.png" -f $lines.Count
+            $frame = Capture-Frame $h
+            $frame.Save((Join-Path $dir $file), [System.Drawing.Imaging.ImageFormat]::Png); $frame.Dispose()
+            $lines += "$file $($step.Ms)"
+        }
+    }
+    finally { [KrupnoUi.Shot]::Up() }
+    [IO.File]::WriteAllLines((Join-Path $dir "frames.txt"), [string[]]$lines)
+    & python "$PSScriptRoot\..\tools\make_animation.py" $dir "$Out\$Name.webp"
+    if ($LASTEXITCODE -ne 0) { throw "tools/make_animation.py failed" }
 }
 
 function Save-Jpeg([System.Drawing.Bitmap]$Bitmap, [string]$Path) {
@@ -100,7 +157,7 @@ function Save-Jpeg([System.Drawing.Bitmap]$Bitmap, [string]$Path) {
 Backup-Settings
 try {
     Settings $Model
-    foreach ($theme in "light", "dark") {
+    foreach ($theme in $Themes) {
         $p = Launch @($sample) -Theme $theme
         try {
             $h = $p.MainWindowHandle
@@ -112,12 +169,12 @@ try {
             WaitFor $w "^Done" | Out-Null
             Start-Sleep -Seconds 1
             # The slider: the divider between the eyes (a click moves it while the picture fits the window), then two wheel
-            # notches around the face.
+            # notches around the face, and the divider swept across it.
             $r = Image-Rect $w
             [KrupnoUi.Shot]::Click([int]($r.Left + 0.49 * $r.Width), [int]($r.Top + 0.5 * $r.Height))
             Start-Sleep -Milliseconds 400
             [KrupnoUi.Shot]::Wheel([int]($r.Left + 0.5 * $r.Width), [int]($r.Top + 0.42 * $r.Height), 2)
-            Save-Window $h "split-$theme"
+            Save-Sweep $h $r "split-$theme"
             # Side by side, from "fit to window": seven notches around the eye on the left, which both frames follow.
             Keys $p "^0"
             Invoke-Named $w "^Side by side$"

@@ -1,17 +1,22 @@
 # Krupno
 
+[![Download](https://img.shields.io/github/v/release/FLABER87/krupno?filter=v*&label=download&color=2563eb)](https://github.com/FLABER87/krupno/releases/latest)
 [![Tests](https://github.com/FLABER87/krupno/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/FLABER87/krupno/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2563eb)](LICENSE)
 
-**Krupno** is an AI image upscaler for Windows. It enlarges photos and other images ×2, ×4 or to any size with neural networks, in a window (`Krupno.exe`) or from the command line (`krupno-cli.exe`).
+**Krupno** is a free AI image upscaler for Windows. It enlarges photos and other images ×2, ×4 or to any size with neural networks, in a window (`Krupno.exe`) or from the command line (`krupno-cli.exe`). No account, no subscription, and your images stay on your computer.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/split-dark.jpg">
-  <img src="docs/images/split-light.jpg" alt="The Krupno window comparing a 300×200 photo of a fox with its ×4 result: pixelated on the left of the slider, detailed fur and whiskers on the right">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/split-dark.webp">
+  <img src="docs/images/split-light.webp" alt="The Krupno window comparing a 300×200 photo of a fox with its ×4 result: the slider moves across the face, pixelated on its left, detailed fur and whiskers on its right">
 </picture>
 
 *A 300×200 photo (AI-generated) upscaled ×4 with "Photo, maximum detail": the original on the left of the slider, the result on the right.*
 
+**[Download Krupno for Windows](https://github.com/FLABER87/krupno/releases/latest)**: an installer or a portable ZIP, see [Download and install](#download-and-install).
+
 - Runs on any DirectX 12 GPU (NVIDIA, AMD or Intel, integrated ones included) and falls back to the CPU. On Windows 11 24H2 and later it can also use the GPU and NPU vendors' accelerators, such as NVIDIA TensorRT-RTX and Intel OpenVINO.
+- The installer offers [models](#models) for photos (fast or with the most detail), for text and documents and for removing noise; other ONNX models work too.
 - Large images are processed in tiles that fit in video memory, without visible seams.
 - Keeps transparency, EXIF rotation and color profiles. Reads PNG, JPEG, TIFF, BMP, GIF, WebP and HEIC; writes PNG, JPEG, TIFF and BMP.
 - Upscales animated GIF and WebP frame by frame into an animation of the same format, with the same timing.
@@ -130,6 +135,10 @@ More for contributors in [docs/](docs):
 - [installer.md](docs/installer.md): the installer, the portable ZIP and releases;
 - [models.md](docs/models.md): converting models to ONNX and how they compare;
 - [how-it-works.md](docs/how-it-works.md): tiling, memory, accelerators, color and the finer points of the window and the command-line tool.
+
+## Feedback
+
+Found a bug or missing something? Open an [issue](https://github.com/FLABER87/krupno/issues); questions and ideas are welcome in [Discussions](https://github.com/FLABER87/krupno/discussions). If Krupno is useful to you, a star on GitHub helps other people find it.
 
 ## License
 
