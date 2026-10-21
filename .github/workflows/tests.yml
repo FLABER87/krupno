@@ -1,11 +1,17 @@
 # Builds the solution, runs the unit tests (tests/Krupno.Core.Tests), checks the installer script and runs the synthetic CLI
-# tests (tests/run_cli_tests.ps1).
+# tests (tests/run_cli_tests.ps1) on every push to main and every pull request, then squash-merges pull requests from this
+# repository's branches once they pass.
 # The UI scripts (tests/gui_*.ps1) are not run here: they need a desktop and real models.
 name: Tests
 
 on:
   push:
+    # Other branches are tested through their pull requests: a push run of the same commit would be a second "Build and
+    # CLI tests" check, which main requires, possibly still running when the pull request's run merges.
+    branches: [main]
   pull_request:
+    # ready_for_review: a draft marked ready is tested again and then merged.
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
 permissions:
@@ -72,3 +78,26 @@ jobs:
           name: cli-tests-out
           path: tests/out/cli
           if-no-files-found: ignore
+
+  # Merges here rather than through GitHub's auto-merge, which has to be turned on for each pull request. Left alone:
+  # drafts, pull requests from forks, and Dependabot's updates, since an ONNX Runtime update can pass here on the CPU and
+  # still break a GPU, which the runner doesn't have. The head commit must still be the one that was tested.
+  merge:
+    name: Merge
+    if: >-
+      github.event_name == 'pull_request' && !github.event.pull_request.draft &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]'
+    needs: cli
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Squash-merge and delete the branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        # --repo: no checkout here, so gh deletes only the branch on GitHub.
+        run: gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --squash --delete-branch --match-head-commit "$HEAD_SHA"
