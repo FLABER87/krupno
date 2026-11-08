@@ -57,7 +57,20 @@ The script publishes `Krupno.exe` and `krupno-cli.exe` into one folder. Models f
 
 ## Model releases
 
-The installer lists the models in `installer/Krupno.iss` (file name, size, SHA-256). A new set of models is published as a separate release (`models-v5` and so on), and the link in `Krupno.iss` is updated. Old model releases are never overwritten: already built installers point to them. A model release is published without "Set as the latest release" (`gh release create models-v5 --latest=false`): the window finds a new version of Krupno through the latest release, and a model release in its place would hide one until the next release of the app.
+The installer lists the models in `installer/Krupno.iss` (file name, size, SHA-256). A new set of models is published as a separate release (the next `models-vN`), and the link in `Krupno.iss` is updated. Old model releases are never overwritten: already built installers point to them. A model release is published without "Set as the latest release" (`gh release create models-vN --latest=false`): the window finds a new version of Krupno through the latest release, and a model release in its place would hide one until the next release of the app.
+
+`installer/publish-models.ps1` does all of this from the `models` folder. Put the new or changed `.onnx` files there, check what it would do, then publish:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File installer\publish-models.ps1 -DryRun
+powershell -ExecutionPolicy Bypass -File installer\publish-models.ps1
+```
+
+- It compares the folder with the latest model release by SHA-256 and publishes only a set that differs: a model with another hash, or a new file. Models missing from the folder are taken from the latest release, so the new one is complete; `-Exclude` leaves files of the folder out.
+- `MODEL-LICENSES.txt` and the release notes start from the latest release's, with the version replaced, and are kept as drafts in `artifacts/models-vN` for later runs. The notes' last paragraph, the list of changes, is generated on every run (`-Summary` adds a sentence to it). Every model must be named in both: for a new one, the script stops until its author, license and source are added to the drafts.
+- It uploads everything to a draft release, checks each file's size and SHA-256 on GitHub, and only then publishes the release, not as the latest.
+- Then it updates `Krupno.iss` (the link, sizes and hashes), the default model's hash and link in `bucket/krupno.json`, and the release links in the README, the docs and `THIRD-PARTY-NOTICES.txt`, leaving them uncommitted for a pull request.
+- A new model's component in `Krupno.iss`, its titles in `installer/messages.iss` and `ViewModels/ModelItem.cs`, and its entries in the README and `THIRD-PARTY-NOTICES.txt` are added by hand: the script lists what is missing.
 
 ## Releasing a version
 
@@ -71,6 +84,6 @@ Code signing through SignPath Foundation is already built into the workflow. It 
 
 ## Package managers
 
-**Scoop.** The repository is a Scoop bucket of its own: `bucket/krupno.json` installs the portable ZIP and the default model, which goes into the `models` folder; that folder is persisted, so the models a user adds stay through updates. The official Extras bucket takes apps with at least 100 stars on GitHub. After a release is published, the `Packages` workflow runs `installer/update-scoop.ps1`, which takes the new version and the ZIP's SHA-256 from the release's `SHA256SUMS.txt`, and opens a pull request with the new manifest (GitHub Actions may open it only with "Allow GitHub Actions to create and approve pull requests" in the repository's settings; otherwise the log has the link to open it by hand). A pull request from the workflow runs no checks, so it is merged by an administrator. When the default model moves to a new model release, its link and hash in the manifest (in `url`, `hash` and `autoupdate`) change by hand, together with `Krupno.iss`.
+**Scoop.** The repository is a Scoop bucket of its own: `bucket/krupno.json` installs the portable ZIP and the default model, which goes into the `models` folder; that folder is persisted, so the models a user adds stay through updates. The official Extras bucket takes apps with at least 100 stars on GitHub. After a release is published, the `Packages` workflow runs `installer/update-scoop.ps1`, which takes the new version and the ZIP's SHA-256 from the release's `SHA256SUMS.txt`, and opens a pull request with the new manifest (GitHub Actions may open it only with "Allow GitHub Actions to create and approve pull requests" in the repository's settings; otherwise the log has the link to open it by hand). A pull request from the workflow runs no checks, so it is merged by an administrator. When the default model moves to a new model release, its link and hash in the manifest (in `url`, `hash` and `autoupdate`) change together with `Krupno.iss`: `installer/publish-models.ps1` does both.
 
 **WinGet.** The package is `FLABER87.Krupno` in [microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs): the installer, for the current user (`/CURRENTUSER`) or for all users (`/ALLUSERS`). Its first version was submitted by hand; after that, the `Packages` workflow submits each release through [WinGet Releaser](https://github.com/vedantmgoyal9/winget-releaser) once the `WINGET_TOKEN` secret is set: a classic token with the `public_repo` scope of an account with a fork of winget-pkgs. Without the secret, the job only says so. Microsoft's checks and review take from hours to days.
