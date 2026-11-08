@@ -30,6 +30,8 @@ UI scripts (`tests\gui_states.ps1`, `tests\gui_keys.ps1`, `tests\readme_screensh
 
 Installer and portable ZIP (needs Inno Setup 6.5+): `powershell -ExecutionPolicy Bypass -File installer\build.ps1`, output in `artifacts/`.
 
+A new model release from the `models` folder: `powershell -ExecutionPolicy Bypass -File installer\publish-models.ps1 -DryRun` shows what would be published and changed; without `-DryRun` it publishes the next `models-vN` and updates `Krupno.iss`, the Scoop manifest and the links (see `docs/installer.md`).
+
 Environment variables for testing: `KRUPNO_BASIC_RENDER_DRIVER=1` (treat the software adapter as a GPU), `KRUPNO_THEME=light|dark`, `KRUPNO_UPDATE_FROM=<version>` (pretend to be another version for the update check).
 
 ## Architecture
